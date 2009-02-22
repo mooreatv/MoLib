@@ -1,5 +1,8 @@
 ChangeLog
 
+1.1.2	Feb 22nd 2009
+	- Rebuild from curseforge hosted repository
+
 1.1.0	Feb 21st 2009
 
 	- Fixed http://wow.curseforge.com/projects/whotracker/tickets/1-error-with-who-lib-wim/
