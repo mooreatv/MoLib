@@ -1,0 +1,15 @@
+ChangeLog
+
+1.1.0	Feb 21st 2009
+
+	- Fixed http://wow.curseforge.com/projects/whotracker/tickets/1-error-with-who-lib-wim/
+	- Don't have the normal who ui popping up each time a query is done (save, temporarily disable then restore whoframe WHO_LIST_UPDATE listeners)
+	  If there is no user query (empty search, or search equal to the WhoTracker one; do update the dialog if shown)
+	- Cleaned up code
+
+1.0.1
+	- Added sorting by level and zone
+     
+1.0.0	Feb 20th 2009
+
+	- Initial Release
