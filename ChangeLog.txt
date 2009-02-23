@@ -1,5 +1,8 @@
 ChangeLog
 
+1.1.3	Feb 23rd 2009
+ 	- Fixed: Debug off doesn't turn debug off
+ 	
 1.1.2	Feb 22nd 2009
 	- Rebuild from curseforge hosted repository
 
