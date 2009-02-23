@@ -17,7 +17,7 @@ function WhoTracker.Print(...)
 	DEFAULT_CHAT_FRAME:AddMessage(...);
 end
 function WhoTracker.Debug(msg)
-    if WhoTracker.debug then
+    if WhoTracker.debug == 1 then
        WhoTracker.Print("WhoTracker DBG: "..msg,0,1,0);
     end
 end
@@ -66,7 +66,7 @@ function WhoTracker.Slash(arg)
   	WhoTracker.Print("WhoTracker Debug ON");
   elseif arg == "debug off" then
   	-- debug
-  	WhoTracker.debug = 0;
+  	WhoTracker.debug = nil;
   	WhoTracker.Print("WhoTracker Debug OFF");
   else 
     WhoTracker.Help("unknown command \""..arg.."\", usage:");
