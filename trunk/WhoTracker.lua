@@ -15,6 +15,7 @@ end
 function WhoTracker.Print(...)
 	DEFAULT_CHAT_FRAME:AddMessage(...);
 end
+
 function WhoTracker.Debug(msg)
     if WhoTracker.debug == 1 then
        WhoTracker.Print("WhoTracker DBG: "..msg,0,1,0);
@@ -22,7 +23,7 @@ function WhoTracker.Debug(msg)
 end
 
 function WhoTracker.Help(msg) 
-	WhoTracker.Print("WhoTracker: "..msg.."\n/wt pause --   stop tracking.\n/wt resume -- resume tracking\n/wt query ... -- who/what to track\n/wt history -- prints history");
+	WhoTracker.Print("WhoTracker: "..msg.."\n/wt pause --   stop tracking.\n/wt resume -- resume tracking\n/wt query ... -- who/what to track (n-playername z-zone g-guild c-class r-race lvl1-lvl2...)\n/wt history -- prints history");
 end
  
 function WhoTracker.Slash(arg)
@@ -81,6 +82,12 @@ SLASH_WhoTracker_Slash_Command2 = "/wt";
 function WhoTracker.OnEvent(this, event) 
    WhoTracker.Debug("called for "..this:GetName().." e="..event.." q="..WhoTracker.inQueryFlag.." nr="..#WhoTracker.registered
    					.." ur="..#WhoTracker.unregistered);
+   if (event == "PLAYER_LOGOUT") then
+      local ts=date("%a %b %d %H:%M end of tracking (logout)")
+      WhoTracker.Print(ts, 0,0,1);
+      table.insert(whoTrackerSaved, ts);
+      return;
+   end
    if WhoTracker.inQueryFlag == 0 then
       return; 
    end
@@ -182,9 +189,10 @@ function WhoTracker.Init()
       WhoTracker.Print("WhoTracker is paused.  /wt resume or /wt query [query] to resume.");
     else
       WhoTracker.Print("WhoTracker loaded.  Will track \"".. whoTrackerSaved.query .."\" - type /wt pause to stop .");
-    end 
-  end
+    end
+  end 
   -- end save vars
+  WhoTracker.frame:RegisterEvent("PLAYER_LOGOUT");
 end
 
 function WhoTracker.OnUpdate(self, elapsed) 
