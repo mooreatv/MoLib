@@ -1,5 +1,9 @@
 ChangeLog
 
+1.1.5	Feb 28th 2009
+	- Added entry in history for logout event (end of tracking time stamp)
+	- Better help (/wt)
+
 1.1.4	Feb 27th 2009
 	- Fixed: Seems in some case GetFramesRegisteredForEvent's GetName is nil
 
