@@ -2,7 +2,7 @@
 ## Title: WhoTracker
 ## Notes: Tracks /who result changes - type /wt for usage
 ## Author: moorea@ymail.com
-## Version: 1.1.3
+## Version: 1.1.4
 ## DefaultState: enabled
 ## SavedVariables:  whoTrackerSaved
 WhoTracker.lua
