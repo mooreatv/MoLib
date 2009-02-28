@@ -3,7 +3,6 @@
 -- NO WARRANTY
 -- (contact the author if you need a different license)
 
-
 if WhoTracker == nil then
   -- create table/namespace for most of this addon state
   -- and functions (whoTrackerSaved containing the rest)
@@ -231,7 +230,11 @@ function WhoTracker.SendWho()
     local friendsFrame = nil;
     for i=1,#WhoTracker.registered do
     	local fname = WhoTracker.registered[i]:GetName();
-        WhoTracker.Debug("who events registered for "..fname);
+    	if fname == nil then
+        	WhoTracker.Debug("who events registered - nil name #"..i);
+    	else
+        	WhoTracker.Debug("who events registered for "..fname);
+        end
         if fname == "FriendsFrame" then
         	friendsFrame = WhoTracker.registered[i];
     		friendsFrame:UnregisterEvent("WHO_LIST_UPDATE");
