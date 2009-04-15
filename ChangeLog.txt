@@ -1,5 +1,8 @@
 ChangeLog
 
+1.1.6	Apr 14th 2009
+	- Tested with 3.1 (works) - updated toc to match game version
+
 1.1.5	Feb 28th 2009
 	- Added entry in history for logout event (end of tracking time stamp)
 	- Better help (/wt)
