@@ -1,5 +1,8 @@
 ChangeLog
 
+1.1.8   Dec 8th 2009
+    - Updated toc to match game version 3.3
+
 1.1.7   Dec 2nd 2009
     - Tested with 3.2. (still works fine) - updated toc to match game version
     
