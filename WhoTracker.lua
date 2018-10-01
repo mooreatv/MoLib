@@ -155,7 +155,7 @@ function WhoTracker.OnEvent(this, event)
       local tsMsg = ts..totalCount.." online. "..msg;
       WhoTracker.Print(tsMsg, 1,0,0);
       table.insert(whoTrackerSaved, tsMsg); 
-      PlaySound("AuctionWindowClose");
+      PlaySound(SOUNDKIT.AUCTION_WINDOW_CLOSE);
    else 
       --print("unchanged");
    end
