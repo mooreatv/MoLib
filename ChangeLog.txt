@@ -1,5 +1,10 @@
 ChangeLog
 
+2.0.0	Oct 1st 2018
+	- Reviving the addon 9 years later!
+	- TOC update to 8.0.
+	- Update for PlaySound api change
+
 1.1.8   Dec 8th 2009
     - Updated toc to match game version 3.3
 
