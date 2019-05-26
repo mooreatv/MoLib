@@ -8,15 +8,15 @@ if WhoTracker == nil then
   WhoTracker = {}
 end
 
--- to force debug from load time, uncomment: (otherwise "/wt debug on" to turn on later)
--- WhoTracker.debug = 1
+-- to force debug from empty state, uncomment: (otherwise "/wt debug on" to turn on later)
+-- whoTrackerSaved.debug = 1
 
 function WhoTracker.Print(...)
   DEFAULT_CHAT_FRAME:AddMessage(...)
 end
 
 function WhoTracker.Debug(msg)
-  if WhoTracker.debug == 1 then
+  if whoTrackerSaved.debug == 1 then
     WhoTracker.Print("WhoTracker DBG: " .. msg, 0, 1, 0)
   end
 end
@@ -53,23 +53,29 @@ function WhoTracker.Slash(arg)
     whoTrackerSaved.query = rest
     local msg = "WhoTracker now tracking " .. rest
     WhoTracker.Print(msg)
-    table.insert(whoTrackerSaved, msg)
+    table.insert(whoTrackerSaved.history, msg)
     whoTrackerSaved.paused = nil
     WhoTracker.nextUpdate = 0
   elseif cmd == "h" then
     -- history
     WhoTracker.Print("WhoTracker history:")
-    for i = 1, #whoTrackerSaved do
-      WhoTracker.Print(whoTrackerSaved[i])
+    for i = 1, #whoTrackerSaved.history do
+      WhoTracker.Print(whoTrackerSaved.history[i])
     end
     -- for debug, needs exact match:
   elseif arg == "debug on" then
     -- debug
-    WhoTracker.debug = 1
+    whoTrackerSaved.debug = 1
+    if WhoTracker.whoLib then
+      WhoTracker.whoLib:SetWhoLibDebug(true)
+    end
     WhoTracker.Print("WhoTracker Debug ON")
   elseif arg == "debug off" then
     -- debug
-    WhoTracker.debug = nil
+    whoTrackerSaved.debug = nil
+    if WhoTracker.whoLib then
+      WhoTracker.whoLib:SetWhoLibDebug(false)
+    end
     WhoTracker.Print("WhoTracker Debug OFF")
   else
     WhoTracker.Help("unknown command \"" .. arg .. "\", usage:")
@@ -87,7 +93,7 @@ function WhoTracker.OnEvent(this, event)
   if (event == "PLAYER_LOGOUT") then
     local ts = date("%a %b %d %H:%M end of tracking (logout)")
     WhoTracker.Print(ts, 0, 0, 1)
-    table.insert(whoTrackerSaved, ts)
+    table.insert(whoTrackerSaved.history, ts)
     return
   end
   if WhoTracker.inQueryFlag == 0 then
@@ -101,7 +107,7 @@ function WhoTracker.OnEvent(this, event)
   WhoTracker.unregistered = {}
   WhoTracker.frame:UnregisterEvent("WHO_LIST_UPDATE")
   -- check results
-  local numWhos, totalCount = GetNumWhoResults()
+  local numWhos, totalCount = C_FriendList.GetNumWhoResults()
   -- if numWhos>0 then
   local status = ""
   local levels = {}
@@ -110,8 +116,9 @@ function WhoTracker.OnEvent(this, event)
   local maxl = 0
   local zoneList = {}
   for i = 1, numWhos do
-    local charname, guildname, levelStr, race, class, zone, classFileName = GetWhoInfo(i)
-    local level = tonumber(levelStr)
+    local info = C_FriendList.GetWhoInfo(i)
+    local level = tonumber(info.level)
+    local zone = info.area
     if level < minl then
       minl = level
     end
@@ -156,7 +163,7 @@ function WhoTracker.OnEvent(this, event)
     local ts = date("%a %b %d %H:%M ")
     local tsMsg = ts .. totalCount .. " online. " .. msg
     WhoTracker.Print(tsMsg, 1, 0, 0)
-    table.insert(whoTrackerSaved, tsMsg)
+    table.insert(whoTrackerSaved.history, tsMsg)
     PlaySound(SOUNDKIT.AUCTION_WINDOW_CLOSE)
   else
     -- print("unchanged");
@@ -184,12 +191,17 @@ function WhoTracker.Init()
   if whoTrackerSaved == nil then
     whoTrackerSaved = {}
     WhoTracker.Print(
-      "Welcome to WhoTracker: type \"/wt query n-samdeath\" for instance" .. 
-      " to start tracking player names matching \"samdeath\"" ..
+      "Welcome to WhoTracker: type \"/wt query g-MyGuild\" for instance" .. 
+      " to start tracking characters in guild \"MyGuild\"" ..
       " - \"/wt pause\" to stop tracking")
-    whoTrackerSaved.query = "n-samdeath"
+    whoTrackerSaved.query = "g-ChangeThis"
     whoTrackerSaved.paused = 1
+    whoTrackerSaved.history = {}
   else
+    if whoTrackerSaved.history == nil then
+      WhoTracker.Print("WhoTracker: warning - new history version/reset!")
+      whoTrackerSaved.history = {}
+    end
     if whoTrackerSaved.paused == 1 then
       WhoTracker.Print("WhoTracker is paused.  /wt resume or /wt query [query] to resume.")
     else
@@ -198,6 +210,19 @@ function WhoTracker.Init()
   end
   -- end save vars
   WhoTracker.frame:RegisterEvent("PLAYER_LOGOUT")
+  WhoTracker.whoLib = nil
+  if LibStub then
+    WhoTracker.whoLib = LibStub:GetLibrary('LibWho-2.0', true)
+ end
+  if WhoTracker.whoLib then
+    -- TODO potentially, use LibWho when it is there (but our version seems to work fine)
+    WhoTracker.Debug("LibWho found!")
+    if whoTrackerSaved.debug then
+      WhoTracker.whoLib:SetWhoLibDebug(true)
+    end
+  else
+    WhoTracker.Debug("LibWho not found!")
+  end  
 end
 
 function WhoTracker.OnUpdate(self, elapsed)
@@ -216,10 +241,8 @@ function WhoTracker.SetRegistered(...)
   end
 end
 
--- Turns out the FriendsFrame is the only one we need to unregister;
--- in particular LibWho-2.0 needs to stay as it hooks SendWho so
--- we probably don't need to 2 lists (registered and unregistered)
--- but it may be useful later if we find other incompatibilities
+-- With the new C_FriendList we can again unregister everything
+-- including LibWho-2.0 and not just FriendsFrame
 function WhoTracker.SendWho()
   if (WhoTracker.inQueryFlag == 1) or (#WhoTracker.registered > 0) or (#WhoTracker.unregistered > 0) then
     -- shouldn't happen... something is wrong/slow/... if it does, restore other handlers
@@ -240,17 +263,15 @@ function WhoTracker.SendWho()
   WhoTracker.unregistered = {}
   local friendsFrame = nil
   for i = 1, #WhoTracker.registered do
-    local fname = WhoTracker.registered[i]:GetName()
+    friendsFrame = WhoTracker.registered[i] 
+    local fname = friendsFrame:GetName()
     if fname == nil then
-      WhoTracker.Debug("who events registered - nil name #" .. i)
+      WhoTracker.Debug("who events registered to nil name #" .. i)
     else
-      WhoTracker.Debug("who events registered for " .. fname)
+      WhoTracker.Debug("who events registered for " .. fname .. " #" ..i)
     end
-    if fname == "FriendsFrame" then
-      friendsFrame = WhoTracker.registered[i]
-      friendsFrame:UnregisterEvent("WHO_LIST_UPDATE")
-      table.insert(WhoTracker.unregistered, friendsFrame)
-    end
+    friendsFrame:UnregisterEvent("WHO_LIST_UPDATE")
+    table.insert(WhoTracker.unregistered, friendsFrame)
   end
   WhoTracker.frame:RegisterEvent("WHO_LIST_UPDATE")
   C_FriendList.SetWhoToUi(1)
@@ -262,6 +283,7 @@ function WhoTracker.SendWho()
     WhoTracker.prevQuery = WhoFrameEditBox:GetText()
     WhoFrameEditBox:HighlightText()
     if WhoFrame:IsVisible() then
+      -- TODO: friendsFrame is the last of the registered handler, not necessarily the right one...
       if friendsFrame == nil then
         WhoTracker.Print("WhoFrame visible but FriendsFrame wasn't registered", 1, .6, .6)
       else
