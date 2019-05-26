@@ -1,11 +1,11 @@
 ChangeLog
 
 2.1.0 May 26th 2019
-  - Fix for wow classic (hopefully, despite no beta access to test... help needed!)
+	- Fix for wow classic (hopefully, despite no beta access to test... help needed!)
 	- LUA reformat, removing unecessary ; etc
 	- use new C_FriendList.* who APIs
 	- interact fine when LibWho-2.0 is installed: don't pop up the Who window (unless it's up)
-  - Better structure of the whoTrackerSaved saved variable. If you wrote code to parse it, it will need change!
+	- Better structure of the whoTrackerSaved saved variable. If you wrote code to parse it, it will need change!
 	- /wt debug on persists through reload/restart (/wt debug off to turn off) - also turns on WhoLib debug if it is present.
 
 2.0.0	Oct 1st 2018
@@ -14,11 +14,11 @@ ChangeLog
 	- Update for PlaySound api change
 
 1.1.8   Dec 8th 2009
-    - Updated toc to match game version 3.3
+	- Updated toc to match game version 3.3
 
 1.1.7   Dec 2nd 2009
-    - Tested with 3.2. (still works fine) - updated toc to match game version
-    
+	- Tested with 3.2. (still works fine) - updated toc to match game version
+		
 1.1.6	Apr 14th 2009
 	- Tested with 3.1 (works) - updated toc to match game version
 
@@ -39,12 +39,11 @@ ChangeLog
 
 	- Fixed http://wow.curseforge.com/projects/whotracker/tickets/1-error-with-who-lib-wim/
 	- Don't have the normal who ui popping up each time a query is done (save, temporarily disable then restore whoframe WHO_LIST_UPDATE listeners)
-	  If there is no user query (empty search, or search equal to the WhoTracker one; do update the dialog if shown)
+		If there is no user query (empty search, or search equal to the WhoTracker one; do update the dialog if shown)
 	- Cleaned up code
 
 1.0.1
 	- Added sorting by level and zone
-     
+		 
 1.0.0	Feb 20th 2009
-
 	- Initial Release
