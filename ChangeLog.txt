@@ -1,13 +1,13 @@
 ChangeLog
 
-2.1.2 May 26th 2019
+2.1.3 May 26th 2019
 	- Fix for wow classic (hopefully, despite no beta access to test... help needed!)
 	- LUA reformat, removing unecessary ; etc
 	- use new C_FriendList.* who APIs
 	- interact fine when LibWho-2.0 is installed: don't pop up the Who window (unless it's up)
 	- Better structure of the whoTrackerSaved saved variable. If you wrote code to parse it, it will need change!
 	- /wt debug on persists through reload/restart (/wt debug off to turn off) - also turns on WhoLib debug if it is present.
-	- redo release/tag to trigger auto build for curse
+	- redo release/tag to trigger auto build for curse - try #3
 
 2.0.0	Oct 1st 2018
 	- Reviving the addon 9 years later!
