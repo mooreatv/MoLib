@@ -1,0 +1,4 @@
+ignore:
+    - installwt.bat
+
+manual-changelog: ChangeLog.txt
