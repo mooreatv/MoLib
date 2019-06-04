@@ -2,11 +2,13 @@
 -- Covered by the GNU General Public License version 3 (GPLv3)
 -- NO WARRANTY
 -- (contact the author if you need a different license)
-if WhoTracker == nil then
-  -- create table/namespace for most of this addon state
-  -- and functions (whoTrackerSaved containing the rest)
-  WhoTracker = {}
-end
+
+-- create table/namespace for most of this addon state
+-- and functions (whoTrackerSaved containing the rest)
+-- CreateFrame does create a namesake global
+CreateFrame("frame", "WhoTracker", UIParent)
+
+-- WhoTracker = {}
 
 -- to force debug from empty state, uncomment: (otherwise "/wt debug on" to turn on later)
 -- whoTrackerSaved.debug = 1
@@ -90,6 +92,10 @@ SLASH_WhoTracker_Slash_Command2 = "/wt"
 function WhoTracker.OnEvent(this, event)
   WhoTracker.Debug("called for " .. this:GetName() .. " e=" .. event .. " q=" .. WhoTracker.inQueryFlag .. " nr=" ..
                      #WhoTracker.registered .. " ur=" .. #WhoTracker.unregistered)
+  if (event == "PLAYER_LOGIN") then
+    WhoTracker.Ticker() -- initial query/init
+    return
+  end
   if (event == "PLAYER_LOGOUT") then
     local ts = date("%a %b %d %H:%M end of tracking (logout)")
     WhoTracker.Print(ts, 0, 0, 1)
@@ -105,7 +111,7 @@ function WhoTracker.OnEvent(this, event)
   end
   WhoTracker.registered = {}
   WhoTracker.unregistered = {}
-  WhoTracker.frame:UnregisterEvent("WHO_LIST_UPDATE")
+  WhoTracker:UnregisterEvent("WHO_LIST_UPDATE")
   -- check results
   local numWhos, totalCount = C_FriendList.GetNumWhoResults()
   -- if numWhos>0 then
@@ -174,10 +180,7 @@ function WhoTracker.OnEvent(this, event)
 end
 
 WhoTracker.refresh = 60
-WhoTracker.nextUpdate = 0
--- if  WhoTracker.prevStatus==nil then
 WhoTracker.prevStatus = "x"
--- end
 WhoTracker.inQueryFlag = 0
 
 WhoTracker.first = 1
@@ -209,7 +212,7 @@ function WhoTracker.Init()
     end
   end
   -- end save vars
-  WhoTracker.frame:RegisterEvent("PLAYER_LOGOUT")
+  WhoTracker:RegisterEvent("PLAYER_LOGOUT")
   WhoTracker.whoLib = nil
   if LibStub then
     WhoTracker.whoLib = LibStub:GetLibrary('LibWho-2.0', true)
@@ -225,11 +228,10 @@ function WhoTracker.Init()
   end  
 end
 
-function WhoTracker.OnUpdate(self, elapsed)
+function WhoTracker.Ticker()
+  WhoTracker.Debug("WhoTracker periodic ticker called")
   WhoTracker.Init()
-  local now = GetTime()
-  if not (whoTrackerSaved.paused == 1) and (now >= WhoTracker.nextUpdate) then
-    WhoTracker.nextUpdate = now + WhoTracker.refresh
+  if not (whoTrackerSaved.paused == 1) then
     WhoTracker.SendWho()
   end
 end
@@ -254,7 +256,7 @@ function WhoTracker.SendWho()
     end
     WhoTracker.registered = {}
     WhoTracker.unregistered = {}
-    WhoTracker.frame:UnregisterEvent("WHO_LIST_UPDATE")
+    WhoTracker:UnregisterEvent("WHO_LIST_UPDATE")
     WhoTracker.inQueryFlag = 0
     return
   end
@@ -273,7 +275,7 @@ function WhoTracker.SendWho()
     friendsFrame:UnregisterEvent("WHO_LIST_UPDATE")
     table.insert(WhoTracker.unregistered, friendsFrame)
   end
-  WhoTracker.frame:RegisterEvent("WHO_LIST_UPDATE")
+  WhoTracker:RegisterEvent("WHO_LIST_UPDATE")
   C_FriendList.SetWhoToUi(1)
   -- set regular /who ui in case the user wants to repeat/get detailed
   -- of the search, but only if there isn't another search in there
@@ -296,15 +298,9 @@ function WhoTracker.SendWho()
   C_FriendList.SendWho(whoTrackerSaved.query)
 end
 
-if WhoTracker.frame == nil then
-  WhoTracker.frame = CreateFrame("frame", "WhoTracker", UIParent)
-end
-if WhoTracker.registered == nil then
-  WhoTracker.registered = {}
-end
-if WhoTracker.unregistered == nil then
-  WhoTracker.unregistered = {}
-end
+WhoTracker.registered = {}
+WhoTracker.unregistered = {}
+WhoTracker.ticker =  C_Timer.NewTicker(WhoTracker.refresh, WhoTracker.Ticker)
 
-WhoTracker.frame:SetScript("OnEvent", WhoTracker.OnEvent)
-WhoTracker.frame:SetScript("OnUpdate", WhoTracker.OnUpdate)
+WhoTracker:SetScript("OnEvent", WhoTracker.OnEvent)
+WhoTracker:RegisterEvent("PLAYER_LOGIN")
