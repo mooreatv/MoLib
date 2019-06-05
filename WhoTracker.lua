@@ -1,4 +1,4 @@
--- WhoTracker -- (c) 2009-2019 moorea@ymail.com
+-- WhoTracker -- (c) 2009-2019 moorea@ymail.com (MooreaTv)
 -- Covered by the GNU General Public License version 3 (GPLv3)
 -- NO WARRANTY
 -- (contact the author if you need a different license)
@@ -12,31 +12,35 @@ local addon, ns = ... -- our name, our empty default anonymous ns
 
 CreateFrame("frame", "WhoTracker", UIParent)
 
+-- Shortcut to not type WT everywhere
+
+local WT = WhoTracker
+
 -- to force debug from empty state, uncomment: (otherwise "/wt debug on" to turn on later
 -- and /reload to get it save/start over)
 -- whoTrackerSaved.debug = 1
 
-function WhoTracker.Print(...)
+function WT.Print(...)
   DEFAULT_CHAT_FRAME:AddMessage(...)
 end
 
-function WhoTracker.Debug(msg)
+function WT.Debug(msg)
   if  whoTrackerSaved and whoTrackerSaved.debug == 1 then
-    WhoTracker.Print("WhoTracker DBG: " .. msg, 0, 1, 0)
+    WT.Print("WhoTracker DBG: " .. msg, 0, 1, 0)
   end
 end
 
-function WhoTracker.Help(msg)
-  WhoTracker.Print("WhoTracker: " .. msg .. "\n" ..
+function WT.Help(msg)
+  WT.Print("WhoTracker: " .. msg .. "\n" ..
    "/wt pause --   stop tracking.\n" ..
    "/wt resume -- resume tracking\n" ..
    "/wt query ... -- who/what to track (n-playername z-zone g-guild c-class r-race lvl1-lvl2...)\n" ..
    "/wt history -- prints history")
 end
 
-function WhoTracker.Slash(arg)
+function WT.Slash(arg)
   if #arg == 0 then
-    WhoTracker.Help("commands")
+    WT.Help("commands")
     return
   end
   -- TODO: switch to/use tables
@@ -49,77 +53,77 @@ function WhoTracker.Slash(arg)
   if cmd == "p" then
     -- off
     whoTrackerSaved.paused = 1
-    WhoTracker.Print("WhoTracker now off")
+    WT.Print("WhoTracker now off")
   elseif cmd == "r" then
     -- resume
     whoTrackerSaved.paused = nil
-    WhoTracker.Print("WhoTracker resuming tracking of " .. whoTrackerSaved.query)
-    WhoTracker.Ticker()
+    WT.Print("WhoTracker resuming tracking of " .. whoTrackerSaved.query)
+    WT.Ticker()
   elseif cmd == "q" then
     -- query 
     whoTrackerSaved.query = rest
     local msg = "WhoTracker now tracking " .. rest
-    WhoTracker.Print(msg)
+    WT.Print(msg)
     table.insert(whoTrackerSaved.history, msg)
     whoTrackerSaved.paused = nil
-    WhoTracker.Ticker()
+    WT.Ticker()
   elseif cmd == "h" then
     -- history
-    WhoTracker.Print("WhoTracker history:")
+    WT.Print("WhoTracker history:")
     for i = 1, #whoTrackerSaved.history do
-      WhoTracker.Print(whoTrackerSaved.history[i])
+      WT.Print(whoTrackerSaved.history[i])
     end
     -- for debug, needs exact match:
   elseif arg == "debug on" then
     -- debug
     whoTrackerSaved.debug = 1
-    if WhoTracker.whoLib then
-      WhoTracker.whoLib:SetWhoLibDebug(true)
+    if WT.whoLib then
+      WT.whoLib:SetWhoLibDebug(true)
     end
-    WhoTracker.Print("WhoTracker Debug ON")
+    WT.Print("WhoTracker Debug ON")
   elseif arg == "debug off" then
     -- debug
     whoTrackerSaved.debug = nil
-    if WhoTracker.whoLib then
-      WhoTracker.whoLib:SetWhoLibDebug(false)
+    if WT.whoLib then
+      WT.whoLib:SetWhoLibDebug(false)
     end
-    WhoTracker.Print("WhoTracker Debug OFF")
+    WT.Print("WhoTracker Debug OFF")
   elseif cmd == "d" then
     -- dump
-    WhoTracker.Print("WTDump = " .. WhoTracker.Dump(_G[rest]))
+    WT.Print("WhoTrackerDump = " .. WT.Dump(_G[rest]))
   else
-    WhoTracker.Help("unknown command \"" .. arg .. "\", usage:")
+    WT.Help("unknown command \"" .. arg .. "\", usage:")
   end
 end
 
-SlashCmdList["WhoTracker_Slash_Command"] = WhoTracker.Slash
+SlashCmdList["WhoTracker_Slash_Command"] = WT.Slash
 
-SLASH_WhoTracker_Slash_Command1 = "/WhoTracker"
-SLASH_WhoTracker_Slash_Command2 = "/wt"
+SLASH_WT_Slash_Command1 = "/WhoTracker"
+SLASH_WT_Slash_Command2 = "/wt"
 
-function WhoTracker.OnEvent(this, event)
-  WhoTracker.Debug("called for " .. this:GetName() .. " e=" .. event .. " q=" .. WhoTracker.inQueryFlag .. " nr=" ..
-                     #WhoTracker.registered .. " ur=" .. #WhoTracker.unregistered)
+function WT.OnEvent(this, event)
+  WT.Debug("called for " .. this:GetName() .. " e=" .. event .. " q=" .. WT.inQueryFlag .. " nr=" ..
+                     #WT.registered .. " ur=" .. #WT.unregistered)
   if (event == "PLAYER_LOGIN") then
-    WhoTracker.Ticker() -- initial query/init
+    WT.Ticker() -- initial query/init
     return
   end
   if (event == "PLAYER_LOGOUT") then
     local ts = date("%a %b %d %H:%M end of tracking (logout)")
-    WhoTracker.Print(ts, 0, 0, 1)
+    WT.Print(ts, 0, 0, 1)
     table.insert(whoTrackerSaved.history, ts)
     return
   end
-  if WhoTracker.inQueryFlag == 0 then
+  if WT.inQueryFlag == 0 then
     return
   end
   -- restore other handlers
-  for i = 1, #WhoTracker.unregistered do
-    WhoTracker.unregistered[i]:RegisterEvent("WHO_LIST_UPDATE")
+  for i = 1, #WT.unregistered do
+    WT.unregistered[i]:RegisterEvent("WHO_LIST_UPDATE")
   end
-  WhoTracker.registered = {}
-  WhoTracker.unregistered = {}
-  WhoTracker:UnregisterEvent("WHO_LIST_UPDATE")
+  WT.registered = {}
+  WT.unregistered = {}
+  WT:UnregisterEvent("WHO_LIST_UPDATE")
   -- check results
   local numWhos, totalCount = C_FriendList.GetNumWhoResults()
   -- if numWhos>0 then
@@ -172,11 +176,11 @@ function WhoTracker.OnEvent(this, event)
     local count = zones[zone]
     msg = msg .. ", " .. count .. " in " .. zone
   end
-  if not (msg == WhoTracker.prevStatus) then
-    WhoTracker.prevStatus = msg
+  if not (msg == WT.prevStatus) then
+    WT.prevStatus = msg
     local ts = date("%a %b %d %H:%M ")
     local tsMsg = ts .. totalCount .. " online. " .. msg
-    WhoTracker.Print(tsMsg, 1, 0, 0)
+    WT.Print(tsMsg, 1, 0, 0)
     table.insert(whoTrackerSaved.history, tsMsg)
     PlaySound(SOUNDKIT.AUCTION_WINDOW_CLOSE)
   else
@@ -184,25 +188,25 @@ function WhoTracker.OnEvent(this, event)
   end
   -- end
   -- print("---");
-  WhoTracker.inQueryFlag = 0
+  WT.inQueryFlag = 0
 end
 
-WhoTracker.refresh = 60
-WhoTracker.prevStatus = "x"
-WhoTracker.inQueryFlag = 0
-WhoTracker.first = 1
-WhoTracker.manifestVersion = GetAddOnMetadata(addon, "Version")
+WT.refresh = 60
+WT.prevStatus = "x"
+WT.inQueryFlag = 0
+WT.first = 1
+WT.manifestVersion = GetAddOnMetadata(addon, "Version")
 
-function WhoTracker.Init()
-  if not (WhoTracker.first == 1) then
+function WT.Init()
+  if not (WT.first == 1) then
     return
   end
-  WhoTracker.first = 0
+  WT.first = 0
   -- saved vars handling
-  local version = "(" .. addon .. " " .. WhoTracker.manifestVersion .. ")"
+  local version = "(" .. addon .. " " .. WT.manifestVersion .. ")"
   if whoTrackerSaved == nil then
     whoTrackerSaved = {}
-    WhoTracker.Print("Welcome to WhoTracker " .. version .. ":\n" ..
+    WT.Print("Welcome to WhoTracker " .. version .. ":\n" ..
       "type \"/wt query g-MyGuild\" for instance" .. 
       " to start tracking characters in guild \"MyGuild\"" ..
       " - \"/wt pause\" to stop tracking")
@@ -211,172 +215,168 @@ function WhoTracker.Init()
     whoTrackerSaved.history = {}
   else
     if whoTrackerSaved.history == nil then
-      WhoTracker.Print("WhoTracker: warning - new history version/reset!")
+      WT.Print("WhoTracker: warning - new history version/reset!")
       whoTrackerSaved.history = {}
     end
     if whoTrackerSaved.paused == 1 then
-      WhoTracker.Print("WhoTracker is paused.  /wt resume or /wt query [query] to resume.")
+      WT.Print("WhoTracker is paused.  /wt resume or /wt query [query] to resume.")
     else
-      WhoTracker.Print("WhoTracker " .. version .. " loaded.  Will track \"" .. whoTrackerSaved.query .. "\" - type /wt pause to stop .")
+      WT.Print("WhoTracker " .. version .. " loaded.  Will track \"" .. whoTrackerSaved.query .. "\" - type /wt pause to stop .")
     end
   end
-  WhoTracker.Debug("whoTrackerSaved = " .. WhoTracker.Dump(whoTrackerSaved))
+  WT.Debug("whoTrackerSaved = " .. WT.Dump(whoTrackerSaved))
   -- end save vars
-  WhoTracker:RegisterEvent("PLAYER_LOGOUT")
-  WhoTracker.whoLib = nil
+  WT:RegisterEvent("PLAYER_LOGOUT")
+  WT.whoLib = nil
   if LibStub then
-    WhoTracker.whoLib = LibStub:GetLibrary('LibWho-2.0', true)
+    WT.whoLib = LibStub:GetLibrary('LibWho-2.0', true)
  end
-  if WhoTracker.whoLib then
+  if WT.whoLib then
     -- TODO potentially, use LibWho when it is there (but our version seems to work fine)
-    WhoTracker.Debug("LibWho found!")
+    WT.Debug("LibWho found!")
     if whoTrackerSaved.debug then
-      WhoTracker.whoLib:SetWhoLibDebug(true)
+      WT.whoLib:SetWhoLibDebug(true)
     end
   else
-    WhoTracker.Debug("LibWho not found!")
+    WT.Debug("LibWho not found!")
   end
 end
 
-function WhoTracker.Ticker()
-  WhoTracker.Debug("WhoTracker periodic ticker called")
-  WhoTracker.Init()
+function WT.Ticker()
+  WT.Debug("WhoTracker periodic ticker called")
+  WT.Init()
   if not (whoTrackerSaved.paused == 1) then
-    WhoTracker.SendWho()
+    WT.SendWho()
   end
 end
 
-function WhoTracker.SetRegistered(...)
-  WhoTracker.registered = {}
+function WT.SetRegistered(...)
+  WT.registered = {}
   for i = 1, select("#", ...) do
-    WhoTracker.registered[i] = select(i, ...)
+    WT.registered[i] = select(i, ...)
   end
 end
 
 
 -- Start of handy poor man's "/dump" --
 
-WhoTracker.DumpT = {}
-WhoTracker.DumpT["string"] = function(into, v)
+WT.DumpT = {}
+WT.DumpT["string"] = function(into, v)
   table.insert(into, "\"")
   table.insert(into, v)
   table.insert(into, "\"")
 end
-WhoTracker.DumpT["number"] = function(into, v)
+WT.DumpT["number"] = function(into, v)
   table.insert(into, tostring(v))
 end
-WhoTracker.DumpT["boolean"] = WhoTracker.DumpT["number"]
+WT.DumpT["boolean"] = WT.DumpT["number"]
 
 for _, t in next, {"function", "nil", "userdata"} do
-  WhoTracker.DumpT[t] = function(into, v)
+  WT.DumpT[t] = function(into, v)
     table.insert(into, t)
   end
 end
 
-WhoTracker.DumpT["table"] = function(into, t)
-  table.insert(into, "[")
-  local first = true
+WT.DumpT["table"] = function(into, t)
+  local sep = "["
   for k,v in pairs(t) do 
-    if first then
-      first = nil
-    else
-      table.insert(into, ", ")
-    end
-    WhoTracker.DumpInto(into, k) -- so we get the type/difference betwee [1] and ["1"]
+    table.insert(into, sep)
+    sep = ", " -- inserts a [ at begining and coma after the first one
+    WT.DumpInto(into, k) -- so we get the type/difference betwee [1] and ["1"]
     table.insert(into, " = ")
-    WhoTracker.DumpInto(into, v)
+    WT.DumpInto(into, v)
   end
   table.insert(into, "]")
 end
 
-function WhoTracker.DumpInto(into, v)
+function WT.DumpInto(into, v)
   local type = type(v)
-   if WhoTracker.DumpT[type] then
-    WhoTracker.DumpT[type](into, v)
+   if WT.DumpT[type] then
+    WT.DumpT[type](into, v)
    else
     table.insert(into, "<Unknown Type " .. type .. ">")
    end
 end
 
-function WhoTracker.Dump(v)
+function WT.Dump(v)
    local into = {}
-   WhoTracker.DumpInto(into, v)
+   WT.DumpInto(into, v)
    return table.concat(into, "")
 end
 -- End of handy poor man's "/dump" --
 
 -- WIP
-function WhoTracker.WhoLibCallBack(query, results, complete)
-  -- WhoTracker.lastLR = results
-  WhoTracker.Debug("WhoLibCallBack q=" .. query .. " r size " .. #results .. " complete " .. tostring(complete))
-  WhoTracker.Debug("results is " .. WhoTracker.Dump(results)) 
+function WT.WhoLibCallBack(query, results, complete)
+  -- WT.lastLR = results
+  WT.Debug("WhoLibCallBack q=" .. query .. " r size " .. #results .. " complete " .. tostring(complete))
+  WT.Debug("results is " .. WT.Dump(results)) 
 end
 
 -- Now using WhoLib if it's here (and hopefully it's a working one)
-function WhoTracker.SendWho()
-  if WhoTracker.whoLib then
-    WhoTracker.Debug("Using WhoLib")
+function WT.SendWho()
+  if WT.whoLib then
+    WT.Debug("Using WhoLib")
     local opts = {
-      callback = WhoTracker.WhoLibCallBack
+      callback = WT.WhoLibCallBack
     }
-    WhoTracker.whoLib:Who(whoTrackerSaved.query, opts)
+    WT.whoLib:Who(whoTrackerSaved.query, opts)
     return
   end
-  if (WhoTracker.inQueryFlag == 1) or (#WhoTracker.registered > 0) or (#WhoTracker.unregistered > 0) then
+  if (WT.inQueryFlag == 1) or (#WT.registered > 0) or (#WT.unregistered > 0) then
     -- shouldn't happen... something is wrong/slow/... if it does, restore other handlers
-    WhoTracker.inQueryFlag = 0
-    WhoTracker.Print("WhoTracker found unexpected state i=" .. WhoTracker.inQueryFlag .. " r=" ..
-                       #WhoTracker.registered .. " u=" .. #WhoTracker.unregistered, 1, .6, .6)
-    for i = 1, #WhoTracker.unregistered do
-      WhoTracker.registered[i]:RegisterEvent("WHO_LIST_UPDATE")
+    WT.inQueryFlag = 0
+    WT.Print("WhoTracker found unexpected state i=" .. WT.inQueryFlag .. " r=" ..
+                       #WT.registered .. " u=" .. #WT.unregistered, 1, .6, .6)
+    for i = 1, #WT.unregistered do
+      WT.registered[i]:RegisterEvent("WHO_LIST_UPDATE")
     end
-    WhoTracker.registered = {}
-    WhoTracker.unregistered = {}
-    WhoTracker:UnregisterEvent("WHO_LIST_UPDATE")
-    WhoTracker.inQueryFlag = 0
+    WT.registered = {}
+    WT.unregistered = {}
+    WT:UnregisterEvent("WHO_LIST_UPDATE")
+    WT.inQueryFlag = 0
     return
   end
-  WhoTracker.inQueryFlag = 1
-  WhoTracker.SetRegistered(GetFramesRegisteredForEvent("WHO_LIST_UPDATE"))
-  WhoTracker.unregistered = {}
+  WT.inQueryFlag = 1
+  WT.SetRegistered(GetFramesRegisteredForEvent("WHO_LIST_UPDATE"))
+  WT.unregistered = {}
   local friendsFrame = nil
-  for i = 1, #WhoTracker.registered do
-    friendsFrame = WhoTracker.registered[i]
+  for i = 1, #WT.registered do
+    friendsFrame = WT.registered[i]
     local fname = friendsFrame:GetName()
     if fname == nil then
-      WhoTracker.Debug("who events registered to nil name #" .. i)
+      WT.Debug("who events registered to nil name #" .. i)
     else
-      WhoTracker.Debug("who events registered for " .. fname .. " #" .. i)
+      WT.Debug("who events registered for " .. fname .. " #" .. i)
     end
     friendsFrame:UnregisterEvent("WHO_LIST_UPDATE")
-    table.insert(WhoTracker.unregistered, friendsFrame)
+    table.insert(WT.unregistered, friendsFrame)
   end
-  WhoTracker:RegisterEvent("WHO_LIST_UPDATE")
+  WT:RegisterEvent("WHO_LIST_UPDATE")
   C_FriendList.SetWhoToUi(1)
   -- set regular /who ui in case the user wants to repeat/get detailed
   -- of the search, but only if there isn't another search in there
   -- note that the results aren't displayed (the list is unchanged)
-  if #WhoFrameEditBox:GetText() == 0 or WhoFrameEditBox:GetText() == WhoTracker.prevQuery then
+  if #WhoFrameEditBox:GetText() == 0 or WhoFrameEditBox:GetText() == WT.prevQuery then
     WhoFrameEditBox:SetText(whoTrackerSaved.query)
-    WhoTracker.prevQuery = WhoFrameEditBox:GetText()
+    WT.prevQuery = WhoFrameEditBox:GetText()
     WhoFrameEditBox:HighlightText()
     if WhoFrame:IsVisible() then
       -- TODO: friendsFrame is the last of the registered handler, not necessarily the right one...
       if friendsFrame == nil then
-        WhoTracker.Print("WhoFrame visible but FriendsFrame wasn't registered", 1, .6, .6)
+        WT.Print("WhoFrame visible but FriendsFrame wasn't registered", 1, .6, .6)
       else
         -- put it back
         friendsFrame:RegisterEvent("WHO_LIST_UPDATE")
-        WhoTracker.Debug("put back FriendsFrame event hdlr")
+        WT.Debug("put back FriendsFrame event hdlr")
       end
     end
   end
   C_FriendList.SendWho(whoTrackerSaved.query)
 end
 
-WhoTracker.registered = {}
-WhoTracker.unregistered = {}
-WhoTracker.ticker = C_Timer.NewTicker(WhoTracker.refresh, WhoTracker.Ticker)
+WT.registered = {}
+WT.unregistered = {}
+WT.ticker = C_Timer.NewTicker(WT.refresh, WT.Ticker)
 
-WhoTracker:SetScript("OnEvent", WhoTracker.OnEvent)
-WhoTracker:RegisterEvent("PLAYER_LOGIN")
+WT:SetScript("OnEvent", WT.OnEvent)
+WT:RegisterEvent("PLAYER_LOGIN")
