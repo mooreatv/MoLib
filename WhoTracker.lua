@@ -278,10 +278,11 @@ for _, t in next, {"function", "nil", "userdata"} do
 end
 
 WT.DumpT["table"] = function(into, t)
-  local sep = "["
+  table.insert(into, "[")
+  local sep = ""
   for k,v in pairs(t) do 
     table.insert(into, sep)
-    sep = ", " -- inserts a [ at begining and coma after the first one
+    sep = ", " -- inserts coma seperator after the first one
     WT.DumpInto(into, k) -- so we get the type/difference betwee [1] and ["1"]
     table.insert(into, " = ")
     WT.DumpInto(into, v)
