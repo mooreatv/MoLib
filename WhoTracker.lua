@@ -328,7 +328,7 @@ function WT.WhoLibCallBack(query, results, complete)
   for i = 1, totalCount do
     local info = results[i]
     local data = {
-      level = info.level,
+      level = info.Level,
       zone = info.Zone,
     }
     table.insert(res, data)
