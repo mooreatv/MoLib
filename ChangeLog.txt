@@ -1,5 +1,8 @@
 ChangeLog
 
+2.1.5 June 4th 2019
+	- Much cleaner initialization/code
+	- Use a ticker (timer) instead of expensive OnUpdate for periodic query
 2.1.4 May 26th 2019
 	- Fix for wow classic (hopefully, despite no beta access to test... help needed!)
 	- LUA reformat, removing unecessary ; etc
