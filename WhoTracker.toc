@@ -5,4 +5,5 @@
 ## Version: @project-version@
 ## DefaultState: enabled
 ## SavedVariables:  whoTrackerSaved
+## OptionalDeps: LibWho-2.0
 WhoTracker.lua

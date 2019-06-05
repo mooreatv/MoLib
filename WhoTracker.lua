@@ -21,7 +21,7 @@ function WhoTracker.Print(...)
 end
 
 function WhoTracker.Debug(msg)
-  if whoTrackerSaved.debug == 1 then
+  if  whoTrackerSaved and whoTrackerSaved.debug == 1 then
     WhoTracker.Print("WhoTracker DBG: " .. msg, 0, 1, 0)
   end
 end
@@ -39,6 +39,7 @@ function WhoTracker.Slash(arg)
     WhoTracker.Help("commands")
     return
   end
+  -- TODO: switch to/use tables
   local cmd = string.lower(string.sub(arg, 1, 1))
   local posRest = string.find(arg, " ")
   local rest = ""
@@ -53,6 +54,7 @@ function WhoTracker.Slash(arg)
     -- resume
     whoTrackerSaved.paused = nil
     WhoTracker.Print("WhoTracker resuming tracking of " .. whoTrackerSaved.query)
+    WhoTracker.Ticker()
   elseif cmd == "q" then
     -- query 
     whoTrackerSaved.query = rest
@@ -60,7 +62,7 @@ function WhoTracker.Slash(arg)
     WhoTracker.Print(msg)
     table.insert(whoTrackerSaved.history, msg)
     whoTrackerSaved.paused = nil
-    WhoTracker:Ticker()
+    WhoTracker.Ticker()
   elseif cmd == "h" then
     -- history
     WhoTracker.Print("WhoTracker history:")
@@ -82,6 +84,9 @@ function WhoTracker.Slash(arg)
       WhoTracker.whoLib:SetWhoLibDebug(false)
     end
     WhoTracker.Print("WhoTracker Debug OFF")
+  elseif cmd == "d" then
+    -- dump
+    -- WhoTracker.Print("WTDump = " .. WhoTracker.Dump(_G[rest]))
   else
     WhoTracker.Help("unknown command \"" .. arg .. "\", usage:")
   end
@@ -215,6 +220,7 @@ function WhoTracker.Init()
       WhoTracker.Print("WhoTracker " .. version .. " loaded.  Will track \"" .. whoTrackerSaved.query .. "\" - type /wt pause to stop .")
     end
   end
+  -- WhoTracker.Debug("whoTrackerSaved = " .. WhoTracker.Dump(whoTrackerSaved))
   -- end save vars
   WhoTracker:RegisterEvent("PLAYER_LOGOUT")
   WhoTracker.whoLib = nil
@@ -247,9 +253,24 @@ function WhoTracker.SetRegistered(...)
   end
 end
 
--- With the new C_FriendList we can again unregister everything
--- including LibWho-2.0 and not just FriendsFrame
+
+-- WIP
+function WhoTracker.WhoLibCallBack(query, results, complete)
+  -- WhoTracker.lastLR = results
+  WhoTracker.Debug("WhoLibCallBack q=" .. query .. " r size " .. #results .. " complete " .. tostring(complete))
+  -- WhoTracker.Debug("results is " .. WhoTracker.Dump(results)) 
+end
+
+-- Now using WhoLib if it's here (and hopefully it's a working one)
 function WhoTracker.SendWho()
+  if WhoTracker.whoLib then
+    WhoTracker.Debug("Using WhoLib")
+    local opts = {
+      callback = WhoTracker.WhoLibCallBack
+    }
+    WhoTracker.whoLib:Who(whoTrackerSaved.query, opts)
+    return
+  end
   if (WhoTracker.inQueryFlag == 1) or (#WhoTracker.registered > 0) or (#WhoTracker.unregistered > 0) then
     -- shouldn't happen... something is wrong/slow/... if it does, restore other handlers
     WhoTracker.inQueryFlag = 0
