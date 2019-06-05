@@ -1,5 +1,7 @@
 ChangeLog
 
+2.1.6 June 4th 2019
+	- Bug fix for older LibWho: use the old/original "Level" instead of the new "level" field
 2.1.5 June 4th 2019
 	- Much cleaner initialization/code
 	- Use a ticker (timer) instead of expensive OnUpdate for periodic query
