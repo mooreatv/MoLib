@@ -126,17 +126,31 @@ function WT.OnEvent(this, event)
   WT:UnregisterEvent("WHO_LIST_UPDATE")
   -- check results
   local numWhos, totalCount = C_FriendList.GetNumWhoResults()
-  -- if numWhos>0 then
+  local res = {}
+  for i = 1, numWhos do
+    local info = C_FriendList.GetWhoInfo(i)
+    local levelNum = tonumber(info.level)
+    local data = {
+      level = levelNum,
+      zone = info.area,
+    }
+    table.insert(res, data)
+  end
+  WT.ProcessResult(totalCount, res)
+  WT.inQueryFlag = 0
+end
+
+-- Common part between libwho/no libwho:
+function WT.ProcessResult(totalCount, data)
   local status = ""
   local levels = {}
   local zones = {}
   local minl = 999
   local maxl = 0
   local zoneList = {}
-  for i = 1, numWhos do
-    local info = C_FriendList.GetWhoInfo(i)
-    local level = tonumber(info.level)
-    local zone = info.area
+  for i = 1, #data do
+    local level = data[i].level
+    local zone = data[i].zone
     if level < minl then
       minl = level
     end
@@ -188,7 +202,6 @@ function WT.OnEvent(this, event)
   end
   -- end
   -- print("---");
-  WT.inQueryFlag = 0
 end
 
 WT.refresh = 60
@@ -309,7 +322,18 @@ end
 function WT.WhoLibCallBack(query, results, complete)
   -- WT.lastLR = results
   WT.Debug("WhoLibCallBack q=" .. query .. " r size " .. #results .. " complete " .. tostring(complete))
-  WT.Debug("results is " .. WT.Dump(results)) 
+  -- WT.Debug("results is " .. WT.Dump(results)) 
+  local totalCount = #results
+  local res = {}
+  for i = 1, totalCount do
+    local info = results[i]
+    local data = {
+      level = info.level,
+      zone = info.Zone,
+    }
+    table.insert(res, data)
+  end
+  WT.ProcessResult(totalCount, res)
 end
 
 -- Now using WhoLib if it's here (and hopefully it's a working one)
