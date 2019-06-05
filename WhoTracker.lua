@@ -3,14 +3,17 @@
 -- NO WARRANTY
 -- (contact the author if you need a different license)
 
--- create table/namespace for most of this addon state
+local addon, ns = ... -- our name, our empty default anonymous ns
+
+-- Create table/namespace for most of this addon state
 -- and functions (whoTrackerSaved containing the rest)
--- CreateFrame does create a namesake global
+-- CreateFrame does create a namesake global class (table)
+-- which we'll extend.
+
 CreateFrame("frame", "WhoTracker", UIParent)
 
--- WhoTracker = {}
-
--- to force debug from empty state, uncomment: (otherwise "/wt debug on" to turn on later)
+-- to force debug from empty state, uncomment: (otherwise "/wt debug on" to turn on later
+-- and /reload to get it save/start over)
 -- whoTrackerSaved.debug = 1
 
 function WhoTracker.Print(...)
@@ -57,7 +60,7 @@ function WhoTracker.Slash(arg)
     WhoTracker.Print(msg)
     table.insert(whoTrackerSaved.history, msg)
     whoTrackerSaved.paused = nil
-    WhoTracker.nextUpdate = 0
+    WhoTracker:Ticker()
   elseif cmd == "h" then
     -- history
     WhoTracker.Print("WhoTracker history:")
@@ -182,8 +185,8 @@ end
 WhoTracker.refresh = 60
 WhoTracker.prevStatus = "x"
 WhoTracker.inQueryFlag = 0
-
 WhoTracker.first = 1
+WhoTracker.manifestVersion = GetAddOnMetadata(addon, "Version")
 
 function WhoTracker.Init()
   if not (WhoTracker.first == 1) then
@@ -191,10 +194,11 @@ function WhoTracker.Init()
   end
   WhoTracker.first = 0
   -- saved vars handling
+  local version = "(" .. addon .. " " .. WhoTracker.manifestVersion .. ")"
   if whoTrackerSaved == nil then
     whoTrackerSaved = {}
-    WhoTracker.Print(
-      "Welcome to WhoTracker: type \"/wt query g-MyGuild\" for instance" .. 
+    WhoTracker.Print("Welcome to WhoTracker " .. version .. ":\n" ..
+      "type \"/wt query g-MyGuild\" for instance" .. 
       " to start tracking characters in guild \"MyGuild\"" ..
       " - \"/wt pause\" to stop tracking")
     whoTrackerSaved.query = "g-ChangeThis"
@@ -208,7 +212,7 @@ function WhoTracker.Init()
     if whoTrackerSaved.paused == 1 then
       WhoTracker.Print("WhoTracker is paused.  /wt resume or /wt query [query] to resume.")
     else
-      WhoTracker.Print("WhoTracker loaded.  Will track \"" .. whoTrackerSaved.query .. "\" - type /wt pause to stop .")
+      WhoTracker.Print("WhoTracker " .. version .. " loaded.  Will track \"" .. whoTrackerSaved.query .. "\" - type /wt pause to stop .")
     end
   end
   -- end save vars
@@ -225,7 +229,7 @@ function WhoTracker.Init()
     end
   else
     WhoTracker.Debug("LibWho not found!")
-  end  
+  end
 end
 
 function WhoTracker.Ticker()
@@ -265,12 +269,12 @@ function WhoTracker.SendWho()
   WhoTracker.unregistered = {}
   local friendsFrame = nil
   for i = 1, #WhoTracker.registered do
-    friendsFrame = WhoTracker.registered[i] 
+    friendsFrame = WhoTracker.registered[i]
     local fname = friendsFrame:GetName()
     if fname == nil then
       WhoTracker.Debug("who events registered to nil name #" .. i)
     else
-      WhoTracker.Debug("who events registered for " .. fname .. " #" ..i)
+      WhoTracker.Debug("who events registered for " .. fname .. " #" .. i)
     end
     friendsFrame:UnregisterEvent("WHO_LIST_UPDATE")
     table.insert(WhoTracker.unregistered, friendsFrame)
@@ -300,7 +304,7 @@ end
 
 WhoTracker.registered = {}
 WhoTracker.unregistered = {}
-WhoTracker.ticker =  C_Timer.NewTicker(WhoTracker.refresh, WhoTracker.Ticker)
+WhoTracker.ticker = C_Timer.NewTicker(WhoTracker.refresh, WhoTracker.Ticker)
 
 WhoTracker:SetScript("OnEvent", WhoTracker.OnEvent)
 WhoTracker:RegisterEvent("PLAYER_LOGIN")
