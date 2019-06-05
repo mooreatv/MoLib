@@ -86,7 +86,7 @@ function WhoTracker.Slash(arg)
     WhoTracker.Print("WhoTracker Debug OFF")
   elseif cmd == "d" then
     -- dump
-    -- WhoTracker.Print("WTDump = " .. WhoTracker.Dump(_G[rest]))
+    WhoTracker.Print("WTDump = " .. WhoTracker.Dump(_G[rest]))
   else
     WhoTracker.Help("unknown command \"" .. arg .. "\", usage:")
   end
@@ -220,7 +220,7 @@ function WhoTracker.Init()
       WhoTracker.Print("WhoTracker " .. version .. " loaded.  Will track \"" .. whoTrackerSaved.query .. "\" - type /wt pause to stop .")
     end
   end
-  -- WhoTracker.Debug("whoTrackerSaved = " .. WhoTracker.Dump(whoTrackerSaved))
+  WhoTracker.Debug("whoTrackerSaved = " .. WhoTracker.Dump(whoTrackerSaved))
   -- end save vars
   WhoTracker:RegisterEvent("PLAYER_LOGOUT")
   WhoTracker.whoLib = nil
@@ -254,11 +254,62 @@ function WhoTracker.SetRegistered(...)
 end
 
 
+-- Start of handy poor man's "/dump" --
+
+WhoTracker.DumpT = {}
+WhoTracker.DumpT["string"] = function(into, v)
+  table.insert(into, "\"")
+  table.insert(into, v)
+  table.insert(into, "\"")
+end
+WhoTracker.DumpT["number"] = function(into, v)
+  table.insert(into, tostring(v))
+end
+WhoTracker.DumpT["boolean"] = WhoTracker.DumpT["number"]
+
+for _, t in next, {"function", "nil", "userdata"} do
+  WhoTracker.DumpT[t] = function(into, v)
+    table.insert(into, t)
+  end
+end
+
+WhoTracker.DumpT["table"] = function(into, t)
+  table.insert(into, "[")
+  local first = true
+  for k,v in pairs(t) do 
+    if first then
+      first = nil
+    else
+      table.insert(into, ", ")
+    end
+    WhoTracker.DumpInto(into, k) -- so we get the type/difference betwee [1] and ["1"]
+    table.insert(into, " = ")
+    WhoTracker.DumpInto(into, v)
+  end
+  table.insert(into, "]")
+end
+
+function WhoTracker.DumpInto(into, v)
+  local type = type(v)
+   if WhoTracker.DumpT[type] then
+    WhoTracker.DumpT[type](into, v)
+   else
+    table.insert(into, "<Unknown Type " .. type .. ">")
+   end
+end
+
+function WhoTracker.Dump(v)
+   local into = {}
+   WhoTracker.DumpInto(into, v)
+   return table.concat(into, "")
+end
+-- End of handy poor man's "/dump" --
+
 -- WIP
 function WhoTracker.WhoLibCallBack(query, results, complete)
   -- WhoTracker.lastLR = results
   WhoTracker.Debug("WhoLibCallBack q=" .. query .. " r size " .. #results .. " complete " .. tostring(complete))
-  -- WhoTracker.Debug("results is " .. WhoTracker.Dump(results)) 
+  WhoTracker.Debug("results is " .. WhoTracker.Dump(results)) 
 end
 
 -- Now using WhoLib if it's here (and hopefully it's a working one)
