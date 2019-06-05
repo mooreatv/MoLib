@@ -98,8 +98,8 @@ end
 
 SlashCmdList["WhoTracker_Slash_Command"] = WT.Slash
 
-SLASH_WT_Slash_Command1 = "/WhoTracker"
-SLASH_WT_Slash_Command2 = "/wt"
+SLASH_WhoTracker_Slash_Command1 = "/WhoTracker"
+SLASH_WhoTracker_Slash_Command2 = "/wt"
 
 function WT.OnEvent(this, event)
   WT.Debug("called for " .. this:GetName() .. " e=" .. event .. " q=" .. WT.inQueryFlag .. " nr=" ..
@@ -256,7 +256,6 @@ function WT.SetRegistered(...)
     WT.registered[i] = select(i, ...)
   end
 end
-
 
 -- Start of handy poor man's "/dump" --
 
