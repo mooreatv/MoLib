@@ -1,4 +1,6 @@
-set wowdir=C:\Program Files (x86)\World of Warcraft
-set addonsdir=%wowdir%\_retail_\Interface\Addons
-set tdir=%addonsdir%\WhoTracker
-xcopy /i /y WhoTracker.* "%tdir%"
+for %%i in (_retail_ _classic_beta_) do (
+    for %%a in (WhoTracker ISBoxer Camera) do (
+        echo Installing for %%i and %%a
+        xcopy /i /y *.lua "C:\Program Files (x86)\World of Warcraft\%%i\Interface\Addons\%%a"
+    )
+)
