@@ -1,9 +1,0 @@
-## Interface: 80100
-## Title: WhoTracker
-## Notes: Tracks /who result changes - type /wt for usage
-## Author: moorea@ymail.com
-## Version: @project-version@
-## DefaultState: enabled
-## SavedVariables:  whoTrackerSaved
-## OptionalDeps: LibWho-2.0
-WhoTracker.lua
