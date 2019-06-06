@@ -1,5 +1,8 @@
 ChangeLog
 
+3.0.0 June 6th 2019
+	- Created MoLib for common code between WhoTracker, Camera, DynamicBoxer etc
+
 2.1.6 June 4th 2019
 	- Bug fix for older LibWho: use the old/original "Level" instead of the new "level" field
 2.1.5 June 4th 2019
