@@ -24,11 +24,30 @@ function WT.Print(...)
   DEFAULT_CHAT_FRAME:AddMessage(...)
 end
 
-function WT.Debug(msg)
+-- like format except simpler... just use % to replace a value that will be tostring()'ed
+-- string arguments are quoted (ie "Zone") so you can distinguish nil from "nil" etc
+-- and works for all types (like boolean), unlike format
+function WT.format(fmtstr, firstarg, ...)
+  local i = string.find(fmtstr, "%%")
+  if not i then
+    return fmtstr
+  end
+  local t = type(firstarg)
+  local s = ""
+  if t == "string" then
+    s = format("%q", firstarg)
+  else
+    s = tostring(firstarg)
+  end
+  return string.sub(fmtstr, 0, i - 1) .. s .. WT.format(string.sub(fmtstr, i + 1), ...)
+end
+
+function WT.Debug(...)
   if  whoTrackerSaved and whoTrackerSaved.debug == 1 then
-    WT.Print("WhoTracker DBG: " .. msg, 0, 1, 0)
+    WT.Print("WhoTracker DBG: " .. WT.format(...), 0, 1, 0)
   end
 end
+
 
 function WT.Help(msg)
   WT.Print("WhoTracker: " .. msg .. "\n" ..
@@ -102,8 +121,7 @@ SLASH_WhoTracker_Slash_Command1 = "/WhoTracker"
 SLASH_WhoTracker_Slash_Command2 = "/wt"
 
 function WT.OnEvent(this, event)
-  WT.Debug("called for " .. this:GetName() .. " e=" .. event .. " q=" .. WT.inQueryFlag .. " nr=" ..
-                     #WT.registered .. " ur=" .. #WT.unregistered)
+  WT.Debug("called for % e=% q=% numr=% numur=%" , this:GetName(), event, WT.inQueryFlag, #WT.registered, #WT.unregistered)
   if (event == "PLAYER_LOGIN") then
     WT.Ticker() -- initial query/init
     return
@@ -321,7 +339,7 @@ end
 -- WIP
 function WT.WhoLibCallBack(query, results, complete)
   -- WT.lastLR = results
-  WT.Debug("WhoLibCallBack q=" .. query .. " r size " .. #results .. " complete " .. tostring(complete))
+  WT.Debug("WhoLibCallBack q=% rsize % complete %", query, #results, complete)
   -- WT.Debug("results is " .. WT.Dump(results)) 
   local totalCount = #results
   local res = {}
@@ -368,9 +386,9 @@ function WT.SendWho()
     friendsFrame = WT.registered[i]
     local fname = friendsFrame:GetName()
     if fname == nil then
-      WT.Debug("who events registered to nil name #" .. i)
+      WT.Debug("who events registered to nil name #%", i)
     else
-      WT.Debug("who events registered for " .. fname .. " #" .. i)
+      WT.Debug("who events registered for % #%", fname, i)
     end
     friendsFrame:UnregisterEvent("WHO_LIST_UPDATE")
     table.insert(WT.unregistered, friendsFrame)
