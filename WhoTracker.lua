@@ -264,7 +264,6 @@ function WT.Init()
     WT.whoLib = LibStub:GetLibrary('LibWho-2.0', true)
  end
   if WT.whoLib then
-    -- TODO potentially, use LibWho when it is there (but our version seems to work fine)
     WT.Debug("LibWho found!")
     if whoTrackerSaved.debug then
       WT.whoLib:SetWhoLibDebug(true)
