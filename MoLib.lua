@@ -5,16 +5,18 @@
 
 local addon, ns = ... -- our name, our empty default anonymous ns
 
-local ML = _G[addon]
-
-if not ML -- we may not be the first file loaded in the addon
-  ML = {}
+if not _G[addon] then
+  -- we may not be the first file loaded in the addon, create its global NS if we are
+  _G[addon] = {}
+  -- Note that if we do that CreateFrame won't work later, so we shouldn't be loaded first for WhoTracker for instance
 end
 
--- to force debug from empty state, uncomment: (otherwise "/wt debug on" to turn on later
--- and /reload to get it save/start over)
--- whoTrackerSaved.debug = 1
+local ML = _G[addon]
 
+-- to force debug from empty state, uncomment: (otherwise "/<addon> debug on" to turn on later
+-- and /reload to get it save/start over)
+-- ML.debug = 1
+ 
 function ML.Print(...)
   DEFAULT_CHAT_FRAME:AddMessage(...)
 end
@@ -39,8 +41,8 @@ function ML.format(fmtstr, firstarg, ...)
 end
 
 function ML.Debug(...)
-  if ML.debug and ML.debug == 1 then
-    ML.Print(addon .. " DBG: " .. WT.format(...), 0, 1, 0)
+  if ML.debug then
+    ML.Print(addon .. " DBG: " .. ML.format(...), 0, 1, 0)
   end
 end
 
@@ -55,55 +57,55 @@ function ML.MoLibInit()
   end
   ML.first = 0
   -- saved vars handling
-  local version = "(" .. addon .. " " .. WT.manifestVersion .. ")"
-  WT.Print("MoLib embeded in " .. version)
+  local version = "(" .. addon .. " " .. ML.manifestVersion .. ")"
+  ML.Print("MoLib embeded in " .. version)
   return false -- so caller can continue with 1 time init
 end
 
 -- Start of handy poor man's "/dump" --
 
-WT.DumpT = {}
-WT.DumpT["string"] = function(into, v)
+ML.DumpT = {}
+ML.DumpT["string"] = function(into, v)
   table.insert(into, "\"")
   table.insert(into, v)
   table.insert(into, "\"")
 end
-WT.DumpT["number"] = function(into, v)
+ML.DumpT["number"] = function(into, v)
   table.insert(into, tostring(v))
 end
-WT.DumpT["boolean"] = WT.DumpT["number"]
+ML.DumpT["boolean"] = ML.DumpT["number"]
 
 for _, t in next, {"function", "nil", "userdata"} do
-  WT.DumpT[t] = function(into, v)
+  ML.DumpT[t] = function(into, v)
     table.insert(into, t)
   end
 end
 
-WT.DumpT["table"] = function(into, t)
+ML.DumpT["table"] = function(into, t)
   table.insert(into, "[")
   local sep = ""
   for k,v in pairs(t) do 
     table.insert(into, sep)
     sep = ", " -- inserts coma seperator after the first one
-    WT.DumpInto(into, k) -- so we get the type/difference betwee [1] and ["1"]
+    ML.DumpInto(into, k) -- so we get the type/difference betwee [1] and ["1"]
     table.insert(into, " = ")
-    WT.DumpInto(into, v)
+    ML.DumpInto(into, v)
   end
   table.insert(into, "]")
 end
 
-function WT.DumpInto(into, v)
+function ML.DumpInto(into, v)
   local type = type(v)
-   if WT.DumpT[type] then
-    WT.DumpT[type](into, v)
+   if ML.DumpT[type] then
+    ML.DumpT[type](into, v)
    else
     table.insert(into, "<Unknown Type " .. type .. ">")
    end
 end
 
-function WT.Dump(v)
+function ML.Dump(v)
    local into = {}
-   WT.DumpInto(into, v)
+   ML.DumpInto(into, v)
    return table.concat(into, "")
 end
 -- End of handy poor man's "/dump" --
