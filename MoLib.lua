@@ -48,14 +48,16 @@ end
 ML.first = 1
 ML.manifestVersion = GetAddOnMetadata(addon, "Version")
 
+-- Returns 1 if already done
 function ML.MoLibInit()
   if not (ML.first == 1) then
-    return
+    return true
   end
   ML.first = 0
   -- saved vars handling
   local version = "(" .. addon .. " " .. WT.manifestVersion .. ")"
   WT.Print("MoLib embeded in " .. version)
+  return false -- so caller can continue with 1 time init
 end
 
 -- Start of handy poor man's "/dump" --
