@@ -336,7 +336,6 @@ function WT.Dump(v)
 end
 -- End of handy poor man's "/dump" --
 
--- WIP
 function WT.WhoLibCallBack(query, results, complete)
   -- WT.lastLR = results
   WT.Debug("WhoLibCallBack q=% rsize % complete %", query, #results, complete)
