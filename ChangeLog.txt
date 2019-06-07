@@ -7,6 +7,7 @@ ChangeLog
 	- Adding multi valued Dump(...)
 	- Adding debug Ev handler DebugEvCall
 	- prefix seconds (server time) prefix to debug logging
+	- adding GetMyFQN fully qualified characterName-normalizedRealm
 3.0.0 June 6th 2019
 	- Created MoLib for common code between WhoTracker, Camera, DynamicBoxer etc
 
