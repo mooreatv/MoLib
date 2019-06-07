@@ -6,6 +6,7 @@ ChangeLog
 	- As a consequence Debug() and MoLibInit() must be called using : so they can access state
 	- Adding multi valued Dump(...)
 	- Adding debug Ev handler DebugEvCall
+	- prefix seconds (server time) prefix to debug logging
 3.0.0 June 6th 2019
 	- Created MoLib for common code between WhoTracker, Camera, DynamicBoxer etc
 

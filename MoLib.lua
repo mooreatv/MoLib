@@ -75,7 +75,7 @@ end
 -- must be called with : (as method, to access state)
 function ML:Debug(...)
   if self.debug then
-    ML:Print(self.name .. " DBG: " .. ML.format(...), 0, 1, 0)
+    ML:Print(string.format("%02d", GetServerTime() % 60) .. " " .. self.name .. " DBG: " .. ML.format(...), 0, 1, 0)
   end
 end
 
