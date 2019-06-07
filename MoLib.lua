@@ -2,7 +2,6 @@
 -- Covered by the GNU General Public License version 3 (GPLv3)
 -- NO WARRANTY
 -- (contact the author if you need a different license)
-
 local addon, ns = ... -- our name, our empty default anonymous ns
 
 if not _G[addon] then
@@ -16,7 +15,7 @@ local ML = _G[addon]
 -- to force debug from empty state, uncomment: (otherwise "/<addon> debug on" to turn on later
 -- and /reload to get it save/start over)
 -- ML.debug = 1
- 
+
 function ML.Print(...)
   DEFAULT_CHAT_FRAME:AddMessage(...)
 end
@@ -45,7 +44,6 @@ function ML.Debug(...)
     ML.Print(addon .. " DBG: " .. ML.format(...), 0, 1, 0)
   end
 end
-
 
 ML.first = 1
 ML.manifestVersion = GetAddOnMetadata(addon, "Version")
@@ -84,7 +82,7 @@ end
 ML.DumpT["table"] = function(into, t)
   table.insert(into, "[")
   local sep = ""
-  for k,v in pairs(t) do 
+  for k, v in pairs(t) do
     table.insert(into, sep)
     sep = ", " -- inserts coma seperator after the first one
     ML.DumpInto(into, k) -- so we get the type/difference betwee [1] and ["1"]
@@ -96,16 +94,16 @@ end
 
 function ML.DumpInto(into, v)
   local type = type(v)
-   if ML.DumpT[type] then
+  if ML.DumpT[type] then
     ML.DumpT[type](into, v)
-   else
+  else
     table.insert(into, "<Unknown Type " .. type .. ">")
-   end
+  end
 end
 
 function ML.Dump(v)
-   local into = {}
-   ML.DumpInto(into, v)
-   return table.concat(into, "")
+  local into = {}
+  ML.DumpInto(into, v)
+  return table.concat(into, "")
 end
 -- End of handy poor man's "/dump" --
