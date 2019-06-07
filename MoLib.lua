@@ -8,6 +8,7 @@
 -- name of the addon embedding us, our empty default anonymous ns (not used)
 local addon, ns = ...
 
+-- install into addon's namespace by default
 if not _G[addon] then
   -- we may not be the first file loaded in the addon, create its global NS if we are
   _G[addon] = {}
@@ -16,11 +17,38 @@ end
 
 local ML = _G[addon]
 
+ML.name = addon
+
+function ML.deepmerge(dstTable, dstKey, src)
+  if type(src) ~= 'table' then
+    if not dstKey then
+      error("setting leave object on nil key")
+    end
+    dstTable[dstKey] = src
+    return
+  end
+  if dstKey then
+    if not dstTable[dstKey] then
+      dstTable[dstKey] = {}
+    end
+    dstTable = dstTable[dstKey]
+  end
+  for k, v in pairs(src) do
+    ML.deepmerge(dstTable, k, v)
+  end
+end
+
+function ML.MoLibInstallInto(namespace, name)
+  ML.deepmerge(namespace, nil, ML)
+  namespace.name = name
+  ML:Print("MoLib aliased into " .. name)
+end
+
 -- to force debug from empty state, uncomment: (otherwise "/<addon> debug on" to turn on later
 -- and /reload to get it save/start over)
 -- ML.debug = 1
 
-function ML.Print(...)
+function ML:Print(...)
   DEFAULT_CHAT_FRAME:AddMessage(...)
 end
 
@@ -43,24 +71,25 @@ function ML.format(fmtstr, firstarg, ...)
   return fmtstr:sub(1, i - 1) .. s .. ML.format(fmtstr:sub(i + 1), ...)
 end
 
-function ML.Debug(...)
-  if ML.debug then
-    ML.Print(addon .. " DBG: " .. ML.format(...), 0, 1, 0)
+-- Use: YourAddon:Debug("foo is %, bar is %!", foo, bar)
+-- must be called with : (as method, to access state)
+function ML:Debug(...)
+  if self.debug then
+    ML:Print(self.name .. " DBG: " .. ML.format(...), 0, 1, 0)
   end
 end
 
 ML.first = 1
 ML.manifestVersion = GetAddOnMetadata(addon, "Version")
 
--- Returns 1 if already done
-function ML.MoLibInit()
-  if not (ML.first == 1) then
+-- Returns 1 if already done; must be called with : (as method, to access state)
+function ML:MoLibInit()
+  if not (self.first == 1) then
     return true
   end
-  ML.first = 0
-  -- saved vars handling
-  local version = "(" .. addon .. " " .. ML.manifestVersion .. ")"
-  ML.Print("MoLib embeded in " .. version)
+  self.first = 0
+  local version = "(" .. addon .. " / " .. self.name .. " " .. ML.manifestVersion .. ")"
+  ML:Print("MoLib embeded in " .. version)
   return false -- so caller can continue with 1 time init
 end
 
