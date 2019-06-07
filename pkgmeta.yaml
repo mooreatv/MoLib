@@ -1,4 +1,4 @@
 ignore:
-    - installwt.bat
+    - installmolib.bat
 
 manual-changelog: ChangeLog.txt
