@@ -1,8 +1,12 @@
--- MoLib -- (c) 2009-2019 moorea@ymail.com (MooreaTv)
--- Covered by the GNU General Public License version 3 (GPLv3)
--- NO WARRANTY
--- (contact the author if you need a different license)
-local addon, ns = ... -- our name, our empty default anonymous ns
+--[[ 
+  MoLib -- (c) 2009-2019 moorea@ymail.com (MooreaTv)
+  Covered by the GNU General Public License version 3 (GPLv3)
+  NO WARRANTY
+  (contact the author if you need a different license)
+]] --
+--
+-- name of the addon embedding us, our empty default anonymous ns (not used)
+local addon, ns = ...
 
 if not _G[addon] then
   -- we may not be the first file loaded in the addon, create its global NS if we are
