@@ -149,3 +149,8 @@ end
 function ML:DebugEvCall(...)
   self:Debug("On ev " .. ML.Dump(...))
 end
+
+-- Retuns the normalized fully qualified name of the player
+function ML.GetMyFQN()
+  return UnitName("player") .. "-" .. GetNormalizedRealmName()
+end
