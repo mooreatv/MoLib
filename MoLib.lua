@@ -134,9 +134,18 @@ function ML.DumpInto(into, v)
   end
 end
 
-function ML.Dump(v)
+function ML.Dump(...)
   local into = {}
-  ML.DumpInto(into, v)
+  for i = 1, select("#", ...) do
+    if i > 1 then
+      table.insert(into, " , ")
+    end
+    ML.DumpInto(into, select(i, ...))
+  end
   return table.concat(into, "")
 end
 -- End of handy poor man's "/dump" --
+
+function ML:DebugEvCall(...)
+  self:Debug("On ev " .. ML.Dump(...))
+end
