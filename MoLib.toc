@@ -3,5 +3,4 @@
 ## Notes: MooreaTv's library/common code
 ## Author: moorea@ymail.com
 ## Version: @project-version@
-## DefaultState: enabled
 MoLib.lua
