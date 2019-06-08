@@ -155,6 +155,12 @@ function ML:DebugEvCall(...)
 end
 
 -- Retuns the normalized fully qualified name of the player
-function ML.GetMyFQN()
-  return UnitName("player") .. "-" .. GetNormalizedRealmName()
+function ML:GetMyFQN()
+  local p, realm = UnitFullName("player")
+  self:Debug("GetMyFQN % , %",p, realm)
+  if not realm then
+    self:Print("GetMyFQN: Realm not yet available!", 1, 0, 0)
+    return p
+  end
+  return p .. "-" .. realm
 end
