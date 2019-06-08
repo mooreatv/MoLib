@@ -64,6 +64,10 @@ function ML.format(fmtstr, firstarg, ...)
   local s
   if t == "string" then -- if the argument is a string, quote it, else tostring it
     s = format("%q", firstarg)
+  elseif t == "table" then
+    local t = {}
+    ML.DumpT["table"](t, firstarg)
+    s = table.concat(t, "")
   else
     s = tostring(firstarg)
   end
