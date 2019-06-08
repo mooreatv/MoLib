@@ -2,6 +2,7 @@ ChangeLog
 
 3.1.1 June 7th 2019
 	- Format() and thus Debug() now Dump()s table arguments
+	- GetMyFQN when called to early can fail (for instance at UPDATE_BINDINGS time the realm is nil(!))
 3.1.0 June 6th 2019
 	- MoLib can now be installed in a different namespace than the one of the addon's name
 	use MoLibInstallInto(namespace, name) to do so
