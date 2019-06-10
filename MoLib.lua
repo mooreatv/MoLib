@@ -115,7 +115,7 @@ end
 ML.DumpT["boolean"] = ML.DumpT["number"]
 
 for _, t in next, {"function", "nil", "userdata"} do
-  ML.DumpT[t] = function(into, v)
+  ML.DumpT[t] = function(into, _)
     table.insert(into, t)
   end
 end
