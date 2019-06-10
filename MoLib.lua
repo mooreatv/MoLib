@@ -79,8 +79,12 @@ end
 -- must be called with : (as method, to access state)
 function ML:Debug(...)
   if self.debug then
-    ML:Print(string.format("%02d", GetServerTime() % 60) .. " " .. self.name .. " DBG: " .. ML.format(...), 0, 1, 0)
+    ML:Print(string.format("%02d", GetServerTime() % 60) .. " " .. self.name .. " DBG: " .. ML.format(...), .1, .75, .1)
   end
+end
+
+function ML:Error(...)
+  ML:Print(self.name .. " Error: " .. ML.format(...), 0.9, .1, .1)
 end
 
 ML.first = 1
@@ -157,7 +161,7 @@ end
 -- Retuns the normalized fully qualified name of the player
 function ML:GetMyFQN()
   local p, realm = UnitFullName("player")
-  self:Debug("GetMyFQN % , %",p, realm)
+  self:Debug("GetMyFQN % , %", p, realm)
   if not realm then
     self:Print("GetMyFQN: Realm not yet available!", 1, 0, 0)
     return p
