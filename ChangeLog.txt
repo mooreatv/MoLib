@@ -1,6 +1,8 @@
 ChangeLog
 
 3.1.1 June 7th-10th 2019
+	- :Debug now takes optional level first argument (if absent level is 1), use higher level
+		for more verbose levels
 	- Format() and thus Debug() now Dump()s table arguments
 	- GetMyFQN when called to early can fail (for instance at UPDATE_BINDINGS time the realm is nil(!))
 	- Darker green for debug to not confuse with guild chat
