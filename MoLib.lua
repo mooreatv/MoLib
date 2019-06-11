@@ -77,10 +77,25 @@ end
 
 -- Use: YourAddon:Debug("foo is %, bar is %!", foo, bar)
 -- must be called with : (as method, to access state)
-function ML:Debug(...)
-  if self.debug then
-    ML:Print(string.format("%02d", GetServerTime() % 60) .. " " .. self.name .. " DBG: " .. ML.format(...), .1, .75, .1)
+-- first argument is optional debug level for more verbose level set to 9
+function ML:Debug(level, ...)
+  if not self.debug then
+    return
   end
+  if type(level) == "number" then
+    if level > self.debug then
+      return
+    end
+    ML:debugPrint(level, ...)
+  else
+    -- level was omitted
+    ML:debugPrint(1, level, ...)
+  end
+end
+
+function ML:debugPrint(level, ...)
+  ML:Print(string.format("%02d", GetServerTime() % 60) .. " " .. self.name .. " DBG[" .. tostring(level) .. "]: " .. ML.format(...),
+           .1, .75, .1)
 end
 
 function ML:Error(...)
