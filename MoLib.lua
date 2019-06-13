@@ -94,12 +94,16 @@ function ML:Debug(level, ...)
 end
 
 function ML:debugPrint(level, ...)
-  ML:Print(string.format("%02d", GetServerTime() % 60) .. " " .. self.name .. " DBG[" .. tostring(level) .. "]: " .. ML.format(...),
-           .1, .75, .1)
+  ML:Print(string.format("%02d", GetServerTime() % 60) .. " " .. self.name .. " DBG[" .. tostring(level) .. "]: " ..
+             ML.format(...), .1, .75, .1)
 end
 
 function ML:Error(...)
   ML:Print(self.name .. " Error: " .. ML.format(...), 0.9, .1, .1)
+end
+
+function ML:Warning(...)
+  ML:Print(self.name .. " Warning: " .. ML.format(...), 0.96, 0.63, 0.26)
 end
 
 ML.first = 1
@@ -178,7 +182,7 @@ function ML:GetMyFQN()
   local p, realm = UnitFullName("player")
   self:Debug("GetMyFQN % , %", p, realm)
   if not realm then
-    self:Print("GetMyFQN: Realm not yet available!", 1, 0, 0)
+    self:Error("GetMyFQN: Realm not yet available!")
     return p
   end
   return p .. "-" .. realm
