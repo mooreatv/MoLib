@@ -187,3 +187,31 @@ function ML:GetMyFQN()
   end
   return p .. "-" .. realm
 end
+
+ML.AlphaNum = {}
+
+-- generate the 62 alpha nums (A-Za-z0-9 but in 1 pass so not in order)
+for i = 1, 26 do
+  table.insert(ML.AlphaNum, format("%c", 64 + i)) -- 'A'-1
+  table.insert(ML.AlphaNum, format("%c", 64 + 32 + i)) -- 'a'-1
+  if i <= 10 then
+    table.insert(ML.AlphaNum, format("%c", 47 + i)) -- '0'-1
+  end
+end
+
+function ML.RandomId(len)
+  ML:Debug(9, "AlphaNum table has % elem: %", #ML.AlphaNum, ML.AlphaNum)
+  local res = {}
+  for i = 1, len do
+    table.insert(res, ML.AlphaNum[math.random(1, #ML.AlphaNum)])
+  end
+  local strRes = table.concat(res)
+  ML:Debug(8, "Generated % long id from alphabet of % characters: %", len, #ML.AlphaNum, strRes)
+  return strRes
+end
+
+-- ML.debug = 9
+-- local rnum = math.random()
+-- local randomId = format("%.25f", rnum):sub(3)
+-- ML:Debug("random id %", randomId)
+-- ML:Debug("RandomId 6 is %", ML.RandomId(6))
