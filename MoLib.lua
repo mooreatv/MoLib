@@ -1,4 +1,4 @@
---[[ 
+--[[
   MoLib -- (c) 2009-2019 moorea@ymail.com (MooreaTv)
   Covered by the GNU General Public License version 3 (GPLv3)
   NO WARRANTY
@@ -173,14 +173,14 @@ function ML.Dump(...)
 end
 -- End of handy poor man's "/dump" --
 
-function ML:DebugEvCall(...)
-  self:Debug("On ev " .. ML.Dump(...))
+function ML:DebugEvCall(level, ...)
+  self:Debug(level, "On ev " .. ML.Dump(...))
 end
 
 -- Retuns the normalized fully qualified name of the player
 function ML:GetMyFQN()
   local p, realm = UnitFullName("player")
-  self:Debug("GetMyFQN % , %", p, realm)
+  self:Debug(1, "GetMyFQN % , %", p, realm)
   if not realm then
     self:Error("GetMyFQN: Realm not yet available!")
     return p

@@ -1,6 +1,7 @@
 ChangeLog
 
-On going updates from June 7th-12th 2019
+On going updates from June 7th-16th 2019
+	- changed DebugEvCall to take mandatory level arg 
 	- new :RandomId(len) for random alpha num string of length len
 	- new :Warning(formatStr, ...) for warnings with nice orange color
 	- :Debug now takes optional level first argument (if absent level is 1), use higher level
