@@ -1,6 +1,11 @@
 ChangeLog
 
-On going updates from June 7th-17th 2019
+On going updates from June 7th-18th 2019
+	- new :GsubEsc(str) escapes a string so it can be used literally
+	as a string.gsub(haystack, needle, replace) needle (ie escapes %?*-...)
+	- new :ReplaceAll(haystack, needle, replace, ...) replaces literally
+	every occurence of needle by replace in haystack, rest of signature
+	and return is same as gsub()
 	- new :ShortHash(str) returning 1 alpha num hash of input string (and
 	the longer 32 bits hash numerical value)
 	- changed DebugEvCall to take mandatory level arg 
