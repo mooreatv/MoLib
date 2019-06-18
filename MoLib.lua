@@ -210,6 +210,12 @@ function ML.RandomId(len)
   return strRes
 end
 
+-- ML.debug = 9
+-- local rnum = math.random()
+-- local randomId = format("%.25f", rnum):sub(3)
+-- ML:Debug("random id %", randomId)
+-- ML:Debug("RandomId 6 is %", ML.RandomId(6))
+
 -- based on http://www.cse.yorku.ca/~oz/hash.html djb2 xor version
 -- returns a short printable 1 character hash and long numerical hash
 function ML.ShortHash(str)
@@ -220,8 +226,15 @@ function ML.ShortHash(str)
   return ML.AlphaNum[1 + mod(hash, #ML.AlphaNum)], hash
 end
 
--- ML.debug = 9
--- local rnum = math.random()
--- local randomId = format("%.25f", rnum):sub(3)
--- ML:Debug("random id %", randomId)
--- ML:Debug("RandomId 6 is %", ML.RandomId(6))
+-- Returns an escaped string such as it can be used literally
+-- as a string.gsub(haystack, needle, replace) needle (ie escapes %?*-...)
+function ML.GsubEsc(str)
+  -- escape ( ) . % + - * ? [ ^ $
+  local sub , _ = string.gsub(str, "[%(%)%.%%%+%-%*%?%[%^%$%]]", "%%%1")
+  return sub
+end
+
+function ML.ReplaceAll(haystack, needle, replace, ...)
+  -- only need to escape % on replace but a few more won't hurt
+  return string.gsub(haystack, ML.GsubEsc(needle), ML.GsubEsc(replace), ...)
+end
