@@ -1,6 +1,8 @@
 ChangeLog
 
-On going updates from June 7th-16th 2019
+On going updates from June 7th-17th 2019
+	- new :ShortHash(str) returning 1 alpha num hash of input string (and
+	the longer 32 bits hash numerical value)
 	- changed DebugEvCall to take mandatory level arg 
 	- new :RandomId(len) for random alpha num string of length len
 	- new :Warning(formatStr, ...) for warnings with nice orange color

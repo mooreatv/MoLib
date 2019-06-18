@@ -210,6 +210,16 @@ function ML.RandomId(len)
   return strRes
 end
 
+-- based on http://www.cse.yorku.ca/~oz/hash.html djb2 xor version
+-- returns a short printable 1 character hash and long numerical hash
+function ML.ShortHash(str)
+  local hash = 0
+  for i = 1, #str do
+    hash = bit.bxor(33 * hash, string.byte(str, i))
+  end
+  return ML.AlphaNum[1 + mod(hash, #ML.AlphaNum)], hash
+end
+
 -- ML.debug = 9
 -- local rnum = math.random()
 -- local randomId = format("%.25f", rnum):sub(3)
