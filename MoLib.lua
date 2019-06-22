@@ -199,14 +199,14 @@ for i = 1, 26 do
   end
 end
 
-function ML.RandomId(len)
-  ML:Debug(9, "AlphaNum table has % elem: %", #ML.AlphaNum, ML.AlphaNum)
+function ML:RandomId(len)
+  self:Debug(9, "AlphaNum table has % elem: %", #ML.AlphaNum, ML.AlphaNum)
   local res = {}
   for i = 1, len do
     table.insert(res, ML.AlphaNum[math.random(1, #ML.AlphaNum)])
   end
   local strRes = table.concat(res)
-  ML:Debug(8, "Generated % long id from alphabet of % characters: %", len, #ML.AlphaNum, strRes)
+  self:Debug(8, "Generated % long id from alphabet of % characters: %", len, #ML.AlphaNum, strRes)
   return strRes
 end
 
@@ -226,11 +226,32 @@ function ML.ShortHash(str)
   return ML.AlphaNum[1 + mod(hash, #ML.AlphaNum)], hash
 end
 
+-- add hash key at the end of text
+function ML:AddHashKey(text)
+  local hashC = ML.ShortHash(text)
+  self:Debug(3, "Hashed % adding %", text, hashC)
+  return text .. hashC
+end
+
+-- checks correctness of hash and returns the pair true, original
+-- if correct, false otherwise (do check that first return arg!)
+function ML:UnHash(str)
+  if type(str) ~= 'string' then
+    self:Debug(1, "Passed non string % to UnHash!", str)
+    return false
+  end
+  local lastC = string.sub(str, #str) -- last character is ascii/alphanum so this works
+  local begin = string.sub(str, 1, #str - 1)
+  local sh, lh = ML.ShortHash(begin)
+  self:Debug(3, "Hash of % is % / %, expecting %", begin, sh, lh, lastC)
+  return lastC == sh, begin -- hopefully caller does check first value
+end
+
 -- Returns an escaped string such as it can be used literally
 -- as a string.gsub(haystack, needle, replace) needle (ie escapes %?*-...)
 function ML.GsubEsc(str)
   -- escape ( ) . % + - * ? [ ^ $
-  local sub , _ = string.gsub(str, "[%(%)%.%%%+%-%*%?%[%^%$%]]", "%%%1")
+  local sub, _ = string.gsub(str, "[%(%)%.%%%+%-%*%?%[%^%$%]]", "%%%1")
   return sub
 end
 
