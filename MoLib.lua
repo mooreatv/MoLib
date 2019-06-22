@@ -175,7 +175,7 @@ function ML.Dump(...)
     if i > 1 then
       table.insert(into, " , ")
     end
-    ML.DumpInto(into, select(i, ..., seen))
+    ML.DumpInto(into, select(i, ...), seen)
   end
   return table.concat(into, "")
 end
@@ -225,7 +225,7 @@ function ML.ShortHash(str)
   for i = 1, #str do
     hash = bit.bxor(33 * hash, string.byte(str, i))
   end
-  return ML.AlphaNum[1 + math.mod(hash, #ML.AlphaNum)], hash
+  return ML.AlphaNum[1 + (hash % #ML.AlphaNum)], hash
 end
 
 -- add hash key at the end of text

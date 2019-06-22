@@ -74,6 +74,7 @@ lru2:add("8")
 
 MLT:Debug("lru1 = %", lru1)
 MLT:Debug("lru2 = %", lru2)
+print(MLT.Dump("TST lru1 and lru2 lists", lru1.direct, "<<<TST>>>", lru2.direct))
 
 print("---table1, newest first---")
 for v, c in lru1.iterateNewest() do
@@ -91,3 +92,6 @@ print("---table2, oldest first---")
 for v, c in lru2.iterateOldest() do
   MLT:Debug("lru2 v=% c=%", v, c)
 end
+
+-- no bit.bxor in std lua 5.1
+-- print("test hash", MLT:AddHashKey("abc"))
