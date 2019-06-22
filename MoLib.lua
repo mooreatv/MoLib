@@ -262,7 +262,7 @@ function ML.ReplaceAll(haystack, needle, replace, ...)
   return string.gsub(haystack, ML.GsubEsc(needle), ML.GsubEsc(replace), ...)
 end
 
--- create a new LRU instance of maximum capacity capacity
+-- create a new LRU instance with the given maximum capacity
 function ML.LRU(capacity)
   local obj = {}
   obj.capacity = capacity
@@ -270,7 +270,7 @@ function ML.LRU(capacity)
   obj.head = nil -- the double linked list for ordering
   obj.tail = nil -- the tail for eviction
   obj.direct = {} -- the direct access to the element
-  -- itereator, most frequent first
+  -- iterator, most frequent first
   obj.iterate = function()
     local cptr = obj.head
     return function() -- next() function
@@ -307,7 +307,7 @@ function ML.LRU(capacity)
       end
       return
     end
-    -- New entry, make a new node at the head:
+    -- new entry, make a new node at the head:
     node = {}
     node.value = elem
     node.count = 1 -- we could also store a timestamp for time based pruning
