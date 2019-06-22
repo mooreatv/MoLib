@@ -63,11 +63,12 @@ function ML.format(fmtstr, firstarg, ...)
   local t = type(firstarg)
   local s
   if t == "string" then -- if the argument is a string, quote it, else tostring it
-    s = format("%q", firstarg)
+    s = string.format("%q", firstarg)
   elseif t == "table" then
-    local t = {}
-    ML.DumpT["table"](t, firstarg)
-    s = table.concat(t, "")
+    local tt = {}
+    local seen = {id = 0, t = {}}
+    ML.DumpT.table(tt, firstarg, seen)
+    s = table.concat(tt, "")
   else
     s = tostring(firstarg)
   end
@@ -139,35 +140,42 @@ for _, t in next, {"function", "nil", "userdata"} do
   end
 end
 
-ML.DumpT["table"] = function(into, t)
-  table.insert(into, "[")
+ML.DumpT["table"] = function(into, t, seen)
+  if seen.t[t] then
+    table.insert(into, "&" .. tostring(seen.t[t]))
+    return
+  end
+  seen.id = seen.id + 1
+  seen.t[t] = seen.id
+  table.insert(into, ML.format("t%[", seen.id))
   local sep = ""
   for k, v in pairs(t) do
     table.insert(into, sep)
     sep = ", " -- inserts coma seperator after the first one
-    ML.DumpInto(into, k) -- so we get the type/difference betwee [1] and ["1"]
+    ML.DumpInto(into, k, seen) -- so we get the type/difference betwee [1] and ["1"]
     table.insert(into, " = ")
-    ML.DumpInto(into, v)
+    ML.DumpInto(into, v, seen)
   end
   table.insert(into, "]")
 end
 
-function ML.DumpInto(into, v)
+function ML.DumpInto(into, v, seen)
   local type = type(v)
   if ML.DumpT[type] then
-    ML.DumpT[type](into, v)
+    ML.DumpT[type](into, v, seen)
   else
     table.insert(into, "<Unknown Type " .. type .. ">")
   end
 end
 
 function ML.Dump(...)
+  local seen = {id = 0, t = {}}
   local into = {}
   for i = 1, select("#", ...) do
     if i > 1 then
       table.insert(into, " , ")
     end
-    ML.DumpInto(into, select(i, ...))
+    ML.DumpInto(into, select(i, ..., seen))
   end
   return table.concat(into, "")
 end
@@ -192,29 +200,23 @@ ML.AlphaNum = {}
 
 -- generate the 62 alpha nums (A-Za-z0-9 but in 1 pass so not in order)
 for i = 1, 26 do
-  table.insert(ML.AlphaNum, format("%c", 64 + i)) -- 'A'-1
-  table.insert(ML.AlphaNum, format("%c", 64 + 32 + i)) -- 'a'-1
+  table.insert(ML.AlphaNum, string.format("%c", 64 + i)) -- 'A'-1
+  table.insert(ML.AlphaNum, string.format("%c", 64 + 32 + i)) -- 'a'-1
   if i <= 10 then
-    table.insert(ML.AlphaNum, format("%c", 47 + i)) -- '0'-1
+    table.insert(ML.AlphaNum, string.format("%c", 47 + i)) -- '0'-1
   end
 end
+ML:Debug("Done generating AlphaNum table, % elems: %", #ML.AlphaNum, ML.AlphaNum)
 
 function ML:RandomId(len)
-  self:Debug(9, "AlphaNum table has % elem: %", #ML.AlphaNum, ML.AlphaNum)
   local res = {}
-  for i = 1, len do
+  for _ = 1, len do
     table.insert(res, ML.AlphaNum[math.random(1, #ML.AlphaNum)])
   end
   local strRes = table.concat(res)
   self:Debug(8, "Generated % long id from alphabet of % characters: %", len, #ML.AlphaNum, strRes)
   return strRes
 end
-
--- ML.debug = 9
--- local rnum = math.random()
--- local randomId = format("%.25f", rnum):sub(3)
--- ML:Debug("random id %", randomId)
--- ML:Debug("RandomId 6 is %", ML.RandomId(6))
 
 -- based on http://www.cse.yorku.ca/~oz/hash.html djb2 xor version
 -- returns a short printable 1 character hash and long numerical hash
@@ -223,7 +225,7 @@ function ML.ShortHash(str)
   for i = 1, #str do
     hash = bit.bxor(33 * hash, string.byte(str, i))
   end
-  return ML.AlphaNum[1 + mod(hash, #ML.AlphaNum)], hash
+  return ML.AlphaNum[1 + math.mod(hash, #ML.AlphaNum)], hash
 end
 
 -- add hash key at the end of text
@@ -259,3 +261,77 @@ function ML.ReplaceAll(haystack, needle, replace, ...)
   -- only need to escape % on replace but a few more won't hurt
   return string.gsub(haystack, ML.GsubEsc(needle), ML.GsubEsc(replace), ...)
 end
+
+-- create a new LRU instance of maximum capacity capacity
+function ML.LRU(capacity)
+  local obj = {}
+  obj.capacity = capacity
+  obj.size = 0
+  obj.head = nil -- the double linked list for ordering
+  obj.tail = nil -- the tail for eviction
+  obj.direct = {} -- the direct access to the element
+  -- itereator, most frequent first
+  obj.iterate = function()
+    local cptr = obj.head
+    return function() -- next() function
+      if cptr then
+        local r = cptr.value
+        local c = cptr.count
+        cptr = cptr.next
+        return r, c
+      end
+    end
+  end
+  -- add/record data point in the set
+  obj.add = function(self, elem)
+    local node = self.direct[elem]
+    if node then -- found move it to top
+      ML:Debug(9, "looking for %, found %", elem, node.value)
+      assert(node.value == elem, "elem not found where expected")
+      node.count = node.count + 1
+      local p = node.prev
+      if not p then -- already at the top, we're done
+        return
+      end
+      local n = node.next
+      p.next = n
+      node.next = self.head
+      self.head = node
+      if self.tail == node then
+        if n then
+          self.tail = n
+        else
+          self.tail = p
+        end
+        ML:Debug(9, "Moving exiting to front, setting tail to %", self.tail.value)
+      end
+      return
+    end
+    -- New entry, make a new node at the head:
+    node = {}
+    node.value = elem
+    node.count = 1 -- we could also store a timestamp for time based pruning
+    node.next = self.head
+    if node.next then
+      node.next.prev = node
+    end
+    self.head = node
+    self.direct[elem] = node
+    if not self.tail then
+      self.tail = node
+      ML:Debug(9, "Setting tail to %", node.value)
+    end
+    self.size = self.size + 1
+    if self.size > self.capacity then
+      -- drop the tail
+      local t = self.tail
+      ML:Debug(3, "Reaching capacity %, will evict %", self.size, t.value)
+      t.prev.next = nil
+      self.direct[t.value] = nil
+    end
+  end
+  -- end of methods, return obj
+  return obj
+end
+
+ML:Debug("Done loading MoLib.lua")
