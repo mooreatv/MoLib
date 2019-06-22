@@ -117,7 +117,7 @@ function ML:MoLibInit()
   end
   self.first = 0
   local version = "(" .. addon .. " / " .. self.name .. " " .. ML.manifestVersion .. ")"
-  ML:Print("MoLib embeded in " .. version)
+  ML:Print("MoLib embedded in " .. version)
   return false -- so caller can continue with 1 time init
 end
 
@@ -151,8 +151,8 @@ ML.DumpT["table"] = function(into, t, seen)
   local sep = ""
   for k, v in pairs(t) do
     table.insert(into, sep)
-    sep = ", " -- inserts coma seperator after the first one
-    ML.DumpInto(into, k, seen) -- so we get the type/difference betwee [1] and ["1"]
+    sep = ", " -- inserts comma separator after the first one
+    ML.DumpInto(into, k, seen) -- so we get the type/difference between [1] and ["1"]
     table.insert(into, " = ")
     ML.DumpInto(into, v, seen)
   end
@@ -185,7 +185,7 @@ function ML:DebugEvCall(level, ...)
   self:Debug(level, "On ev " .. ML.Dump(...))
 end
 
--- Retuns the normalized fully qualified name of the player
+-- Returns the normalized fully qualified name of the player
 function ML:GetMyFQN()
   local p, realm = UnitFullName("player")
   self:Debug(1, "GetMyFQN % , %", p, realm)
@@ -198,7 +198,7 @@ end
 
 ML.AlphaNum = {}
 
--- generate the 62 alpha nums (A-Za-z0-9 but in 1 pass so not in order)
+-- generate the 62 alphanums (A-Za-z0-9 but in 1 pass so not in order)
 for i = 1, 26 do
   table.insert(ML.AlphaNum, string.format("%c", 64 + i)) -- 'A'-1
   table.insert(ML.AlphaNum, string.format("%c", 64 + 32 + i)) -- 'a'-1
@@ -262,7 +262,8 @@ function ML.ReplaceAll(haystack, needle, replace, ...)
   return string.gsub(haystack, ML.GsubEsc(needle), ML.GsubEsc(replace), ...)
 end
 
--- create a new LRU instance with the given maximum capacity
+-- Create a new LRU instance with the given maximum capacity
+-- everything is/should be O(1) {except garbage collecting}
 function ML.LRU(capacity)
   local obj = {}
   obj.capacity = capacity
@@ -270,8 +271,8 @@ function ML.LRU(capacity)
   obj.head = nil -- the double linked list for ordering
   obj.tail = nil -- the tail for eviction
   obj.direct = {} -- the direct access to the element
-  -- iterator, most frequent first
-  obj.iterate = function()
+  -- iterator, most recent first
+  obj.iterateNewest = function()
     local cptr = obj.head
     return function() -- next() function
       if cptr then
@@ -282,8 +283,23 @@ function ML.LRU(capacity)
       end
     end
   end
+  -- iterator, oldest first, use this to save in a table which can then restore the
+  -- same state (minus the count) using add()
+  obj.iterateOldest = function()
+    local cptr = obj.tail
+    return function() -- next() function
+      if cptr then
+        local r = cptr.value
+        local c = cptr.count
+        cptr = cptr.prev
+        return r, c
+      end
+    end
+  end
   -- add/record data point in the set
   obj.add = function(self, elem)
+    ML:Debug(9, "adding % tail list is %", elem, self.tail)
+    ML:Debug(9, "adding % head list is %", elem, self.head)
     local node = self.direct[elem]
     if node then -- found move it to top
       ML:Debug(9, "looking for %, found %", elem, node.value)
@@ -295,15 +311,20 @@ function ML.LRU(capacity)
       end
       local n = node.next
       p.next = n
+      if n then
+        n.prev = p
+      end
       node.next = self.head
+      node.next.prev = node
       self.head = node
+      node.prev = nil
       if self.tail == node then
         if n then
           self.tail = n
         else
           self.tail = p
         end
-        ML:Debug(9, "Moving exiting to front, setting tail to %", self.tail.value)
+        ML:Debug(9, "moving existing to front, setting tail to %", self.tail.value)
       end
       return
     end
@@ -319,15 +340,17 @@ function ML.LRU(capacity)
     self.direct[elem] = node
     if not self.tail then
       self.tail = node
-      ML:Debug(9, "Setting tail to %", node.value)
+      ML:Debug(9, "setting tail to %", node.value)
     end
-    self.size = self.size + 1
-    if self.size > self.capacity then
+    if self.size == self.capacity then
       -- drop the tail
       local t = self.tail
-      ML:Debug(3, "Reaching capacity %, will evict %", self.size, t.value)
+      ML:Debug(3, "reaching capacity %, will evict % (tail list is %)", self.size, t.value, t)
+      self.tail = t.prev
       t.prev.next = nil
       self.direct[t.value] = nil
+    else
+      self.size = self.size + 1
     end
   end
   -- end of methods, return obj
