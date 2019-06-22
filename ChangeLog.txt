@@ -1,6 +1,11 @@
 ChangeLog
 
-On going updates from June 7th-18th 2019
+On going updates from June 7th-22th 2019
+	- changed all functions using :Debug to be :Functions (take self arg)
+		so the debugging level of user addons embedded under different
+		namespace do work (RandomId)
+	- new :AddHashKey to add a single alphanum character hash at the end of a string
+	- new :UnHash to check validity of, and remove previous hash key
 	- new :GsubEsc(str) escapes a string so it can be used literally
 	as a string.gsub(haystack, needle, replace) needle (ie escapes %?*-...)
 	- new :ReplaceAll(haystack, needle, replace, ...) replaces literally
