@@ -55,14 +55,15 @@ local lru2 = MLT.LRU(4)
 
 MLT:Debug("lru2 = %", lru2)
 
-
 lru1:add("1 abc")
 lru1:add("2 def")
 lru2:add("1")
 lru2:add("2")
 lru1:add("3 ghi")
 lru1:add("1 abc")
+lru1:add("1 abc") -- test already at top addition
 lru1:add("4 jkl") -- will evict def and not abc
+lru1:add("2 def") -- put back a deleted/dropped one (count should be 1, not 2)
 lru2:add("3")
 lru2:add("4")
 lru2:add("5")
@@ -71,14 +72,22 @@ lru2:add("6")
 lru2:add("7")
 lru2:add("8")
 
-
 MLT:Debug("lru1 = %", lru1)
---MLT:Debug("lru2 = %", lru2)
+MLT:Debug("lru2 = %", lru2)
 
-for v, c in lru1.iterate() do
-  MLT:Debug("lru1 v=% c=%", v, c)
+print("---table1, newest first---")
+for v, c in lru1.iterateNewest() do
+  MLT:Debug("lru1 newest v=% c=%", v, c)
 end
-print("---table2---")
-for v, c in lru2.iterate() do
+print("---table1, oldest first---")
+for v, c in lru1.iterateOldest() do
+  MLT:Debug("lru1 newest v=% c=%", v, c)
+end
+print("---table2, newest first---")
+for v, c in lru2.iterateNewest() do
+  MLT:Debug("lru2 v=% c=%", v, c)
+end
+print("---table2, oldest first---")
+for v, c in lru2.iterateOldest() do
   MLT:Debug("lru2 v=% c=%", v, c)
 end
