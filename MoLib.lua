@@ -264,6 +264,7 @@ end
 -- messages (though that's still doable because the hashing function we use isn't cryptographically
 -- secure, but if only a handful of messages are exchanged, or the tokens change often enough, it
 -- should be secure, feedback/analysis welcome about it!)
+-- ps: well aware of https://www.vice.com/en_us/article/wnx8nq/why-you-dont-roll-your-own-crypto
 function ML:CreateSecureMessage(msg, visibleToken, secretToken)
   local base = visibleToken .. ":" .. msg .. ":" .. self:RandomId(4) .. tostring(GetServerTime()) .. ":"
   return base .. ML:Sign(base, secretToken)
