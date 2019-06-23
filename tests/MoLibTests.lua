@@ -95,3 +95,24 @@ end
 
 -- no bit.bxor in std lua 5.1
 -- print("test hash", MLT:AddHashKey("abc"))
+
+function MLT.TestSecure() -- for now copy/paste into /lua as we can't run without bit.bxor here
+  local DynBoxer = MLT -- when ran from wow /lua the namespace is DynBoxer
+  --- start copy paste into /lua (wowlua) ---
+  local t = DynBoxer:CreateSecureMessage("a :test", "tok1", "tok2")
+  print(t)
+
+  if not TST then
+    TST = {}
+  end
+
+  table.insert(TST, t)
+
+  local m, l = DynBoxer:VerifySecureMessage(t, "tok1", "tok2")
+  print(m, l)
+  -- fails with too old (on purpose) when ran again later
+  local x, l = DynBoxer:VerifySecureMessage(TST[1], "tok1", "tok2")
+  print(x, l)
+  print(x)
+  --- end copy paste into /lua (wowlua) ---
+end
