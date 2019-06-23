@@ -259,6 +259,48 @@ function ML:Sign(str, secret)
   return tostring(hash)
 end
 
+-- creates a time limited secure message based on two tokens, one exposed, one staying secret
+-- adds noise plus timestamp to payload to avoid replay and guessing secret based on observing
+-- messages (though that's still doable because the hashing function we use isn't cryptographically
+-- secure, but if only a handful of messages are exchanged, or the tokens change often enough, it
+-- should be secure, feedback/analysis welcome about it!)
+function ML:CreateSecureMessage(msg, visibleToken, secretToken)
+  local base = visibleToken .. ":" .. msg .. ":" .. self:RandomId(4) .. tostring(GetServerTime()) .. ":"
+  return base .. ML:Sign(base, secretToken)
+end
+-- parse and checks validity of a message created with CreateSecureMessage
+-- returns nil if invalid, the original message, lag otherwise (lag can only
+-- be between -5 and +15 seconds otherwise the message is rejected)
+function ML:VerifySecureMessage(msg, visibleToken, secretToken)
+  -- skip the 4 noise characters to get to timestamp
+  local b, v, m, t, s = msg:match("^(([^:]+):(.+):....([^:]+):)([^:]+)$")
+  if v ~= visibleToken then
+    self:Warning("Token mismatch (% vs %) in msg %", v, visibleToken, msg)
+    return
+  end
+  if ML:Sign(b, secretToken) ~= s then
+    self:Warning("Invalid signature in msg %", msg)
+    return
+  end
+  local now = GetServerTime()
+  local msgTs = tonumber(t)
+  if not msgTs then
+    self:Warning("Invalid message timestamp % in %", t, msg)
+    return
+  end
+  local delta = now - msgTs
+  if delta < -5 then
+    self:Warning("Invalid message from %s in future % vs % in %", delta, msgTs, now, msg)
+    return
+  end
+  if delta > 15 then
+    self:Warning("Message %s in past, too old (replay attack?) % vs % in %", delta, msgTs, now, msg)
+    return
+  end
+  -- all good!
+  return m, delta
+end
+
 -- Returns an escaped string such as it can be used literally
 -- as a string.gsub(haystack, needle, replace) needle (ie escapes %?*-...)
 function ML.GsubEsc(str)
