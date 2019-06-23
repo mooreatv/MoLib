@@ -219,12 +219,16 @@ function ML:RandomId(len)
 end
 
 -- based on http://www.cse.yorku.ca/~oz/hash.html djb2 xor version
--- returns a short printable 1 character hash and long numerical hash
-function ML.ShortHash(str)
+function ML.Hash(str)
   local hash = 0
   for i = 1, #str do
     hash = bit.bxor(33 * hash, string.byte(str, i))
   end
+  return hash
+end
+-- returns a short printable 1 character hash and long numerical hash
+function ML.ShortHash(str)
+  local hash = ML.Hash(str)
   return ML.AlphaNum[1 + (hash % #ML.AlphaNum)], hash
 end
 
@@ -247,6 +251,12 @@ function ML:UnHash(str)
   local sh, lh = ML.ShortHash(begin)
   self:Debug(3, "Hash of % is % / %, expecting %", begin, sh, lh, lastC)
   return lastC == sh, begin -- hopefully caller does check first value
+end
+
+-- sign a payload with a secret (ie simply hash the two)
+function ML:Sign(str, secret)
+  local hash = ML.Hash(str .. secret)
+  return tostring(hash)
 end
 
 -- Returns an escaped string such as it can be used literally
