@@ -62,8 +62,8 @@ function ML.format(fmtstr, firstarg, ...)
   end
   local t = type(firstarg)
   local s
-  if t == "string" then -- if the argument is a string, quote it, else tostring it
-    s = string.format("%q", firstarg)
+  if t == "string" then -- if the argument is a string, quote it, also escape | sequences
+    s = string.format("%q", gsub(firstarg, '|', '||'))
   elseif t == "table" then
     local tt = {}
     local seen = {id = 0, t = {}}
@@ -126,7 +126,8 @@ end
 ML.DumpT = {}
 ML.DumpT["string"] = function(into, v)
   table.insert(into, "\"")
-  table.insert(into, v)
+  local e, _ = gsub(v, '|', '||')
+  table.insert(into, e)
   table.insert(into, "\"")
 end
 ML.DumpT["number"] = function(into, v)
@@ -315,6 +316,27 @@ end
 function ML.ReplaceAll(haystack, needle, replace, ...)
   -- only need to escape % on replace but a few more won't hurt
   return string.gsub(haystack, ML.GsubEsc(needle), ML.GsubEsc(replace), ...)
+end
+
+-- returns true if str starts with prefix and calls the optional function cb
+-- with the reminder, false otherwise
+function ML.StartsWith(str, prefix, cb)
+  if not prefix then
+    if cb then
+      cb("") -- being extra nice to caller passing random nils
+    end
+    return true
+  end
+  if not str then
+    return false
+  end
+  if str:sub(1, #prefix) == prefix then
+    if cb then
+      cb(str:sub(#prefix + 1))
+    end
+    return true
+  end
+  return false
 end
 
 -- Create a new LRU instance with the given maximum capacity

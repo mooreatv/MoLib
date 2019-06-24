@@ -1,6 +1,9 @@
 ChangeLog
 
 On going updates from June 7th-23th 2019
+	- Dump/Debug etc now properly escape the wow | sequences
+	- new .StartsWith(str, prefix [, cb]) returns true and the reminder of the str if str starts with prefix,
+	optional cb argument is called with reminder of str after prefix if a match is found.
 	- new :CreateSecureMessage and :VerifySecureMessage functions to exchange time limited secure messages 
 	based on 1 visible and 1 secret token, embeds server time and checks it too (messages stay valid for 15s)
 	- new :Sign(msg, secret) which returns the long hash of msg .. secret, also exposed .Hash() in addition
