@@ -50,8 +50,8 @@ MLT:Debug("RandomId 6 is %", MLT:RandomId(6))
 
 MLT:Debug("Mlt is %", {MLT:GetMyFQN()})
 
-local lru1 = MLT.LRU(3)
-local lru2 = MLT.LRU(4)
+local lru1 = MLT:LRU(3)
+local lru2 = MLT:LRU(4)
 
 MLT:Debug("lru2 = %", lru2)
 
@@ -74,7 +74,7 @@ lru2:add("8")
 
 MLT:Debug("lru1 = %", lru1)
 MLT:Debug("lru2 = %", lru2)
-print(MLT.Dump("TST lru1 and lru2 lists", lru1.direct, "<<<TST>>>", lru2.direct))
+print(MLT:Dump("TST lru1 and lru2 lists", lru1.direct, "<<<TST>>>", lru2.direct))
 
 print("---table1, newest first---")
 for v, c in lru1.iterateNewest() do
