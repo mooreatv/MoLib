@@ -35,6 +35,8 @@ _G.UnitFullName = function(name)
   return name .. "1", "My'Realm"
 end
 
+_G.gsub = string.gsub
+
 local f = assert(loadfile("../MoLib.lua"))
 f(libName, ns)
 
@@ -115,4 +117,17 @@ function MLT.TestSecure() -- for now copy/paste into /lua as we can't run withou
   print(x, l)
   print(x)
   --- end copy paste into /lua (wowlua) ---
+end
+
+
+print(MLT:ToHex(0))
+print(MLT:ToHex(2^32-1))
+print(MLT:ToHex(-1))
+print(MLT:ToHex(255))
+local i = tonumber("EFFFFFF1", 16)
+print(MLT:ToHex(i))
+
+local str = "Á"
+for i = 1, #str do
+  print(i, str:byte(i), MLT:ToHex(str:byte(i)))
 end

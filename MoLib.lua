@@ -219,18 +219,44 @@ function ML:RandomId(len)
   return strRes
 end
 
--- based on http://www.cse.yorku.ca/~oz/hash.html djb2 xor version
-function ML:Hash(str)
-  local hash = 0
-  for i = 1, #str do
-    hash = bit.bxor(33 * hash, string.byte(str, i))
-  end
-  return hash
+-- unsigned 32 bit number (like bit.bxor returns) to hex
+ML.NumToHex = {}
+for i = 0, 15 do
+  table.insert(ML.NumToHex, i < 10 and tostring(i) or string.format("%c", 65 + i - 10)) -- A + i - 10; so A for 10...F for 15
 end
--- returns a short printable 1 character hash and long numerical hash
+ML:Debug("Done generating Hex table, % elems: %", #ML.NumToHex, ML.NumToHex)
+
+function ML:ToHex(num)
+  local r = {}
+  for i = 8, 1, -1 do
+    local v = num % 16
+    num = (num - v) / 16
+    r[i] = ML.NumToHex[v + 1]
+  end
+  return table.concat(r, "")
+end
+
+-- based on http://www.cse.yorku.ca/~oz/hash.html djb2 xor version for 32bits
+-- and sdbm for another 32 bits
+function ML:Hash(str)
+  local hash1 = 0
+  local hash2 = 0
+  for i = 1, #str do
+    -- don't hash the same characters with both or one could use the hash values to reverse the process
+    local c = string.byte(str, i)
+    if i % 2 == 1 then
+      hash1 = bit.bxor(33 * hash1, c)
+    else
+      -- c + (hash << 6) + (hash << 16) - hash;
+      hash2 = c + bit.lshift(hash2, 6) + bit.lshift(hash2, 16) - hash2
+    end
+  end
+  return hash1, hash2
+end
+-- returns a short printable 1 character hash and 2 long numerical 32 bit hashes
 function ML:ShortHash(str)
-  local hash = ML:Hash(str)
-  return ML.AlphaNum[1 + (hash % #ML.AlphaNum)], hash
+  local hash1, hash2 = ML:Hash(str)
+  return ML.AlphaNum[1 + (bit.bxor(hash1, hash2) % #ML.AlphaNum)], hash1, hash2
 end
 
 -- add hash key at the end of text
@@ -249,15 +275,15 @@ function ML:UnHash(str)
   end
   local lastC = string.sub(str, #str) -- last character is ascii/alphanum so this works
   local begin = string.sub(str, 1, #str - 1)
-  local sh, lh = ML:ShortHash(begin)
-  self:Debug(3, "Hash of % is % / %, expecting %", begin, sh, lh, lastC)
+  local sh = ML:ShortHash(begin)
+  self:Debug(3, "Hash of % is % / %, expecting %", begin, sh, lastC)
   return lastC == sh, begin -- hopefully caller does check first value
 end
 
 -- sign a payload with a secret (ie simply hash the two)
 function ML:Sign(str, secret)
-  local hash = ML:Hash(str .. secret)
-  return tostring(hash)
+  local hash1, hash2 = ML:Hash(str .. secret)
+  return ML:ToHex(hash1) .. ML:ToHex(hash2)
 end
 
 -- creates a time limited secure message based on two tokens, one exposed, one staying secret
