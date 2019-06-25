@@ -1,6 +1,10 @@
 ChangeLog
 
-On going updates from June 7th-23th 2019
+On going updates from June 7th-25th 2019
+4.0.0
+	- ***Big incompatible change!*** all functions now declared with ":" and not a mix and match of "." and ":"
+	check all the callers, always use ":" !
+	- CreateSecureMessage and VerifySecureMessage both now return the signature to be used as messageId
 	- Dump/Debug etc now properly escape the wow | sequences
 	- new .StartsWith(str, prefix [, cb]) returns true and the reminder of the str if str starts with prefix,
 	optional cb argument is called with reminder of str after prefix if a match is found.

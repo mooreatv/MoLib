@@ -19,7 +19,7 @@ local ML = _G[addon]
 
 ML.name = addon
 
-function ML.deepmerge(dstTable, dstKey, src)
+function ML:deepmerge(dstTable, dstKey, src)
   if type(src) ~= 'table' then
     if not dstKey then
       error("setting leave object on nil key")
@@ -34,12 +34,12 @@ function ML.deepmerge(dstTable, dstKey, src)
     dstTable = dstTable[dstKey]
   end
   for k, v in pairs(src) do
-    ML.deepmerge(dstTable, k, v)
+    ML:deepmerge(dstTable, k, v)
   end
 end
 
-function ML.MoLibInstallInto(namespace, name)
-  ML.deepmerge(namespace, nil, ML)
+function ML:MoLibInstallInto(namespace, name)
+  ML:deepmerge(namespace, nil, ML)
   namespace.name = name
   ML:Print("MoLib aliased into " .. name)
 end
@@ -55,7 +55,7 @@ end
 -- like format except simpler... just use % to replace a value that will be tostring()'ed
 -- string arguments are quoted (ie "Zone") so you can distinguish nil from "nil" etc
 -- and works for all types (like boolean), unlike format
-function ML.format(fmtstr, firstarg, ...)
+function ML:format(fmtstr, firstarg, ...)
   local i = fmtstr:find("%%")
   if not i then
     return fmtstr -- no % in the format string anymore, we're done with literal value returned
@@ -73,7 +73,7 @@ function ML.format(fmtstr, firstarg, ...)
     s = tostring(firstarg)
   end
   -- emit the part of the format string up to %, the processed first argument and recurse with the rest
-  return fmtstr:sub(1, i - 1) .. s .. ML.format(fmtstr:sub(i + 1), ...)
+  return fmtstr:sub(1, i - 1) .. s .. ML:format(fmtstr:sub(i + 1), ...)
 end
 
 -- Use: YourAddon:Debug("foo is %, bar is %!", foo, bar)
@@ -96,15 +96,15 @@ end
 
 function ML:debugPrint(level, ...)
   ML:Print(string.format("%02d", GetServerTime() % 60) .. " " .. self.name .. " DBG[" .. tostring(level) .. "]: " ..
-             ML.format(...), .1, .75, .1)
+             ML:format(...), .1, .75, .1)
 end
 
 function ML:Error(...)
-  ML:Print(self.name .. " Error: " .. ML.format(...), 0.9, .1, .1)
+  ML:Print(self.name .. " Error: " .. ML:format(...), 0.9, .1, .1)
 end
 
 function ML:Warning(...)
-  ML:Print(self.name .. " Warning: " .. ML.format(...), 0.96, 0.63, 0.26)
+  ML:Print(self.name .. " Warning: " .. ML:format(...), 0.96, 0.63, 0.26)
 end
 
 ML.first = 1
@@ -148,19 +148,19 @@ ML.DumpT["table"] = function(into, t, seen)
   end
   seen.id = seen.id + 1
   seen.t[t] = seen.id
-  table.insert(into, ML.format("t%[", seen.id))
+  table.insert(into, ML:format("t%[", seen.id))
   local sep = ""
   for k, v in pairs(t) do
     table.insert(into, sep)
     sep = ", " -- inserts comma separator after the first one
-    ML.DumpInto(into, k, seen) -- so we get the type/difference between [1] and ["1"]
+    ML:DumpInto(into, k, seen) -- so we get the type/difference between [1] and ["1"]
     table.insert(into, " = ")
-    ML.DumpInto(into, v, seen)
+    ML:DumpInto(into, v, seen)
   end
   table.insert(into, "]")
 end
 
-function ML.DumpInto(into, v, seen)
+function ML:DumpInto(into, v, seen)
   local type = type(v)
   if ML.DumpT[type] then
     ML.DumpT[type](into, v, seen)
@@ -169,21 +169,21 @@ function ML.DumpInto(into, v, seen)
   end
 end
 
-function ML.Dump(...)
+function ML:Dump(...)
   local seen = {id = 0, t = {}}
   local into = {}
   for i = 1, select("#", ...) do
     if i > 1 then
       table.insert(into, " , ")
     end
-    ML.DumpInto(into, select(i, ...), seen)
+    ML:DumpInto(into, select(i, ...), seen)
   end
   return table.concat(into, "")
 end
 -- End of handy poor man's "/dump" --
 
 function ML:DebugEvCall(level, ...)
-  self:Debug(level, "On ev " .. ML.Dump(...))
+  self:Debug(level, "On ev " .. ML:Dump(...))
 end
 
 -- Returns the normalized fully qualified name of the player
@@ -220,7 +220,7 @@ function ML:RandomId(len)
 end
 
 -- based on http://www.cse.yorku.ca/~oz/hash.html djb2 xor version
-function ML.Hash(str)
+function ML:Hash(str)
   local hash = 0
   for i = 1, #str do
     hash = bit.bxor(33 * hash, string.byte(str, i))
@@ -228,14 +228,14 @@ function ML.Hash(str)
   return hash
 end
 -- returns a short printable 1 character hash and long numerical hash
-function ML.ShortHash(str)
-  local hash = ML.Hash(str)
+function ML:ShortHash(str)
+  local hash = ML:Hash(str)
   return ML.AlphaNum[1 + (hash % #ML.AlphaNum)], hash
 end
 
 -- add hash key at the end of text
 function ML:AddHashKey(text)
-  local hashC = ML.ShortHash(text)
+  local hashC = ML:ShortHash(text)
   self:Debug(3, "Hashed % adding %", text, hashC)
   return text .. hashC
 end
@@ -249,14 +249,14 @@ function ML:UnHash(str)
   end
   local lastC = string.sub(str, #str) -- last character is ascii/alphanum so this works
   local begin = string.sub(str, 1, #str - 1)
-  local sh, lh = ML.ShortHash(begin)
+  local sh, lh = ML:ShortHash(begin)
   self:Debug(3, "Hash of % is % / %, expecting %", begin, sh, lh, lastC)
   return lastC == sh, begin -- hopefully caller does check first value
 end
 
 -- sign a payload with a secret (ie simply hash the two)
 function ML:Sign(str, secret)
-  local hash = ML.Hash(str .. secret)
+  local hash = ML:Hash(str .. secret)
   return tostring(hash)
 end
 
@@ -267,16 +267,21 @@ end
 -- should be secure, feedback/analysis welcome about it!)
 -- note that the resulting message is signed (tries to prevent spoofing and confirms authenticity),
 -- not encrypted (the original message is visible in clear in the resulting string).
+-- the signature is returned to be used as unique (well, within 32 bits) messageId
 -- ps: well aware of https://www.vice.com/en_us/article/wnx8nq/why-you-dont-roll-your-own-crypto
 function ML:CreateSecureMessage(msg, visibleToken, secretToken)
   local base = visibleToken .. ":" .. msg .. ":" .. self:RandomId(4) .. tostring(GetServerTime()) .. ":"
-  return base .. ML:Sign(base, secretToken)
+  local sig = ML:Sign(base, secretToken)
+  return base .. sig, sig
 end
+
 -- parse and checks validity of a message created with CreateSecureMessage
--- returns nil if invalid, the original message, lag otherwise (lag can only
--- be between -5 and +15 seconds otherwise the message is rejected)
+-- returns nil if invalid, the original message, lag , messageId when valid
+-- (lag can only be between -5 and +15 seconds otherwise the message is rejected
+-- and messageId is the signature of the message)
 function ML:VerifySecureMessage(msg, visibleToken, secretToken)
-  -- skip the 4 noise characters to get to timestamp
+  -- skip the 4 noise characters to get to timestamp (todo: detect lack of entropy/fixed/hacked noise,
+  -- but hopefully the time part covers that)
   local b, v, m, t, s = msg:match("^(([^:]+):(.+):....([^:]+):)([^:]+)$")
   if v ~= visibleToken then
     self:Warning("Token mismatch (% vs %) in msg %", v, visibleToken, msg)
@@ -302,25 +307,25 @@ function ML:VerifySecureMessage(msg, visibleToken, secretToken)
     return
   end
   -- all good!
-  return m, delta
+  return m, delta, s
 end
 
 -- Returns an escaped string such as it can be used literally
 -- as a string.gsub(haystack, needle, replace) needle (ie escapes %?*-...)
-function ML.GsubEsc(str)
+function ML:GsubEsc(str)
   -- escape ( ) . % + - * ? [ ^ $
   local sub, _ = string.gsub(str, "[%(%)%.%%%+%-%*%?%[%^%$%]]", "%%%1")
   return sub
 end
 
-function ML.ReplaceAll(haystack, needle, replace, ...)
+function ML:ReplaceAll(haystack, needle, replace, ...)
   -- only need to escape % on replace but a few more won't hurt
-  return string.gsub(haystack, ML.GsubEsc(needle), ML.GsubEsc(replace), ...)
+  return string.gsub(haystack, ML:GsubEsc(needle), ML:GsubEsc(replace), ...)
 end
 
 -- returns true if str starts with prefix and calls the optional function cb
 -- with the reminder, false otherwise
-function ML.StartsWith(str, prefix, cb)
+function ML:StartsWith(str, prefix, cb)
   if not prefix then
     if cb then
       cb("") -- being extra nice to caller passing random nils
@@ -341,7 +346,7 @@ end
 
 -- Create a new LRU instance with the given maximum capacity
 -- everything is/should be O(1) {except garbage collecting}
-function ML.LRU(capacity)
+function ML:LRU(capacity)
   local obj = {}
   obj.capacity = capacity
   obj.size = 0
@@ -374,10 +379,10 @@ function ML.LRU(capacity)
     end
   end
   -- add/record data point in the set
-  obj.add = function(self, elem)
-    ML:Debug(9, "adding % tail list is %", elem, self.tail)
-    ML:Debug(9, "adding % head list is %", elem, self.head)
-    local node = self.direct[elem]
+  obj.add = function(o, elem)
+    ML:Debug(9, "adding % tail list is %", elem, o.tail)
+    ML:Debug(9, "adding % head list is %", elem, o.head)
+    local node = o.direct[elem]
     if node then -- found move it to top
       ML:Debug(9, "looking for %, found %", elem, node.value)
       assert(node.value == elem, "elem not found where expected")
@@ -391,17 +396,17 @@ function ML.LRU(capacity)
       if n then
         n.prev = p
       end
-      node.next = self.head
+      node.next = o.head
       node.next.prev = node
-      self.head = node
+      o.head = node
       node.prev = nil
-      if self.tail == node then
+      if o.tail == node then
         if n then
-          self.tail = n
+          o.tail = n
         else
-          self.tail = p
+          o.tail = p
         end
-        ML:Debug(9, "moving existing to front, setting tail to %", self.tail.value)
+        ML:Debug(9, "moving existing to front, setting tail to %", o.tail.value)
       end
       return
     end
@@ -409,25 +414,25 @@ function ML.LRU(capacity)
     node = {}
     node.value = elem
     node.count = 1 -- we could also store a timestamp for time based pruning
-    node.next = self.head
+    node.next = o.head
     if node.next then
       node.next.prev = node
     end
-    self.head = node
-    self.direct[elem] = node
-    if not self.tail then
-      self.tail = node
+    o.head = node
+    o.direct[elem] = node
+    if not o.tail then
+      o.tail = node
       ML:Debug(9, "setting tail to %", node.value)
     end
-    if self.size == self.capacity then
+    if o.size == o.capacity then
       -- drop the tail
-      local t = self.tail
-      ML:Debug(3, "reaching capacity %, will evict % (tail list is %)", self.size, t.value, t)
-      self.tail = t.prev
+      local t = o.tail
+      ML:Debug(3, "reaching capacity %, will evict % (tail list is %)", o.size, t.value, t)
+      o.tail = t.prev
       t.prev.next = nil
-      self.direct[t.value] = nil
+      o.direct[t.value] = nil
     else
-      self.size = self.size + 1
+      o.size = o.size + 1
     end
   end
   -- end of methods, return obj
