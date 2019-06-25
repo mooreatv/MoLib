@@ -276,7 +276,7 @@ function ML:UnHash(str)
   local lastC = string.sub(str, #str) -- last character is ascii/alphanum so this works
   local begin = string.sub(str, 1, #str - 1)
   local sh = ML:ShortHash(begin)
-  self:Debug(3, "Hash of % is % / %, expecting %", begin, sh, lastC)
+  self:Debug(3, "Hash of % is %, expecting %", begin, sh, lastC)
   return lastC == sh, begin -- hopefully caller does check first value
 end
 
