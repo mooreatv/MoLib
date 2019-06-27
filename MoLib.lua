@@ -301,9 +301,12 @@ function ML:CreateSecureMessage(msg, visibleToken, secretToken)
   return base .. sig, sig
 end
 
+ML.secureFutureThreshold = -5
+ML.securePastThreshold = 35 -- shouldn't need to be so high but some addons are verbose and consuming msg'ing bandwith/trigger throttle
+
 -- parse and checks validity of a message created with CreateSecureMessage
 -- returns nil if invalid, the original message, lag , messageId when valid
--- (lag can only be between -5 and +15 seconds otherwise the message is rejected
+-- (lag can only be between -5 and +60 seconds otherwise the message is rejected
 -- and messageId is the signature of the message)
 function ML:VerifySecureMessage(msg, visibleToken, secretToken)
   -- skip the 4 noise characters to get to timestamp (todo: detect lack of entropy/fixed/hacked noise,
@@ -324,12 +327,12 @@ function ML:VerifySecureMessage(msg, visibleToken, secretToken)
     return
   end
   local delta = now - msgTs
-  if delta < -5 then
+  if delta < self.secureFutureThreshold then
     self:Warning("Invalid message from %s in future % vs % in %", delta, msgTs, now, msg)
     return
   end
-  if delta > 15 then
-    self:Warning("Message %s in past, too old (replay attack?) % vs % in %", delta, msgTs, now, msg)
+  if delta > self.securePastThreshold then
+    self:Warning("Message %s in past, too old (replay attack? lag/throttling?) % vs % in %", delta, msgTs, now, msg)
     return
   end
   -- all good!
