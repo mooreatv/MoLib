@@ -304,7 +304,7 @@ end
 -- in case some server's time are out of sync by a few seconds
 ML.secureFutureThreshold = -5
 -- shouldn't need to be so high but some addons are verbose and consuming msg'ing bandwith/trigger throttle
-ML.securePastThreshold = 35
+ML.securePastThreshold = 45
 
 -- parse and checks validity of a message created with CreateSecureMessage
 -- returns nil if invalid, the original message, lag , messageId when valid
