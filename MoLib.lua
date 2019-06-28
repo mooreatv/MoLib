@@ -87,10 +87,10 @@ function ML:Debug(level, ...)
     if level > self.debug then
       return
     end
-    ML:debugPrint(level, ...)
+    self:debugPrint(level, ...)
   else
     -- level was omitted
-    ML:debugPrint(1, level, ...)
+    self:debugPrint(1, level, ...)
   end
 end
 
