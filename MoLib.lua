@@ -377,7 +377,9 @@ end
 
 -- Create a new LRU instance with the given maximum capacity
 -- everything is/should be O(1) {except garbage collecting}
-function ML:LRU(capacity)
+-- takes in an optional history flat table to initialize with
+-- (created by lru:toTable())
+function ML:LRU(capacity, initialData)
   local obj = {}
   obj.capacity = capacity
   obj.size = 0
@@ -466,7 +468,27 @@ function ML:LRU(capacity)
       o.size = o.size + 1
     end
   end
-  -- end of methods, return obj
+  -- export to table (that can be put in saved vars for instance), newest last
+  obj.toTable = function(o)
+    local res = {}
+    for v in o:iterateOldest() do
+      table.insert(res, v)
+    end
+    return res
+  end
+  -- import from table
+  obj.fromTable = function(o, data)
+    if not data then
+      return -- allow nil to be passed in
+    end
+    for _, v in ipairs(data) do
+      o:add(v)
+    end
+  end
+  -- end of methods
+  -- initialize
+  obj.fromTable(initialData)
+  -- and return the instance
   return obj
 end
 
