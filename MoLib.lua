@@ -95,8 +95,8 @@ function ML:Debug(level, ...)
 end
 
 function ML:debugPrint(level, ...)
-  ML:Print(string.format("%02d", GetServerTime() % 60) .. " " .. self.name .. " DBG[" .. tostring(level) .. "]: " ..
-             ML:format(...), .1, .75, .1)
+  local ts = string.format("%05.2f ", (100 * select(2, math.modf(GetTime() / 100)) + 0.5))
+  ML:Print(ts .. self.name .. " DBG[" .. tostring(level) .. "]: " .. ML:format(...), .1, .75, .1)
 end
 
 function ML:Error(...)
