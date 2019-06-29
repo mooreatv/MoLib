@@ -19,6 +19,8 @@ local ML = _G[addon]
 
 ML.name = addon
 
+ML.Factions = {"Horde", "Alliance", "Neutral"}
+
 function ML:deepmerge(dstTable, dstKey, src)
   if type(src) ~= 'table' then
     if not dstKey then
@@ -109,6 +111,7 @@ end
 
 ML.first = 1
 ML.manifestVersion = GetAddOnMetadata(addon, "Version")
+local globe = "MooreaTvLibrary"
 
 -- Returns 1 if already done; must be called with : (as method, to access state)
 function ML:MoLibInit()
@@ -116,7 +119,7 @@ function ML:MoLibInit()
     return true
   end
   self.first = 0
-  local version = "(" .. addon .. " / " .. self.name .. " " .. ML.manifestVersion .. ")"
+  local version = "(" .. addon .. " / " .. self.name .. " " .. ML.manifestVersion .. " / " .. _G[globe] .. ")"
   ML:Print("MoLib embedded in " .. version)
   return false -- so caller can continue with 1 time init
 end
@@ -492,4 +495,10 @@ function ML:LRU(capacity, initialData)
   return obj
 end
 
-ML:Debug("Done loading MoLib.lua")
+if not _G[globe] then
+  _G[globe] = 1
+else
+  _G[globe] = _G[globe] + 1
+end
+
+ML:Debug(2, "Done loading MoLib.lua #%", _G[globe])
