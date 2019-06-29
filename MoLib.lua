@@ -389,9 +389,20 @@ function ML:LRU(capacity, initialData)
   obj.head = nil -- the double linked list for ordering
   obj.tail = nil -- the tail for eviction
   obj.direct = {} -- the direct access to the element
+  -- check if entry exists
+  obj.exists = function(o, entry)
+    return o.direct[entry]
+  end
+  -- return most recent
+  obj.newest = function(o)
+    if not o.head then
+      return
+    end
+    return o.head.value
+  end
   -- iterator, most recent first
-  obj.iterateNewest = function()
-    local cptr = obj.head
+  obj.iterateNewest = function(o)
+    local cptr = o.head
     return function() -- next() function
       if cptr then
         local r = cptr.value
@@ -403,8 +414,8 @@ function ML:LRU(capacity, initialData)
   end
   -- iterator, oldest first, use this to save in a table which can then restore the
   -- same state (minus the count) using add()
-  obj.iterateOldest = function()
-    local cptr = obj.tail
+  obj.iterateOldest = function(o)
+    local cptr = o.tail
     return function() -- next() function
       if cptr then
         local r = cptr.value
@@ -490,7 +501,7 @@ function ML:LRU(capacity, initialData)
   end
   -- end of methods
   -- initialize
-  obj.fromTable(initialData)
+  obj:fromTable(initialData)
   -- and return the instance
   return obj
 end
