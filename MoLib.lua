@@ -310,7 +310,8 @@ ML.secureFutureThreshold = -5
 ML.securePastThreshold = 45
 
 -- parse and checks validity of a message created with CreateSecureMessage
--- returns nil if invalid, the original message, lag , messageId when valid
+-- returns false and an error message if invalid
+-- true, the original message, lag , messageId when valid
 -- (lag can only be between -5 and +60 seconds otherwise the message is rejected
 -- and messageId is the signature of the message)
 function ML:VerifySecureMessage(msg, visibleToken, secretToken)
@@ -318,30 +319,30 @@ function ML:VerifySecureMessage(msg, visibleToken, secretToken)
   -- but hopefully the time part covers that)
   local b, v, m, t, s = msg:match("^(([^:]+):(.+):....([^:]+):)([^:]+)$")
   if v ~= visibleToken then
-    self:Warning("Token mismatch (% vs %) in msg %", v, visibleToken, msg)
-    return
+    self:Debug(2, "Token mismatch (% vs %) in msg %", v, visibleToken, msg)
+    return false, self:format("Token mismatch (% vs %)", v, visibleToken)
   end
   if ML:Sign(b, secretToken) ~= s then
-    self:Warning("Invalid signature in msg %", msg)
-    return
+    self:Debug(2, "Invalid signature in msg %", msg)
+    return false, "Invalid signature"
   end
   local now = GetServerTime()
   local msgTs = tonumber(t)
   if not msgTs then
-    self:Warning("Invalid message timestamp % in %", t, msg)
-    return
+    self:Debug(1, "Invalid message timestamp % in %", t, msg)
+    return false, self:format("Timestamp % is not a number", t)
   end
   local delta = now - msgTs
   if delta < self.secureFutureThreshold then
-    self:Warning("Invalid message from %s in future % vs % in %", delta, msgTs, now, msg)
-    return
+    self:Debug(1, "Invalid message from %s in future % vs % in %", delta, msgTs, now, msg)
+    return false, self:format("message from %s in future % vs %", delta, msgTs, now)
   end
   if delta > self.securePastThreshold then
-    self:Warning("Message %s in past, too old (replay attack? lag/throttling?) % vs % in %", delta, msgTs, now, msg)
-    return
+    self:Debug(3, "Message %s in past, too old (replay attack? lag/throttling?) % vs % in %", delta, msgTs, now, msg)
+    return false, self:format("message %s in the past", delta)
   end
   -- all good!
-  return m, delta, s
+  return true, m, delta, s
 end
 
 -- Returns an escaped string such as it can be used literally
