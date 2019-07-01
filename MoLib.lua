@@ -40,6 +40,12 @@ function ML:deepmerge(dstTable, dstKey, src)
   end
 end
 
+function ML:CloneTable(src)
+  local copy = {}
+  ML:deepmerge(copy, nil, src)
+  return copy
+end
+
 function ML:MoLibInstallInto(namespace, name)
   ML:deepmerge(namespace, nil, ML)
   namespace.name = name
@@ -98,7 +104,7 @@ end
 
 function ML:debugPrint(level, ...)
   local ts = string.format("%05.2f ", (100 * select(2, math.modf(GetTime() / 100)) + 0.5))
-  ML:Print(ts .. self.name .. " DBG[" .. tostring(level) .. "]: " .. ML:format(...), .1, .75, .1)
+  ML:Print(ts .. self.name .. " DBG[" .. tostring(level) .. "]: " .. ML:format(...), .1, .65, .1)
 end
 
 function ML:Error(...)
@@ -108,6 +114,17 @@ end
 function ML:Warning(...)
   ML:Print(self.name .. " Warning: " .. ML:format(...), 0.96, 0.63, 0.26)
 end
+
+-- default printing (white) with our formatting
+function ML:PrintDefault(...)
+  ML:Print(ML:format(...))
+end
+
+-- info printing (blue-ish) with our formatting, for more important messages, not warning/errors
+function ML:PrintInfo(...)
+  ML:Print(ML:format(...),  .6, .9, 1)
+end
+
 
 ML.first = 1
 ML.manifestVersion = GetAddOnMetadata(addon, "Version")
