@@ -5,7 +5,8 @@ On going updates from June 7th-25th 2019
 	- Incompatible change:
 	VerifySecureMessage returns true or false as first argument and an error message as
 	second argument instead of printing their own Warning
-	- adding :CloneTable as convenience shortcut for local copy = {} ML:deepmerge(copy, nil, src) return copy
+	- adding :CloneTable as convenience shortcut deepmerge into a new table, also handles nicely nil and non table source
+	  and will always return a table
 	- adding :PrintDefault and :PrintInfo for white and blue printing with format'ing
 	- colors tweak
 4.0.0

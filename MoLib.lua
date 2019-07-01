@@ -6,7 +6,7 @@
 ]] --
 --
 -- name of the addon embedding us, our empty default anonymous ns (not used)
-local addon, ns = ...
+local addon, _ns = ...
 
 -- install into addon's namespace by default
 if not _G[addon] then
@@ -40,8 +40,16 @@ function ML:deepmerge(dstTable, dstKey, src)
   end
 end
 
+-- Deep Clone a src table into a new returned copy, nil input returns an empty table
+-- if src is not a table, it is inserted in the resulting table
 function ML:CloneTable(src)
   local copy = {}
+  if src == nil then
+    return copy
+  end
+  if type(src) ~= 'table' then
+    table.insert(copy, src)
+  end
   ML:deepmerge(copy, nil, src)
   return copy
 end
@@ -122,9 +130,8 @@ end
 
 -- info printing (blue-ish) with our formatting, for more important messages, not warning/errors
 function ML:PrintInfo(...)
-  ML:Print(ML:format(...),  .6, .9, 1)
+  ML:Print(ML:format(...), .6, .9, 1)
 end
-
 
 ML.first = 1
 ML.manifestVersion = GetAddOnMetadata(addon, "Version")
