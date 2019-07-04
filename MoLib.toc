@@ -5,3 +5,5 @@
 ## Version: @project-version@
 MoLib.lua
 MoLibUI.lua
+Realms_us.lua
+Realms_eu.lua

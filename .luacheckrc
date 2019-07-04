@@ -14,6 +14,7 @@ globals = {
     "UIDropDownMenu_SetSelectedID",
     "UIDropDownMenu_SetText",
     "UIDropDownMenu_SetWidth",
+    "Realms",
 }
 max_line_length = 132
 ignore = {
