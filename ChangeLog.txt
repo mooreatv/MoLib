@@ -1,75 +1,75 @@
 ChangeLog
 
 5.0.0
-	- MoLibUI: Moved code from DynamicBoxer DBoxUI.lua so it can be reused
-	(see example of use at the end of
-	 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua)
+- MoLibUI: Moved code from DynamicBoxer DBoxUI.lua so it can be reused
+(see example of use at the end of
+ https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua)
 
 On going updates from June 7th-30th 2019
 4.1.0
-	- Incompatible change:
-	VerifySecureMessage returns true or false as first argument and an error message as
-	second argument instead of printing their own Warning
-	- adding :CloneTable as convenience shortcut deepmerge into a new table, also handles nicely nil and non table source
-	  and will always return a table
-	- adding :PrintDefault and :PrintInfo for white and blue printing with format'ing
-	- colors tweak
+- Incompatible change:
+VerifySecureMessage returns true or false as first argument and an error message as
+second argument instead of printing their own Warning
+- adding :CloneTable as convenience shortcut deepmerge into a new table, also handles nicely nil and non table source
+  and will always return a table
+- adding :PrintDefault and :PrintInfo for white and blue printing with format'ing
+- colors tweak
 4.0.0
-	- ***Big incompatible change!*** all functions now declared with ":" and not a mix and match of "." and ":"
-	check all the callers, always use ":" !
-	- added LRU:exists() and :newest() (and earlier :fromTable(table) and :toTable())
-	- adding .Factions list of possible values returned by UnitFactionGroup()
-	- fix ML.name use instead of self.name use in debug print
-	- :Debug now shows SS.XX prefix where SS is modulo 100 seconds and XX hundredth of seconds
-	- added LRU:toTable() and LRU:fromTable() and optional table argument to constructor (ML:LRU()) to import/export to flat table
-	- ML.secureFutureThreshold = -5 ML.securePastThreshold = 45 changeable defaults instead of hardcoded -5 and +15 seconds before
-	- Switched hashing to be 64 bits (2x32bits to be precise), :Sign and :CreateSecureMessage uses the 64bits hex string
-	- new :ToHex(n) that gives a 32 bit (8 characters long) hex string representation (lua's %x fails for 2-4B)
-	- CreateSecureMessage and VerifySecureMessage both now return the signature to be used as messageId
-	- Dump/Debug etc now properly escape the wow | sequences
-	- new .StartsWith(str, prefix [, cb]) returns true and the reminder of the str if str starts with prefix,
-	optional cb argument is called with reminder of str after prefix if a match is found.
-	- new :CreateSecureMessage and :VerifySecureMessage functions to exchange time limited secure messages 
-	based on 1 visible and 1 secret token, embeds server time and checks it too (messages stay valid for 15s)
-	- new :Sign(msg, secret) which returns the long hash of msg .. secret, also exposed .Hash() in addition
-	to earlier .ShortHash()
-	- new ML.LRU(capacity) instance constructor with :add() and :iterateNewest() and :iterateOldest() methods
-	- the Dump function (and thus Debug, etc...) can now print structures with pointer without infinite loop
-	- start of some tests in tests/ directory, and reduced reliance on wow specific functions to limit the number of shm needed
-	- changed all functions using :Debug to be :Functions (take self arg)
-		so the debugging level of user addons embedded under different
-		namespace do work (RandomId)
-	- new :AddHashKey to add a single alphanum character hash at the end of a string
-	- new :UnHash to check validity of, and remove previous hash key
-	- new :GsubEsc(str) escapes a string so it can be used literally
-	as a string.gsub(haystack, needle, replace) needle (ie escapes %?*-...)
-	- new :ReplaceAll(haystack, needle, replace, ...) replaces literally
-	every occurrence of needle by replace in haystack, rest of signature
-	and return is same as gsub()
-	- new :ShortHash(str) returning 1 alpha num hash of input string (and
-	the longer 32 bits hash numerical value)
-	- changed DebugEvCall to take mandatory level arg 
-	- new :RandomId(len) for random alpha num string of length len
-	- new :Warning(formatStr, ...) for warnings with nice orange color
-	- :Debug now takes optional level first argument (if absent level is 1), use higher level
-		for more verbose levels
-	- new :Error(formatStr, ...) for errors in red function
-	- Format() and thus Debug() now Dump()s table arguments
-	- GetMyFQN when called to early can fail (for instance at UPDATE_BINDINGS time the realm is nil(!))
-	- Darker green for :Debug() to not confuse with guild chat
+- ***Big incompatible change!*** all functions now declared with ":" and not a mix and match of "." and ":"
+check all the callers, always use ":" !
+- added LRU:exists() and :newest() (and earlier :fromTable(table) and :toTable())
+- adding .Factions list of possible values returned by UnitFactionGroup()
+- fix ML.name use instead of self.name use in debug print
+- :Debug now shows SS.XX prefix where SS is modulo 100 seconds and XX hundredth of seconds
+- added LRU:toTable() and LRU:fromTable() and optional table argument to constructor (ML:LRU()) to import/export to flat table
+- ML.secureFutureThreshold = -5 ML.securePastThreshold = 45 changeable defaults instead of hardcoded -5 and +15 seconds before
+- Switched hashing to be 64 bits (2x32bits to be precise), :Sign and :CreateSecureMessage uses the 64bits hex string
+- new :ToHex(n) that gives a 32 bit (8 characters long) hex string representation (lua's %x fails for 2-4B)
+- CreateSecureMessage and VerifySecureMessage both now return the signature to be used as messageId
+- Dump/Debug etc now properly escape the wow | sequences
+- new .StartsWith(str, prefix [, cb]) returns true and the reminder of the str if str starts with prefix,
+optional cb argument is called with reminder of str after prefix if a match is found.
+- new :CreateSecureMessage and :VerifySecureMessage functions to exchange time limited secure messages 
+based on 1 visible and 1 secret token, embeds server time and checks it too (messages stay valid for 15s)
+- new :Sign(msg, secret) which returns the long hash of msg .. secret, also exposed .Hash() in addition
+to earlier .ShortHash()
+- new ML.LRU(capacity) instance constructor with :add() and :iterateNewest() and :iterateOldest() methods
+- the Dump function (and thus Debug, etc...) can now print structures with pointer without infinite loop
+- start of some tests in tests/ directory, and reduced reliance on wow specific functions to limit the number of shm needed
+- changed all functions using :Debug to be :Functions (take self arg)
+	so the debugging level of user addons embedded under different
+	namespace do work (RandomId)
+- new :AddHashKey to add a single alphanum character hash at the end of a string
+- new :UnHash to check validity of, and remove previous hash key
+- new :GsubEsc(str) escapes a string so it can be used literally
+as a string.gsub(haystack, needle, replace) needle (ie escapes %?*-...)
+- new :ReplaceAll(haystack, needle, replace, ...) replaces literally
+every occurrence of needle by replace in haystack, rest of signature
+and return is same as gsub()
+- new :ShortHash(str) returning 1 alpha num hash of input string (and
+the longer 32 bits hash numerical value)
+- changed DebugEvCall to take mandatory level arg 
+- new :RandomId(len) for random alpha num string of length len
+- new :Warning(formatStr, ...) for warnings with nice orange color
+- :Debug now takes optional level first argument (if absent level is 1), use higher level
+	for more verbose levels
+- new :Error(formatStr, ...) for errors in red function
+- Format() and thus Debug() now Dump()s table arguments
+- GetMyFQN when called to early can fail (for instance at UPDATE_BINDINGS time the realm is nil(!))
+- Darker green for :Debug() to not confuse with guild chat
 
 3.1.0 June 6th 2019
-	- MoLib can now be installed in a different namespace than the one of the addon's name
-	use MoLibInstallInto(namespace, name) to do so
-	- As a consequence Debug() and MoLibInit() must be called using : so they can access state
-	- Adding multi valued Dump(...)
-	- Adding debug Ev handler DebugEvCall
-	- prefix seconds (server time) prefix to debug logging
-	- adding GetMyFQN fully qualified characterName-normalizedRealm
+- MoLib can now be installed in a different namespace than the one of the addon's name
+use MoLibInstallInto(namespace, name) to do so
+- As a consequence Debug() and MoLibInit() must be called using : so they can access state
+- Adding multi valued Dump(...)
+- Adding debug Ev handler DebugEvCall
+- prefix seconds (server time) prefix to debug logging
+- adding GetMyFQN fully qualified characterName-normalizedRealm
 3.0.0 June 6th 2019
-	- Created MoLib for common code between WhoTracker, Camera, DynamicBoxer etc
+- Created MoLib for common code between WhoTracker, Camera, DynamicBoxer etc
 
 [... rest of the changelog in WhoTracker: https://github.com/mooreatv/WhoTracker ]
 
 1.0.0	Feb 20th 2009
-	- Initial Release
+- Initial Release
