@@ -1,7 +1,7 @@
 ChangeLog
 
 5.1.0 July 4th 2019
-- Adding Realms[eu] and Realms[us] realms table obtained from Blizzard APIs with
+- Adding Realms.lua realm by id table obtained from Blizzard APIs with
   https://github.com/mooreatv/WowApiClient
 5.0.0 July 3rd 2019
 - MoLibUI: Moved code from DynamicBoxer DBoxUI.lua so it can be reused
