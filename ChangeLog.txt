@@ -1,6 +1,6 @@
 ChangeLog
 
-5.0.0
+5.0.0 July 3rd 2019
 - MoLibUI: Moved code from DynamicBoxer DBoxUI.lua so it can be reused
 (see example of use at the end of
  https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua)
