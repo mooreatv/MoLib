@@ -1,9 +1,12 @@
 globals = {
     "gsub",
+    "BlizzardOptionsPanel_Slider_Disable",
+    "BlizzardOptionsPanel_Slider_Enable",
     "CreateFrame",
     "GetServerTime",
     "GetTime",
     "DEFAULT_CHAT_FRAME",
+    "GameFontNormal",
     "GetAddOnMetadata",
     "UnitFullName",
     "UIParent",
@@ -14,6 +17,7 @@ globals = {
     "UIDropDownMenu_SetSelectedID",
     "UIDropDownMenu_SetText",
     "UIDropDownMenu_SetWidth",
+    "UnitGUID",
     "Realms",
 }
 max_line_length = 132
