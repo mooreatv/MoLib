@@ -148,6 +148,38 @@ function ML:MoLibInit()
   return false -- so caller can continue with 1 time init
 end
 
+-- Realm functions
+
+function ML:GetMyRegion()
+  if self.myRegion then
+    return self.myRegion
+  end
+  -- we can only get the region, not the server reliably from our own GUID
+  local myGuid = UnitGUID("player")
+  local rid = ML:extractRealmID(myGuid)
+  self.myRegion = Realms[rid][2]
+  return self.myRegion
+end
+
+-- returns realm, region
+function ML:GetRealmByID(id)
+  return unpack(Realms[id])
+end
+
+function ML:extractRealmID(guid)
+  local rid = tonumber(self.myGUID:match("^Player%-([0-9]+)%-"))
+  if not rid then
+    self:Error("No match for expected Player-nnnn-... in %", guid)
+    error("no match for expected Player-nnnn-... in " .. guid)
+  end
+  return rid
+end
+
+function ML:RealmAbbrev(str)
+  -- Kil'Jaeden -> KJ
+  -- Wyrmrest Accord -> WA or WrA
+end
+
 -- Start of handy poor man's "/dump" --
 
 ML.DumpT = {}
@@ -218,8 +250,9 @@ function ML:GetMyFQN()
   local p, realm = UnitFullName("player")
   self:Debug(1, "GetMyFQN % , %", p, realm)
   if not realm then
-    self:Error("GetMyFQN: Realm not yet available!")
-    return p
+    local msg = "GetMyFQN: Realm not yet available!, called too early (wait until PLAYER_ENTERING_WORLD)!"
+    self:Error(msg)
+    error(msg)
   end
   return p .. "-" .. realm
 end
@@ -372,6 +405,10 @@ end
 -- Returns an escaped string such as it can be used literally
 -- as a string.gsub(haystack, needle, replace) needle (ie escapes %?*-...)
 function ML:GsubEsc(str)
+  if not str then
+    self:Debug(1, "Unexpected GsubEsc of nil")
+    return ""
+  end
   -- escape ( ) . % + - * ? [ ^ $
   local sub, _ = string.gsub(str, "[%(%)%.%%%+%-%*%?%[%^%$%]]", "%%%1")
   return sub
@@ -379,6 +416,10 @@ end
 
 function ML:ReplaceAll(haystack, needle, replace, ...)
   -- only need to escape % on replace but a few more won't hurt
+  if not haystack then
+    self:Debug(1, "Called replace all on % % %", haystack, needle, replace)
+    return "", 0
+  end
   return string.gsub(haystack, ML:GsubEsc(needle), ML:GsubEsc(replace), ...)
 end
 
