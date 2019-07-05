@@ -175,7 +175,7 @@ function ML:extractRealmID(guid)
   return rid
 end
 
-function ML:RealmAbbrev(str)
+function ML:RealmAbbrev(_str)
   -- Kil'Jaeden -> KJ
   -- Wyrmrest Accord -> WA or WrA
 end
