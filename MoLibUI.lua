@@ -222,14 +222,14 @@ function ML.Frame(addon, name) -- to not shadow self below but really call with 
   end
 
   if ML.widgetDemo then
-    p:addText("Testing 1 2 3... demo widgets:"):Place(50, 20)
-    local _cb1 = p:addCheckBox("A test checkbox", "A sample tooltip"):Place(0, 20) -- A: not here
-    local cb2 = p:addCheckBox("Another checkbox", "Another tooltip"):Place()
+    f:addText("Testing 1 2 3... demo widgets:"):Place(50, 20)
+    local _cb1 = f:addCheckBox("A test checkbox", "A sample tooltip"):Place(0, 20) -- A: not here
+    local cb2 = f:addCheckBox("Another checkbox", "Another tooltip"):Place()
     cb2:SetChecked(true)
-    local s2 = p:addSlider("Test slider", "Test slide tooltip", 1, 4, 1, "Test low", "Test high",
+    local s2 = f:addSlider("Test slider", "Test slide tooltip", 1, 4, 1, "Test low", "Test high",
                            {"Value 1", "Value 2", "Third one", "4th value"}):Place(16, 30)
     s2:SetValue(4)
-    p:addText("Real UI:"):Place(50, 40)
+    f:addText("Real UI:"):Place(50, 40)
   end
 
   return f
