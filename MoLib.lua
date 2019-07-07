@@ -578,4 +578,30 @@ else
   _G[globe] = _G[globe] + 1
 end
 
+--- localization helpers
+
+-- returns the L array with meta suitable for
+-- https://authors.curseforge.com/knowledge-base/world-of-warcraft/531-localization-substitutions
+-- with lua_additive_table same-key-is-true handle-unlocalized=ignore
+function ML:GetLocalization()
+  local L = {}
+  local Lmeta = {}
+  Lmeta.__newindex = function (t, k, v)
+    if v == true then -- allow for the shorter L["Foo bar"] = true
+      v = k
+    end
+    rawset(t, k, v)
+  end
+  Lmeta.__index = function (t, k)
+    self:Debug(1, "Localization not found for %", k)
+    rawset(t, k, k) -- cache it
+    return k
+  end
+  setmetatable(L, Lmeta)
+  return L
+end
+
+--- end of localization helpers
+
+
 ML:Debug(2, "Done loading MoLib.lua #%", _G[globe])
