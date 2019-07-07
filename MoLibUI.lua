@@ -102,6 +102,11 @@ function ML.Frame(addon, name) -- to not shadow self below but really call with 
         addon:Debug(7, "Nothing special to init in %", w:GetObjectType())
       end
     end
+    -- piggy back on 1 to decide both as it doesn't make sense to only define one of the two
+    if not widget.DoDisable then
+      widget.DoDisable = widget.Disable
+      widget.DoEnable = widget.Enable
+    end
     table.insert(self.children, widget) -- keep track of children objects
   end
 
