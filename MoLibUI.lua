@@ -9,14 +9,21 @@ local addonName, _ns = ...
 
 local ML = _G[addonName]
 
-  -- WARNING, Y axis is such as positive is down, unlike rest of the wow api which has + offset going up
-  -- but all the negative numbers all over, just for Y axis, got to me
+-- WARNING, Y axis is such as positive is down, unlike rest of the wow api which has + offset going up
+-- but all the negative numbers all over, just for Y axis, got to me
 
 function ML.Frame(addon, name) -- to not shadow self below but really call with Addon:Frame(name)
   local f = CreateFrame("Frame", nil, UIParent)
   f.name = name
   f.children = {}
   f.numObjects = 0
+
+  f.Init = function(self)
+    addon:Debug("Calling Init() on all % children", #self.children)
+    for _, v in ipairs(self.children) do
+      v:Init()
+    end
+  end
 
   -- place inside the parent at offset x,y from corner of parent
   local placeInside = function(sf, x, y)
@@ -90,7 +97,12 @@ function ML.Frame(addon, name) -- to not shadow self below but really call with 
       widget.parent:PlaceRight(...)
       return widget
     end
-    table.insert(self.children, widget) -- keep track of children objects (mostly for debug)
+    if not widget.Init then
+      widget.Init = function(w)
+        addon:Debug(7, "Nothing special to init in %", w:GetObjectType())
+      end
+    end
+    table.insert(self.children, widget) -- keep track of children objects
   end
 
   f.addText = function(self, text, font)
@@ -184,16 +196,16 @@ function ML.Frame(addon, name) -- to not shadow self below but really call with 
     return c
   end
 
-  f.addDrop = function(self, text, tooltip, cb, options)
-    -- local name = self.name .. "drop" .. self.numObjects
-    local d = CreateFrame("Frame", nil, self, "UIDropDownMenuTemplate")
-    d.tooltipTitle = "Testing tooltip 1" -- not working/showing (so far)
-    d.tooltipText = tooltip
-    d.tooltipOnButton = true
-    -- d.value = "none"
+  local function dropdownInit(d)
+    addon:Debug("drop down init called initDone=%", d.initDone)
+    if d.initDone then
+      return
+    end
+    addon:Debug("drop down first time init called")
+    d.initDone = true
     UIDropDownMenu_JustifyText(d, "CENTER")
     UIDropDownMenu_Initialize(d, function(_w, _level, _menuList)
-      for _, v in ipairs(options) do
+      for _, v in ipairs(d.options) do
         addon:Debug(5, "Creating dropdown entry %", v)
         local info = UIDropDownMenu_CreateInfo() -- don't put it outside the loop!
         info.tooltipOnButton = true
@@ -202,22 +214,38 @@ function ML.Frame(addon, name) -- to not shadow self below but really call with 
         info.tooltipText = v.tooltip
         info.value = v.value
         info.func = function(entry)
-          if cb then
-            cb(entry.value)
+          if d.cb then
+            d.cb(entry.value)
           end
           UIDropDownMenu_SetSelectedID(d, entry:GetID())
         end
         UIDropDownMenu_AddButton(info)
       end
     end)
-    UIDropDownMenu_SetText(d, text)
+    UIDropDownMenu_SetText(d, d.text)
     -- Uh? one global for all dropdowns?? also possible taint issues
     local width = _G["DropDownList1"] and _G["DropDownList1"].maxWidth or 0
     addon:Debug("Found dropdown width to be %", width)
     if width > 0 then
       UIDropDownMenu_SetWidth(d, width)
     end
+  end
+
+  -- Note that trying to reuse the blizzard dropdown code instead of duplicating it cause some tainting
+  -- because said code uses a bunch of globals notably UIDROPDOWNMENU_MENU_LEVEL
+  -- create/show those widgets as late as possible
+  f.addDrop = function(self, text, tooltip, cb, options)
+    -- local name = self.name .. "drop" .. self.numObjects
+    local d = CreateFrame("Frame", nil, self, "UIDropDownMenuTemplate")
+    d.tooltipTitle = "Testing dropdown tooltip 1" -- not working/showing (so far)
+    d.tooltipText = tooltip
+    d.options = options
+    d.cb = cb
+    d.text = text
+    d.tooltipOnButton = true
+    d.Init = dropdownInit
     self:addMethods(d)
+    self.lastDropDown = d
     return d
   end
 
