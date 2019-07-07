@@ -3,6 +3,7 @@ ChangeLog
 5.2.0 July 7th 2019
 - (start of) Localization support: ML:GetLocalization creates an L table compatible with
 https://authors.curseforge.com/knowledge-base/world-of-warcraft/531-localization-substitutions
+- default DoEnable/DoDisable on all widgets
 5.1.1 July 6th 2019
 - Fixing taint by delaying creation of widget (see DynamicBoxer#38 and use/fix)
 5.1.0 July 4th 2019
