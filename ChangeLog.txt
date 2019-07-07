@@ -1,5 +1,7 @@
 ChangeLog
 
+5.1.1 July 6th 2019
+- Fixing taint by delaying creation of widget (see DynamicBoxer#38 and use/fix)
 5.1.0 July 4th 2019
 - Adding Realms.lua realm by id table obtained from Blizzard APIs with
   https://github.com/mooreatv/WowApiClient
