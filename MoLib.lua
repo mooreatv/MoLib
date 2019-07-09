@@ -125,7 +125,7 @@ end
 
 -- color translations
 function ML:RgbToHex(r, g, b)
-  return string.format("%2x%2x%2x", 255*r, 255*g, 255*b)
+  return string.format("%2x%2x%2x", 255 * r, 255 * g, 255 * b)
 end
 
 -- default printing (white) with our formatting
@@ -591,13 +591,13 @@ end
 function ML:GetLocalization()
   local L = {}
   local Lmeta = {}
-  Lmeta.__newindex = function (t, k, v)
+  Lmeta.__newindex = function(t, k, v)
     if v == true then -- allow for the shorter L["Foo bar"] = true
       v = k
     end
     rawset(t, k, v)
   end
-  Lmeta.__index = function (t, k)
+  Lmeta.__index = function(t, k)
     self:Debug(1, "Localization not found for %", k)
     rawset(t, k, k) -- cache it
     return k
@@ -608,5 +608,38 @@ end
 
 --- end of localization helpers
 
+--- Watched table, ie table whose value can be tracked/sent to watchers
+function ML:WatchedTable()
+  self:Debug("Creating watched table")
+  local t = {}
+  local tMeta = {}
+  tMeta.values = {}
+  tMeta.callback = {}
+  tMeta.__newindex = function(_t, k, v)
+    local oldValue = tMeta.values[k]
+    self:Debug(6, "For key %, new value % old value %", k, v, oldValue)
+    if v == oldValue then -- no change
+      return
+    end
+    tMeta.values[k] = v
+    local cb = tMeta.callback[k]
+    self:Debug(5, "For key %, value changed from % to %; cb is %", k, oldValue, v, cb)
+    if cb then
+      cb(k, v, oldValue)
+    end
+  end
+  tMeta.__index = function(t, k)
+    local v = tMeta.values[k]
+    self:Debug(5, "returning value % for key % (table %)", v, k, t)
+    return v
+  end
+  -- Add a watch to be called when the value of key k changes (with params k, newValue, oldValue)
+  t.AddWatch = function(tbl, k, cb)
+    self:Debug(1, "Adding watch for key % (table %)", k, tbl)
+    tMeta.callback[k] = cb
+  end
+  setmetatable(t, tMeta)
+  return t
+end
 
 ML:Debug(2, "Done loading MoLib.lua #%", _G[globe])

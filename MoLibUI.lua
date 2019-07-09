@@ -25,6 +25,34 @@ function ML.Frame(addon, name) -- to not shadow self below but really call with 
     end
   end
 
+  f.calcBottomRight = function(self)
+    local maxX = 0
+    local minY = 99999999
+    for _, v in ipairs(self.children) do
+      local x = v:GetRight()
+      local y = v:GetBottom()
+      maxX = math.max(maxX, x or 0)
+      minY = math.min(minY, y or 0)
+    end
+    return maxX, minY
+  end
+
+  f.setSizeToChildren = function(self, paddingX, paddingY)
+    paddingX = paddingX or 0
+    paddingY = paddingY or 0
+    local mx, my = self:calcBottomRight()
+    local x = self:GetLeft()
+    local y = self:GetTop()
+    if not x or not y then
+      addon:Debug("Frame has no left or top! % %", x, y)
+    end
+    local w = mx - (x or 0)
+    local h = (y or 0) - my
+    addon:Debug("Calculated bottom right x % y % -> w % h %", x, y, w, h)
+    self:SetWidth(w + paddingX)
+    self:SetHeight(h + paddingY)
+  end
+
   -- place inside the parent at offset x,y from corner of parent
   local placeInside = function(sf, x, y)
     x = x or 16
