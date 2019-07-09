@@ -1,5 +1,7 @@
 ChangeLog
 
+5.2.1 July 9th+ 2019
+- new :RgbToHex
 5.2.0 July 7th 2019
 - (start of) Localization support: ML:GetLocalization creates an L table compatible with
 https://authors.curseforge.com/knowledge-base/world-of-warcraft/531-localization-substitutions

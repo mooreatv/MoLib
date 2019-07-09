@@ -123,6 +123,11 @@ function ML:Warning(...)
   ML:Print(self.name .. " Warning: " .. ML:format(...), 0.96, 0.63, 0.26)
 end
 
+-- color translations
+function ML:RgbToHex(r, g, b)
+  return string.format("%2x%2x%2x", 255*r, 255*g, 255*b)
+end
+
 -- default printing (white) with our formatting
 function ML:PrintDefault(...)
   ML:Print(ML:format(...))
