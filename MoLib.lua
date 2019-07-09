@@ -628,9 +628,9 @@ function ML:WatchedTable()
       cb(k, v, oldValue)
     end
   end
-  tMeta.__index = function(t, k)
+  tMeta.__index = function(_t, k)
     local v = tMeta.values[k]
-    self:Debug(5, "returning value % for key % (table %)", v, k, t)
+    self:Debug(5, "returning value % for key %", v, k)
     return v
   end
   -- Add a watch to be called when the value of key k changes (with params k, newValue, oldValue)
