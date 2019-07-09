@@ -12,8 +12,8 @@ local ML = _G[addonName]
 -- WARNING, Y axis is such as positive is down, unlike rest of the wow api which has + offset going up
 -- but all the negative numbers all over, just for Y axis, got to me
 
-function ML.Frame(addon, name) -- to not shadow self below but really call with Addon:Frame(name)
-  local f = CreateFrame("Frame", nil, UIParent)
+function ML.Frame(addon, name, global) -- to not shadow self below but really call with Addon:Frame(name)
+  local f = CreateFrame("Frame", global, UIParent)
   f.name = name
   f.children = {}
   f.numObjects = 0
