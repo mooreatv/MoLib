@@ -1,5 +1,8 @@
 ChangeLog
 
+5.3.0 July 11th 2019
+- pixel perfect snap to pixel boundary with :SnapFrame() on any frame
+- proper bottom right margin calculation and setting in f:Snap() 
 5.2.1 July 9th+ 2019
 - new: :WatchedTable() a table where you get a callback when values are changed.
 - MoLibUI: added :setSizeToChildren which calculates the bounding box union of all placed children and

@@ -9,6 +9,51 @@ local addonName, _ns = ...
 
 local ML = _G[addonName]
 
+-- use 2 or 4 for sizes so there are 1/2, 1/4 points
+function ML:round(x, precision)
+  precision = precision or 1
+  local i, _f = math.modf(math.floor(x / precision + 0.5)) * precision
+  return i
+end
+
+function ML:roundUp(x, precision) -- for sizes, don't shrink but also... 0.9 because floating pt math
+  precision = precision or 1
+  local i, _f = math.modf(math.ceil(x / precision - 0.1)) * precision
+  return i
+end
+
+function ML:scale(x, s, precision)
+  return ML:round(x * s, precision) / s
+end
+
+function ML:scaleUp(x, s, precision)
+  return ML:roundUp(x * s, precision) / s
+end
+
+-- returns a new scale to potentially be used if not recalculating the bottom right margins
+function ML:SnapFrame(f)
+  local s = f:GetEffectiveScale()
+  local point, relTo, relativePoint, xOfs, yOfs = f:GetPoint()
+  local x, y, w, h = f:GetRect()
+  self:Debug("Before: % % % %    % %   % %", x, y, w, h, point, relativePoint, xOfs, yOfs)
+  local nw = self:scaleUp(w, s, 2)
+  local nh = self:scaleUp(h, s, 2)
+  self:Debug("new WxH: % %", nw, nh)
+  f:SetWidth(nw)
+  f:SetHeight(nh)
+  x, y, w, h = f:GetRect()
+  self:Debug("Mid: % % % % : %", x, y, w, h, f:GetScale())
+  f:ClearAllPoints()
+  local nx = self:scale(x, s)
+  local ny = self:scale(y, s)
+  local ns = nh / h
+  local deltaX = nx - x
+  local deltaY = ny - y
+  f:SetPoint(point, relTo, relativePoint, xOfs + deltaX, yOfs + deltaY)
+  self:Debug("ns % : % % % % ( % % ): %", ns, x, y, nw, nh, deltaX, deltaY, f:GetScale())
+  return f:GetScale() * ns
+end
+
 -- WARNING, Y axis is such as positive is down, unlike rest of the wow api which has + offset going up
 -- but all the negative numbers all over, just for Y axis, got to me
 
@@ -18,6 +63,11 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
   f.children = {}
   f.numObjects = 0
 
+  f.Snap = function(w)
+    addon:SnapFrame(w)
+    w:setSizeToChildren()
+  end
+
   f.Init = function(self)
     addon:Debug("Calling Init() on all % children", #self.children)
     for _, v in ipairs(self.children) do
@@ -25,30 +75,39 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     end
   end
 
-  f.calcBottomRight = function(self)
+  -- returns opposite corners 4 coordinates:
+  -- BottomRight(x,y) , TopLeft(x,y)
+  f.calcCorners = function(self)
+    local minX = 99999999
     local maxX = 0
     local minY = 99999999
+    local maxY = 0
     for _, v in ipairs(self.children) do
       local x = v:GetRight()
       local y = v:GetBottom()
+      local l = v:GetLeft()
+      local t = v:GetTop()
       maxX = math.max(maxX, x or 0)
+      minX = math.min(minX, l or 0)
+      maxY = math.max(maxY, t or 0)
       minY = math.min(minY, y or 0)
     end
-    return maxX, minY
+    addon:Debug("Found corners to be topleft % , % to bottomright %, %", maxX, minY, minX, maxY)
+    return maxX, minY, minX, maxY
   end
 
-  f.setSizeToChildren = function(self, paddingX, paddingY)
-    paddingX = paddingX or 0
-    paddingY = paddingY or 0
-    local mx, my = self:calcBottomRight()
+  f.setSizeToChildren = function(self)
+    local mx, my, l, t = self:calcCorners()
     local x = self:GetLeft()
     local y = self:GetTop()
     if not x or not y then
       addon:Debug("Frame has no left or top! % %", x, y)
     end
-    local w = mx - (x or 0)
-    local h = (y or 0) - my
-    addon:Debug("Calculated bottom right x % y % -> w % h %", x, y, w, h)
+    local w = mx - l
+    local h = t - my
+    local paddingX = 2 * (l - x)
+    local paddingY = 2 * (y - t)
+    addon:Debug(3, "Calculated bottom right x % y % -> w % h % padding % x %", x, y, w, h, paddingX, paddingY)
     self:SetWidth(w + paddingX)
     self:SetHeight(h + paddingY)
   end
@@ -134,6 +193,10 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     if not widget.DoDisable then
       widget.DoDisable = widget.Disable
       widget.DoEnable = widget.Enable
+    end
+    widget.Snap = function(w)
+      addon:SnapFrame(w)
+      w:setSizeToChildren()
     end
     table.insert(self.children, widget) -- keep track of children objects
   end
