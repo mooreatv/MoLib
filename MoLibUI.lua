@@ -159,7 +159,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
   f.PlaceRight = function(self, object, optOffsetX, optOffsetY)
     self.numObjects = self.numObjects + 1
     if self.numObjects == 1 then
-      error("PlaceRight() should not be the first call, Place() should")
+      addon:ErrorAndThrow("PlaceRight() should not be the first call, Place() should")
     end
     -- place to the right of previous one on the left
     -- if the previous widget has text, add the text length (eg for check buttons)

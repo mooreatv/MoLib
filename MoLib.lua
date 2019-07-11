@@ -24,7 +24,7 @@ ML.Factions = {"Horde", "Alliance", "Neutral"}
 function ML:deepmerge(dstTable, dstKey, src)
   if type(src) ~= 'table' then
     if not dstKey then
-      error("setting leave object on nil key")
+      self:ErrorAndThrow("can't call deepmerge on non nil key % with src not a table: %", dstKey, src)
     end
     dstTable[dstKey] = src
     return
@@ -119,6 +119,12 @@ function ML:Error(...)
   ML:Print(self.name .. " Error: " .. ML:format(...), 0.9, .1, .1)
 end
 
+function ML:ErrorAndThrow(...)
+  local msg = self.name .. " Error: " .. ML:format(...)
+  ML:Print(msg, 0.9, .1, .1)
+  error(msg)
+end
+
 function ML:Warning(...)
   ML:Print(self.name .. " Warning: " .. ML:format(...), 0.96, 0.63, 0.26)
 end
@@ -155,27 +161,73 @@ end
 
 -- Realm functions
 
-function ML:GetMyRegion()
-  if self.myRegion then
-    return self.myRegion
+function ML:InitRealms()
+  if RealmIdsByName then
+    self:Debug(8, "Init region already done")
+    return
   end
-  -- we can only get the region, not the server reliably from our own GUID
-  local myGuid = UnitGUID("player")
-  local rid = ML:extractRealmID(myGuid)
-  self.myRegion = Realms[rid][2]
-  return self.myRegion
+  local reg = self:GetMyRegion()
+  RealmIdsByName = {}
+  for k, v in pairs(Realms) do
+    local name, region = unpack(v)
+    if region == reg then
+      RealmIdsByName[name] = k
+    end
+  end
 end
 
--- returns realm, region
+-- returns region (and not reliable realmid and namebyguid)
+function ML:GetMyRegion()
+  if self.myRegion then
+    return self.myRegion, self.myRid, self.myRealmByGuid
+  end
+  -- we can only get the region, not the server reliably from our own GUID
+  self.myGuid = UnitGUID("player")
+  self.myRid = ML:extractRealmID(self.myGuid)
+  self.myRealmByGuid, self.myRegion = unpack(Realms[self.myRid])
+  return self.myRegion, self.myRid, self.myRealmByGuid -- don't rely on last 2
+end
+
+-- returns region, id, realm - reliable if id is reliable
 function ML:GetRealmByID(id)
-  return unpack(Realms[id])
+  local mapping = Realms[id]
+  self:Debug("GetRealmByID %: %", id, mapping)
+  if not mapping then
+    return
+  end
+  return mapping[2], id, mapping[1]
+end
+
+function ML:GetUnitRealmUsingGuid(unit)
+  unit = unit or "target"
+  local guid = UnitGUID(unit)
+  self:Debug("In UnitUsingGuid: GUID of % : %", unit, guid)
+  return self:GetRealmByID(self:extractRealmID(guid))
+end
+
+function ML:GetRealRealm(unit)
+  self:InitRealms()
+  unit = unit or "target"
+  local guid = UnitGUID(unit)
+  self:Debug("In RealRealm: GUID of % : %", unit, guid)
+  local _className, _classId, _raceName, _raceId, _gender, name, realm = GetPlayerInfoByGUID(guid)
+  local n2 = ""
+  if not realm or #realm == 0 then
+    n2, realm = UnitFullName("player")
+  end
+  local id = RealmIdsByName[realm]
+  local reg, _, rname = self:GetRealmByID(id)
+  self:Debug(1, "% is % (%) from % -> % -> % %", unit, name, n2, realm, id, reg, rname)
+  return reg, id, rname
 end
 
 function ML:extractRealmID(guid)
-  local rid = tonumber(self.myGUID:match("^Player%-([0-9]+)%-"))
+  if not guid then
+    self:ErrorAndThrow("Can't extract realm id from nil guid")
+  end
+  local rid = tonumber(guid:match("^Player%-([0-9]+)%-"))
   if not rid then
-    self:Error("No match for expected Player-nnnn-... in %", guid)
-    error("no match for expected Player-nnnn-... in " .. guid)
+    self:ErrorAndThrow("No match for expected Player-nnnn-... in %", guid)
   end
   return rid
 end
@@ -255,9 +307,7 @@ function ML:GetMyFQN()
   local p, realm = UnitFullName("player")
   self:Debug(1, "GetMyFQN % , %", p, realm)
   if not realm then
-    local msg = "GetMyFQN: Realm not yet available!, called too early (wait until PLAYER_ENTERING_WORLD)!"
-    self:Error(msg)
-    error(msg)
+    self:ErrorAndThrow("GetMyFQN: Realm not yet available!, called too early (wait until PLAYER_ENTERING_WORLD)!")
   end
   return p .. "-" .. realm
 end
