@@ -131,7 +131,7 @@ end
 
 -- color translations
 function ML:RgbToHex(r, g, b)
-  return string.format("%2x%2x%2x", 255 * r, 255 * g, 255 * b)
+  return string.format("%02X%02X%02X", 255 * r, 255 * g, 255 * b)
 end
 
 -- default printing (white) with our formatting

@@ -1,5 +1,7 @@
 ChangeLog
 
+5.3.1 July 11th 2019
+- fixed RgbToHex, was missing leading 0s on small hex numbers. also use uppercase.
 5.3.0 July 11th 2019
 - pixel perfect snap to pixel boundary with :SnapFrame() on any frame
 - proper bottom right margin calculation and setting in f:Snap() 

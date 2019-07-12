@@ -276,7 +276,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     c.Text:SetText(text)
     c:SetWidth(c.Text:GetStringWidth() + 20) -- need some extra spaces for corners
     if tooltip then
-      c.tooltipText = tooltip -- TODO: style/font is wrong
+      c.tooltipText = tooltip -- TODO: style/font of tooltip for button is wrong
     end
     self:addMethods(c)
     local callback = cb
