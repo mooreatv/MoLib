@@ -68,6 +68,10 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     w:setSizeToChildren()
   end
 
+  f.Scale = function(w, ...)
+    w:setScale(...)
+  end
+
   f.Init = function(self)
     addon:Debug("Calling Init() on all % children", #self.children)
     for _, v in ipairs(self.children) do
@@ -112,18 +116,46 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     self:SetHeight(h + paddingY)
   end
 
+  f.setScale = function(self, nopadding)
+    local mx, my, l, t = self:calcCorners()
+    local x = self:GetLeft()
+    local y = self:GetTop()
+    if not x or not y then
+      addon:Debug("Frame has no left or top! % % in setScale", x, y)
+    end
+    local w = mx - l
+    local h = t - my
+    local paddingX = 2 * (l - x)
+    local paddingY = 2 * (y - t)
+    addon:Debug(3, "setScale bottom right x % y % -> w % h % padding % x %", x, y, w, h, paddingX, paddingY)
+    local nw = w
+    local nh = h
+    if not nopadding then
+      nw = nw + paddingX
+      nh = nh + paddingY
+    end
+    local cw = self:GetWidth() -- current
+    local ch = self:GetHeight()
+    local sX = cw / nw
+    local sY = ch / nh
+    local scale = math.min(sX, sY)
+    self:SetScale(self:GetScale() * scale)
+    addon:Debug(2, "calculated scale x % scale y % -> % -> %", sX, sY, scale, self:GetScale())
+  end
+
   -- place inside the parent at offset x,y from corner of parent
-  local placeInside = function(sf, x, y)
+  local placeInside = function(sf, x, y, point)
+    point = point or "TOPLEFT"
     x = x or 16
     y = y or 16
-    sf:SetPoint("TOPLEFT", x, -y)
+    sf:SetPoint(point, x, -y)
     return sf
   end
   -- place below (previously placed item typically)
-  local placeBelow = function(sf, below, x, y)
+  local placeBelow = function(sf, below, x, y, point1, point2)
     x = x or 0
     y = y or 8
-    sf:SetPoint("TOPLEFT", below, "BOTTOMLEFT", x, -y)
+    sf:SetPoint(point1 or "TOPLEFT", below, point2 or "BOTTOMLEFT", x, -y)
     return sf
   end
   -- place to the right of last widget
@@ -138,17 +170,17 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
   -- established by first widget placed (placeInside)
   -- such as changing the order of widgets doesn't change the left/right offset
   -- in other words, offsetX is absolute to the left margin instead of relative to the previously placed object
-  f.Place = function(self, object, optOffsetX, optOffsetY)
+  f.Place = function(self, object, optOffsetX, optOffsetY, point1, point2)
     self.numObjects = self.numObjects + 1
     addon:Debug(7, "called Place % n % o %", self.name, self.numObjects, self.leftMargin)
     if self.numObjects == 1 then
       -- first object: place inside
-      object:placeInside(optOffsetX, optOffsetY)
+      object:placeInside(optOffsetX, optOffsetY, point1)
       self.leftMargin = 0
     else
       optOffsetX = optOffsetX or 0
       -- subsequent, place after the previous one but relative to initial left margin
-      object:placeBelow(self.lastAdded, optOffsetX - self.leftMargin, optOffsetY)
+      object:placeBelow(self.lastAdded, optOffsetX - self.leftMargin, optOffsetY, point1, point2)
       self.leftMargin = optOffsetX
     end
     self.lastAdded = object
@@ -203,8 +235,15 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
 
   f.addText = function(self, text, font)
     font = font or "GameFontHighlightSmall" -- different default?
+    local fontObj = nil
+    if type(font) ~= "string" then
+      fontObj = font
+      font = nil
+    end
     local t = self:CreateFontString(nil, "ARTWORK", font)
-    addon:Debug(8, "font string starts with % points", t:GetNumPoints())
+    if fontObj then
+      t:SetFontObject(fontObj)
+    end
     t:SetText(text)
     t:SetJustifyH("LEFT")
     t:SetJustifyV("TOP")

@@ -2,6 +2,10 @@ ChangeLog
 
 5.3.1 July 11th 2019
 - fixed RgbToHex, was missing leading 0s on small hex numbers. also use uppercase.
+- widget addText can take either a font name string or a font object as 2nd param.
+- Adding a :Scale() that use the current frame anchor and scale the inside to fit
+  (kind of reverse of Snap() which changes the size of container to fit content)
+- Made Place() take optional Points so one can do centered layout (see DynamicBoxer TAB feature)
 5.3.0 July 11th 2019
 - pixel perfect snap to pixel boundary with :SnapFrame() on any frame
 - proper bottom right margin calculation and setting in f:Snap() 
