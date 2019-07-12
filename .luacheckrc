@@ -8,6 +8,7 @@ globals = {
     "DEFAULT_CHAT_FRAME",
     "GameFontNormal",
     "GetAddOnMetadata",
+    "GetPlayerInfoByGUID",
     "UnitFullName",
     "UIParent",
     "UIDropDownMenu_AddButton",
@@ -19,6 +20,7 @@ globals = {
     "UIDropDownMenu_SetWidth",
     "UnitGUID",
     "Realms",
+    "RealmIdsByName",
 }
 max_line_length = 132
 ignore = {
