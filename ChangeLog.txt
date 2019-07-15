@@ -1,5 +1,8 @@
 ChangeLog
 
+5.3.2 July 15th 2019
+- Fixed slider to show formatted decimal numbers
+- Add optional call back (.callBack) to sliders
 5.3.1 July 11th 2019
 - fixed RgbToHex, was missing leading 0s on small hex numbers. also use uppercase.
 - widget addText can take either a font name string or a font object as 2nd param.
