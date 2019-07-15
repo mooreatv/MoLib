@@ -35,14 +35,14 @@ function ML:SnapFrame(f)
   local s = f:GetEffectiveScale()
   local point, relTo, relativePoint, xOfs, yOfs = f:GetPoint()
   local x, y, w, h = f:GetRect()
-  self:Debug("Before: % % % %    % %   % %", x, y, w, h, point, relativePoint, xOfs, yOfs)
+  self:Debug(6, "Before: % % % %    % %   % %", x, y, w, h, point, relativePoint, xOfs, yOfs)
   local nw = self:scaleUp(w, s, 2)
   local nh = self:scaleUp(h, s, 2)
-  self:Debug("new WxH: % %", nw, nh)
+  self:Debug(6, "new WxH: % %", nw, nh)
   f:SetWidth(nw)
   f:SetHeight(nh)
   x, y, w, h = f:GetRect()
-  self:Debug("Mid: % % % % : %", x, y, w, h, f:GetScale())
+  self:Debug(6, "Mid: % % % % : %", x, y, w, h, f:GetScale())
   f:ClearAllPoints()
   local nx = self:scale(x, s)
   local ny = self:scale(y, s)
@@ -50,7 +50,7 @@ function ML:SnapFrame(f)
   local deltaX = nx - x
   local deltaY = ny - y
   f:SetPoint(point, relTo, relativePoint, xOfs + deltaX, yOfs + deltaY)
-  self:Debug("ns % : % % % % ( % % ): %", ns, x, y, nw, nh, deltaX, deltaY, f:GetScale())
+  self:Debug(5, "ns % : % % % % ( % % ): %", ns, x, y, nw, nh, deltaX, deltaY, f:GetScale())
   return f:GetScale() * ns
 end
 
@@ -96,7 +96,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
       maxY = math.max(maxY, t or 0)
       minY = math.min(minY, y or 0)
     end
-    addon:Debug("Found corners to be topleft % , % to bottomright %, %", maxX, minY, minX, maxY)
+    addon:Debug(6, "Found corners to be topleft % , % to bottomright %, %", maxX, minY, minX, maxY)
     return maxX, minY, minX, maxY
   end
 
@@ -111,7 +111,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     local h = t - my
     local paddingX = 2 * (l - x)
     local paddingY = 2 * (y - t)
-    addon:Debug(3, "Calculated bottom right x % y % -> w % h % padding % x %", x, y, w, h, paddingX, paddingY)
+    addon:Debug(7, "Calculated bottom right x % y % -> w % h % padding % x %", x, y, w, h, paddingX, paddingY)
     self:SetWidth(w + paddingX)
     self:SetHeight(h + paddingY)
   end
@@ -127,7 +127,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     local h = t - my
     local paddingX = 2 * (l - x)
     local paddingY = 2 * (y - t)
-    addon:Debug(3, "setScale bottom right x % y % -> w % h % padding % x %", x, y, w, h, paddingX, paddingY)
+    addon:Debug(6, "setScale bottom right x % y % -> w % h % padding % x %", x, y, w, h, paddingX, paddingY)
     local nw = w
     local nh = h
     if not nopadding then
@@ -140,7 +140,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     local sY = ch / nh
     local scale = math.min(sX, sY)
     self:SetScale(self:GetScale() * scale)
-    addon:Debug(2, "calculated scale x % scale y % -> % -> %", sX, sY, scale, self:GetScale())
+    addon:Debug(5, "calculated scale x % scale y % -> % -> %", sX, sY, scale, self:GetScale())
   end
 
   -- place inside the parent at offset x,y from corner of parent
@@ -295,7 +295,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
       if valueLabels and valueLabels[value] then
         sVal = valueLabels[value]
       else
-        sVal = tostring(value)
+        sVal = tostring(ML:round(value, 0.001))
         if value == minV then
           sVal = lowL
         elseif value == maxV then
@@ -303,6 +303,9 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
         end
       end
       w.Text:SetText(text .. ": " .. sVal)
+      if w.callBack then
+        w:callBack(value)
+      end
     end)
     self:addMethods(s)
     return s
