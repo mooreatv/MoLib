@@ -1,5 +1,9 @@
 ChangeLog
 
+6.00.00 July 16th 2019
+- Move in code from DynamicBoxer :ChangeScale  f:addTexture
+- added comments/doc
+
 5.3.2 July 15th 2019
 - Fixed slider to show formatted decimal numbers
 - Add optional call back (.callBack) to sliders

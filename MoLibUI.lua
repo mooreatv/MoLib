@@ -30,6 +30,8 @@ function ML:scaleUp(x, s, precision)
   return ML:roundUp(x * s, precision) / s
 end
 
+-- Makes sure the frame has the right pixel alignment and same padding with respect to
+-- bottom right corner that it has on top left with its children objects.
 -- returns a new scale to potentially be used if not recalculating the bottom right margins
 function ML:SnapFrame(f)
   local s = f:GetEffectiveScale()
@@ -70,6 +72,10 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
 
   f.Scale = function(w, ...)
     w:setScale(...)
+  end
+
+  f.ChangeScale = function(w, newScale)
+    addon:ChangeScale(w, newScale)
   end
 
   f.Init = function(self)
@@ -116,6 +122,8 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     self:SetHeight(h + paddingY)
   end
 
+  -- Scales a frame so the children objects fill up the frame in width or height
+  -- (aspect ratio isn't changed) while also keeping the snap to pixel effect of SnapFrame
   f.setScale = function(self, nopadding)
     local mx, my, l, t = self:calcCorners()
     local x = self:GetLeft()
@@ -201,7 +209,9 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     return object
   end
 
-  -- to be used by the various factories/sub widget creation to add common methods to them
+  -- To be used by the various factories/sub widget creation to add common methods to them
+  -- (learned after coming up with this pattern on my own that that this seems to be
+  -- called Mixins in blizzard code, though that doesn't cover forwarding or children tracking)
   function f:addMethods(widget) -- put into MoGuiLib once good enough
     widget.placeInside = placeInside
     widget.placeBelow = placeBelow
@@ -247,6 +257,15 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     t:SetText(text)
     t:SetJustifyH("LEFT")
     t:SetJustifyV("TOP")
+    self:addMethods(t)
+    return t
+  end
+
+  -- creates framed texture so it can be placed
+  -- (arguments are optional)
+  f.addTexture = function(self, layer)
+    local t = self:CreateTexture(nil, layer or "BACKGROUND")
+    addon:Debug(8, "textures starts with % points", t:GetNumPoints())
     self:addMethods(t)
     return t
   end
@@ -399,6 +418,17 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
   end
 
   return f
+end
+
+---
+-- Changes the scale without changing the anchor
+function ML:ChangeScale(f, newScale)
+  local pt1, parent, pt2, x, y = f:GetPoint()
+  local oldScale = f:GetScale()
+  local ptMult = oldScale / newScale -- correction for point
+  self:Debug(7, "Changing scale from % to % - point multiplier %", oldScale, newScale, ptMult)
+  f:SetScale(newScale)
+  f:SetPoint(pt1, parent, pt2, x * ptMult, y * ptMult)
 end
 
 ---
