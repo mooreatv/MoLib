@@ -207,6 +207,13 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     sf:setPoint("TOPLEFT", nextTo, "TOPRIGHT", x, -y)
     return sf
   end
+  -- place to the left of last widget
+  local placeLeft = function(sf, nextTo, x, y)
+    x = x or -16
+    y = y or 0
+    sf:setPoint("TOPRIGHT", nextTo, "TOPLEFT", x, -y)
+    return sf
+  end
 
   -- Place (below) relative to previous one. optOffsetX is relative to the left margin
   -- established by first widget placed (placeInside)
@@ -243,6 +250,20 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     return object
   end
 
+  -- doesn't change lastLeft, meant to be called to put 1 thing to the left of a centered object atm
+  f.PlaceLeft = function(self, object, optOffsetX, optOffsetY)
+    self.numObjects = self.numObjects + 1
+    if self.numObjects == 1 then
+      addon:ErrorAndThrow("PlaceLeft() should not be the first call, Place() should")
+    end
+    -- place to the left of previous one
+    -- if the previous widget has text, add the text length (eg for check buttons)
+    local x = (optOffsetX or -16)
+    object:placeLeft(self.lastLeft, x, optOffsetY)
+    -- self.lastLeft = object
+    return object
+  end
+
   -- To be used by the various factories/sub widget creation to add common methods to them
   -- (learned after coming up with this pattern on my own that that this seems to be
   -- called Mixins in blizzard code, though that doesn't cover forwarding or children tracking)
@@ -251,6 +272,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     widget.placeInside = placeInside
     widget.placeBelow = placeBelow
     widget.placeRight = placeRight
+    widget.placeLeft = placeLeft
     widget.parent = self
     widget.Place = function(...)
       -- add missing parent as first arg
@@ -259,6 +281,10 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     end
     widget.PlaceRight = function(...)
       widget.parent:PlaceRight(...)
+      return widget
+    end
+    widget.PlaceLeft = function(...)
+      widget.parent:PlaceLeft(...)
       return widget
     end
     if not widget.Init then
