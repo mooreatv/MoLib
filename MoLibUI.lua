@@ -61,6 +61,14 @@ end
 
 function ML.Frame(addon, name, global) -- to not shadow self below but really call with Addon:Frame(name)
   local f = CreateFrame("Frame", global, UIParent)
+  if addon.debug and addon.debug >= 8 then
+    addon:Debug(8, "Debug level 8 is on, putting debug background on frame %", name)
+    f.bg = f:CreateTexture(nil, "BACKGROUND")
+    f.bg:SetIgnoreParentAlpha(true)
+    f.bg:SetAlpha(.2)
+    f.bg:SetAllPoints()
+    f.bg:SetColorTexture(.1, .2, .7)
+  end
   f.name = name
   f.children = {}
   f.numObjects = 0
@@ -92,6 +100,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     local maxX = 0
     local minY = 99999999
     local maxY = 0
+    local numChildren = 0
     for _, v in ipairs(self.children) do
       local x = v:GetRight()
       local y = v:GetBottom()
@@ -101,8 +110,10 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
       minX = math.min(minX, l or 0)
       maxY = math.max(maxY, t or 0)
       minY = math.min(minY, y or 0)
+      numChildren = numChildren + 1
     end
-    addon:Debug(6, "Found corners to be topleft % , % to bottomright %, %", maxX, minY, minX, maxY)
+    addon:Debug(6, "Found corners for % children to be topleft % , % to bottomright %, %", numChildren, maxX, minY,
+                minX, maxY)
     return maxX, minY, minX, maxY
   end
 
@@ -124,7 +135,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
 
   -- Scales a frame so the children objects fill up the frame in width or height
   -- (aspect ratio isn't changed) while also keeping the snap to pixel effect of SnapFrame
-  f.setScale = function(self, nopadding)
+  f.setScale = function(self, overridePadding)
     local mx, my, l, t = self:calcCorners()
     local x = self:GetLeft()
     local y = self:GetTop()
@@ -138,17 +149,40 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     addon:Debug(6, "setScale bottom right x % y % -> w % h % padding % x %", x, y, w, h, paddingX, paddingY)
     local nw = w
     local nh = h
-    if not nopadding then
-      nw = nw + paddingX
-      nh = nh + paddingY
+    if overridePadding ~= nil then
+      --[[       local firstChild = self.children[1]
+      local pt1, _, pt2, x, y = firstChild:GetPoint()
+      if pt1:match("TOP") then
+        addon:Debug("Adjusting first child top y anchor from % to %", y, overridePadding)
+        y = -overridePadding
+        firstChild:SetPoint(pt1, self, pt2, x, y)
+      end
+      if pt1:match("LEFT") then
+        addon:Debug("Adjusting first child left x anchor from % to %", x, overridePadding)
+        firstChild:SetPoint(pt1, self, pt2, overridePadding, y) -- use the adjusted y for TOPLEFT
+      end
+ ]]
+      paddingX = 2 * overridePadding
+      paddingY = 2 * overridePadding
     end
+    nw = nw + paddingX
+    nh = nh + paddingY
     local cw = self:GetWidth() -- current
     local ch = self:GetHeight()
     local sX = cw / nw
     local sY = ch / nh
     local scale = math.min(sX, sY)
-    self:SetScale(self:GetScale() * scale)
-    addon:Debug(5, "calculated scale x % scale y % -> % -> %", sX, sY, scale, self:GetScale())
+    self:ChangeScale(self:GetScale() * scale)
+    addon:Debug(5, "calculated scale x % scale y % for nw % nh % -> % -> %", sX, sY, nw, nh, scale, self:GetScale())
+  end
+
+  -- Used instead of SetPoint directly to move 2 linked object (eg textures for animation group) together
+  local setPoint = function(sf, pt, ...)
+    addon:Debug(8, "setting point %", pt)
+    sf:SetPoint(pt, ...)
+    if sf.linked then
+      sf.linked:SetPoint(pt, ...)
+    end
   end
 
   -- place inside the parent at offset x,y from corner of parent
@@ -156,21 +190,21 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     point = point or "TOPLEFT"
     x = x or 16
     y = y or 16
-    sf:SetPoint(point, x, -y)
+    sf:setPoint(point, x, -y)
     return sf
   end
   -- place below (previously placed item typically)
   local placeBelow = function(sf, below, x, y, point1, point2)
     x = x or 0
     y = y or 8
-    sf:SetPoint(point1 or "TOPLEFT", below, point2 or "BOTTOMLEFT", x, -y)
+    sf:setPoint(point1 or "TOPLEFT", below, point2 or "BOTTOMLEFT", x, -y)
     return sf
   end
   -- place to the right of last widget
   local placeRight = function(sf, nextTo, x, y)
     x = x or 16
     y = y or 0
-    sf:SetPoint("TOPLEFT", nextTo, "TOPRIGHT", x, -y)
+    sf:setPoint("TOPLEFT", nextTo, "TOPRIGHT", x, -y)
     return sf
   end
 
@@ -212,7 +246,8 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
   -- To be used by the various factories/sub widget creation to add common methods to them
   -- (learned after coming up with this pattern on my own that that this seems to be
   -- called Mixins in blizzard code, though that doesn't cover forwarding or children tracking)
-  function f:addMethods(widget) -- put into MoGuiLib once good enough
+  function f:addMethods(widget)
+    widget.setPoint = setPoint
     widget.placeInside = placeInside
     widget.placeBelow = placeBelow
     widget.placeRight = placeRight
@@ -268,6 +303,32 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     addon:Debug(8, "textures starts with % points", t:GetNumPoints())
     self:addMethods(t)
     return t
+  end
+
+  -- Add an animation of 2 textures (typically glow)
+  f.addAnimatedTexture = function(self, baseId, glowId, duration, glowAlpha, looping, layer)
+    local base = self:addTexture(layer)
+    base:SetTexture(baseId)
+    if not base:IsObjectLoaded() then
+      addon:Warning("Texture % not loaded yet... use ML:PreloadTextures()...", baseId)
+      base:SetSize(64, 64)
+    end
+    addon:Debug("Setting base texture % - height = %", baseId, base:GetHeight())
+    local glow = self:CreateTexture(nil, layer or "BACKGROUND")
+    glow:SetTexture(glowId)
+    glow:SetBlendMode("ADD")
+    glow:SetAlpha(0) -- start with no change
+    glow:SetIgnoreParentAlpha(true)
+    local ag = glow:CreateAnimationGroup()
+    base.animationGroup = ag
+    local anim = ag:CreateAnimation("Alpha")
+    anim:SetFromAlpha(0)
+    anim:SetToAlpha(glowAlpha or 0.2)
+    ag:SetLooping(looping or "BOUNCE")
+    anim:SetDuration(duration or 2)
+    base.linked = glow
+    ag:Play()
+    return base
   end
 
   f.addCheckBox = function(self, text, tooltip)
@@ -426,9 +487,27 @@ function ML:ChangeScale(f, newScale)
   local pt1, parent, pt2, x, y = f:GetPoint()
   local oldScale = f:GetScale()
   local ptMult = oldScale / newScale -- correction for point
-  self:Debug(7, "Changing scale from % to % - point multiplier %", oldScale, newScale, ptMult)
+  self:Debug(7, "Changing scale from % to % for pt % / % x % y % - point multiplier %", oldScale, newScale, pt1, pt2, x,
+             y, ptMult)
   f:SetScale(newScale)
   f:SetPoint(pt1, parent, pt2, x * ptMult, y * ptMult)
+end
+
+-- Frame to attach all textures for (async) preloading: TODO actually wait for them to be loaded
+ML.MoLibTexturesPreLoadFrame = CreateFrame("Frame")
+
+-- ML.debug = 1
+function ML:PreloadTextures(texture, ...)
+  local t = ML.MoLibTexturesPreLoadFrame:CreateTexture(texture)
+  local ret = t:SetTexture(texture)
+  ML:Debug(1, "Preloading % : %", texture, ret)
+  if not ret then
+    error("Can't create texture %", texture)
+  end
+  if select("#", ...) == 0 then
+    return
+  end
+  ML:PreloadTextures(...)
 end
 
 ---
