@@ -1,4 +1,8 @@
-ChangeLog
+ChangeLog for MoLib by MooreaTv (moorea@ymail.com)
+--------------------------------------------------
+Extensively used by DynamicBoxer e.g.
+https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
+but also meant to be reused in other addons, not just mine.
 
 6.00.00 July 17th 2019
 - Move in code from DynamicBoxer :ChangeScale  f:addTexture
