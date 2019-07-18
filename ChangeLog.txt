@@ -1,6 +1,6 @@
 ChangeLog
 
-6.00.00 July 16th 2019
+6.00.00 July 17th 2019
 - Move in code from DynamicBoxer :ChangeScale  f:addTexture
 - added comments/doc
 - new :PreloadTextures (pending using coroutine/continuations or delaying layout 
@@ -8,6 +8,7 @@ ChangeLog
 - overridePadding argument in (set)Scale() and better calculation of scale.
 - new :addAnimatedTexture
 - new :PlaceLeft() meant to place a single item to the left of last right
+- RgbToHex takes optional 4th argument for alpha
 
 5.3.2 July 15th 2019
 - Fixed slider to show formatted decimal numbers
