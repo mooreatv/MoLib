@@ -130,8 +130,12 @@ function ML:Warning(...)
 end
 
 -- color translations
-function ML:RgbToHex(r, g, b)
-  return string.format("%02X%02X%02X", 255 * r, 255 * g, 255 * b)
+function ML:RgbToHex(r, g, b, a)
+  local h = string.format("%02X%02X%02X", 255 * r, 255 * g, 255 * b)
+  if not a then
+    return h
+  end
+  return string.format("%02X", 255 * a) ..  h
 end
 
 -- default printing (white) with our formatting
