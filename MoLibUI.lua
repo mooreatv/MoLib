@@ -201,17 +201,17 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     return sf
   end
   -- place to the right of last widget
-  local placeRight = function(sf, nextTo, x, y)
+  local placeRight = function(sf, nextTo, x, y, point1, point2)
     x = x or 16
     y = y or 0
-    sf:setPoint("TOPLEFT", nextTo, "TOPRIGHT", x, -y)
+    sf:setPoint(point1 or "TOPLEFT", nextTo, point2 or "TOPRIGHT", x, -y)
     return sf
   end
   -- place to the left of last widget
-  local placeLeft = function(sf, nextTo, x, y)
+  local placeLeft = function(sf, nextTo, x, y, point1, point2)
     x = x or -16
     y = y or 0
-    sf:setPoint("TOPRIGHT", nextTo, "TOPLEFT", x, -y)
+    sf:setPoint(point1 or "TOPRIGHT", nextTo, point2 or "TOPLEFT", x, -y)
     return sf
   end
 
@@ -237,7 +237,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     return object
   end
 
-  f.PlaceRight = function(self, object, optOffsetX, optOffsetY)
+  f.PlaceRight = function(self, object, optOffsetX, optOffsetY, point1, point2)
     self.numObjects = self.numObjects + 1
     if self.numObjects == 1 then
       addon:ErrorAndThrow("PlaceRight() should not be the first call, Place() should")
@@ -245,13 +245,13 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     -- place to the right of previous one on the left
     -- if the previous widget has text, add the text length (eg for check buttons)
     local x = (optOffsetX or 16) + (self.lastLeft.extraWidth or 0)
-    object:placeRight(self.lastLeft, x, optOffsetY)
+    object:placeRight(self.lastLeft, x, optOffsetY, point1, point2)
     self.lastLeft = object
     return object
   end
 
   -- doesn't change lastLeft, meant to be called to put 1 thing to the left of a centered object atm
-  f.PlaceLeft = function(self, object, optOffsetX, optOffsetY)
+  f.PlaceLeft = function(self, object, optOffsetX, optOffsetY, point1, point2)
     self.numObjects = self.numObjects + 1
     if self.numObjects == 1 then
       addon:ErrorAndThrow("PlaceLeft() should not be the first call, Place() should")
@@ -259,7 +259,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     -- place to the left of previous one
     -- if the previous widget has text, add the text length (eg for check buttons)
     local x = (optOffsetX or -16)
-    object:placeLeft(self.lastLeft, x, optOffsetY)
+    object:placeLeft(self.lastLeft, x, optOffsetY, point1, point2)
     -- self.lastLeft = object
     return object
   end

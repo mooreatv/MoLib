@@ -4,6 +4,8 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+6.00.01 July 18th 2019
+- add optional points for PlaceLeft/PlaceRight (so DynamicBoxer can use centered points)
 6.00.00 July 17th 2019
 - Move in code from DynamicBoxer :ChangeScale  f:addTexture
 - added comments/doc
