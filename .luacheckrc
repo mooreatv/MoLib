@@ -1,4 +1,5 @@
 globals = {
+    "debugstack",
     "gsub",
     "BlizzardOptionsPanel_Slider_Disable",
     "BlizzardOptionsPanel_Slider_Enable",

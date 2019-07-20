@@ -129,13 +129,17 @@ function ML:Warning(...)
   ML:Print(self.name .. " Warning: " .. ML:format(...), 0.96, 0.63, 0.26)
 end
 
+function ML:DebugStack(...)
+  ML:Print(self.name .. " Debug: " .. ML:format(...) .. ". Stack:\n" .. debugstack(2, 4, 3), 0.96, 0.63, 0.26)
+end
+
 -- color translations
 function ML:RgbToHex(r, g, b, a)
   local h = string.format("%02X%02X%02X", 255 * r, 255 * g, 255 * b)
   if not a then
     return h
   end
-  return string.format("%02X", 255 * a) ..  h
+  return string.format("%02X", 255 * a) .. h
 end
 
 -- default printing (white) with our formatting

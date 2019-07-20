@@ -41,6 +41,10 @@ function ML:SnapFrame(f)
   local nw = self:scaleUp(w, s, 2)
   local nh = self:scaleUp(h, s, 2)
   self:Debug(6, "new WxH: % %", nw, nh)
+  if self.NO_SNAPSCALE then
+    self:DebugStack("NO_SNAPSCALE: Not SNAPing tp w % x h %", nw, nh)
+    return
+  end
   f:SetWidth(nw)
   f:SetHeight(nh)
   x, y, w, h = f:GetRect()
@@ -140,7 +144,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     local x = self:GetLeft()
     local y = self:GetTop()
     if not x or not y then
-      addon:Debug("Frame has no left or top! % % in setScale", x, y)
+      addon:DebugStack("Frame has no left or top! % % in setScale", x, y)
     end
     local w = mx - l
     local h = t - my
@@ -172,6 +176,10 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     local sX = cw / nw
     local sY = ch / nh
     local scale = math.min(sX, sY)
+    if addon.NO_SNAPSCALE then
+      addon:DebugStack("NO_SNAPSCALE: not changing SCALE to % (sx % sy %)", scale, sX, sY)
+      return
+    end
     self:ChangeScale(self:GetScale() * scale)
     addon:Debug(5, "calculated scale x % scale y % for nw % nh % -> % -> %", sX, sY, nw, nh, scale, self:GetScale())
   end
