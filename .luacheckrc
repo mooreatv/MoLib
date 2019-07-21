@@ -22,6 +22,8 @@ globals = {
     "UnitGUID",
     "Realms",
     "RealmIdsByName",
+    "GetPhysicalScreenSize",
+    "WorldFrame",
 }
 max_line_length = 132
 ignore = {

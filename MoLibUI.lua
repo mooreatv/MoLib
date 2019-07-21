@@ -34,7 +34,7 @@ end
 -- bottom right corner that it has on top left with its children objects.
 -- returns a new scale to potentially be used if not recalculating the bottom right margins
 function ML:SnapFrame(f)
-  local s = f:GetEffectiveScale()
+  local s = f:GetScale() -- assumes our parent is the PixelPerfectFrame so getrect coords * s are in pixels
   local point, relTo, relativePoint, xOfs, yOfs = f:GetPoint()
   local x, y, w, h = f:GetRect()
   self:Debug(6, "Before: % % % %    % %   % %", x, y, w, h, point, relativePoint, xOfs, yOfs)
@@ -64,7 +64,7 @@ end
 -- but all the negative numbers all over, just for Y axis, got to me
 
 function ML.Frame(addon, name, global) -- to not shadow self below but really call with Addon:Frame(name)
-  local f = CreateFrame("Frame", global, UIParent)
+  local f = CreateFrame("Frame", global, addon:PixelPerfectFrame())
   if addon.debug and addon.debug >= 8 then
     addon:Debug(8, "Debug level 8 is on, putting debug background on frame %", name)
     f.bg = f:CreateTexture(nil, "BACKGROUND")
@@ -330,7 +330,47 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     return t
   end
 
-  -- creates framed texture so it can be placed
+  --[[   f.drawRectangle = function(self, layer)
+    local r = self:CreateTexture(nil, layer or "BACKGROUND")
+    self:addMethods(r)
+    return r
+  end
+ ]]
+
+  -- adds a line of given thickness and color
+  f.addLine = function(self, thickness, r, g, b, a, layer)
+    local l = self:CreateLine(nil, layer or "BACKGROUND")
+    l:SetThickness(thickness or 1)
+    l:SetColorTexture(r or 1, g or 1, b or 1, a or 1)
+    self:addMethods(l)
+    return l
+  end
+
+  -- adds a border
+  f.addBorder = function(self, padX, padY, thickness, r, g, b, alpha, layer)
+    padX = padX or 0
+    padY = padY or 0
+    layer = layer or "BACKGROUND"
+    r = r or 1
+    g = g or 1
+    b = b or 1
+    alpha = alpha or 1
+    thickness = thickness or 1
+    local top = self:addLine(thickness, r, g, b, alpha, layer)
+    top:SetStartPoint("TOPLEFT", padX, -padY)
+    top:SetEndPoint("TOPRIGHT", -padX, -padY)
+    local left = self:addLine(thickness, r, g, b, alpha, layer)
+    left:SetStartPoint("TOPLEFT", padX, -padY)
+    left:SetEndPoint("BOTTOMLEFT", padX, padY)
+    local bottom = self:addLine(thickness, r, g, b, alpha, layer)
+    bottom:SetStartPoint("BOTTOMLEFT", padX, padY)
+    bottom:SetEndPoint("BOTTOMRIGHT", -padX, padY)
+    local right = self:addLine(thickness, r, g, b, alpha, layer)
+    right:SetStartPoint("BOTTOMRIGHT", -padX, padY)
+    right:SetEndPoint("TOPRIGHT", -padX, -padY)
+  end
+
+  -- creates a texture so it can be placed
   -- (arguments are optional)
   f.addTexture = function(self, layer)
     local t = self:CreateTexture(nil, layer or "BACKGROUND")
@@ -544,6 +584,113 @@ function ML:PreloadTextures(texture, ...)
   ML:PreloadTextures(...)
 end
 
----
+function ML:WipeFrame(f)
+  if not f then
+    return -- nothing to wipe
+  end
+  f:ClearAllPoints()
+  f:Hide()
+  f:SetParent(nil)
+  wipe(f)
+  return nil
+end
 
+--- Test / debug functions
+
+function ML:DisplayInfo(x, y, scale)
+  local f = ML:Frame()
+  f:SetPoint("CENTER", x, -y)
+  f:SetSize(1, 1)
+  f:SetScale(scale)
+  f:addText("Dimensions snapshot by MoLib:"):Place()
+  f:addText(string.format("UI parent: %.3f x %.3f (scale %.5f eff.scale %.5f)", UIParent:GetWidth(),
+                          UIParent:GetHeight(), UIParent:GetScale(), UIParent:GetEffectiveScale())):Place()
+  f:addText(string.format("WorldFrame: %.3f x %.3f (scale %.5f eff.scale %.5f)", WorldFrame:GetWidth(),
+                          WorldFrame:GetHeight(), WorldFrame:GetScale(), WorldFrame:GetEffectiveScale())):Place()
+  local w, h = GetPhysicalScreenSize()
+  f:addText(ML:format("Actual pixels % x % (from GetPhysicalScreenSize())", w, h)):Place()
+  f:addText(ML:format("Renderscale % uiScale %", C_CVar.GetCVar("RenderScale"), C_CVar.GetCVar("uiScale"))):Place()
+  f:addText(
+    string.format("This pos: %.3f x %.3f (scale %.5f eff.scale %.5f)", x, y, f:GetScale(), f:GetEffectiveScale()))
+    :Place()
+  f:Show()
+  self:Debug("done with % % %", x, y, scale)
+  return f
+end
+
+--- Grid demo for pixel perfect (used by PixelPerfectAlign)
+
+function ML:FineGrid(numX, numY)
+  local pp = self:PixelPerfectFrame(true) -- WorldFrame version
+  local f = CreateFrame("Frame", nil, pp)
+  f:SetPoint("BOTTOMLEFT", 0, 0) -- where 0,0 is
+  local w, h = GetPhysicalScreenSize() -- TODO: change offset for odd vs even for the center cross
+  f:SetSize(w, h)
+  local th = 1 -- thickness
+  local xs = 17 / 2
+  local gold = {1, 0.8, 0.05, 0.5}
+  local red = {1, .1, .1, .8}
+  local color
+  for i = 0, numX do
+    local x = math.floor(i * (w - 1) / numX) + 0.5
+    for j = 0, numY do
+      local y = math.floor(j * (h - 1) / numY) + 0.5
+      color = gold
+      local sp = 0
+      if i == numX / 2 and j == numY / 2 then
+        -- center, make a red side cross instead
+        color = red
+        sp = xs + 0.5
+        x = x - 0.5
+        y = y - 0.5
+      end
+      local l = f:CreateLine(nil, "BACKGROUND")
+      l:SetThickness(th)
+      l:SetColorTexture(unpack(color))
+      l:SetStartPoint("BOTTOMLEFT", x - xs, y - sp)
+      l:SetEndPoint("BOTTOMLEFT", x + xs, y + sp)
+      l = f:CreateLine(nil, "BACKGROUND")
+      l:SetThickness(th)
+      l:SetColorTexture(unpack(color))
+      l:SetStartPoint("BOTTOMLEFT", x + sp, y - xs)
+      l:SetEndPoint("BOTTOMLEFT", x - sp, y + xs)
+    end
+  end
+  return f
+end
+
+-- Creates/Returns a frame taking the whole screen and for which every whole coordinate is a physical pixel
+-- Thus any children frame of this one is always pixel perfect/aligned when using whole numbers + 0.5
+-- Makes 2 frames, on child of UIParent for most UI and one, if passed true, of WorldFrame so it can be
+-- shown always.
+function ML:PixelPerfectFrame(worldFrame)
+  local name = "MoLibPixelPerfect"
+  local parent = UIParent
+  if worldFrame then
+    name = name .. "World"
+    parent = WorldFrame
+  end
+  name = name .. "Frame"
+  if _G[name] then
+    return _G[name]
+  end
+  local f = CreateFrame("Frame", name, parent)
+  local w, h = GetPhysicalScreenSize()
+  -- use width as diviser as that's (typically) the largest numbers so better precision
+  f:SetPoint("BOTTOMLEFT", 0, 0) -- where 0,0 is
+  f:SetSize(w, h)
+  local p = f:GetParent()
+  local sx = p:GetWidth() / w
+  local sy = p:GetHeight() / h
+  f:SetScale(sx)
+  self:Debug(1, "Created Pixel Perfect w % h % sx % sy % rect %", w, h, sx, sy, {f:GetRect()})
+  f:Show()
+  return f -- same as _G[name]
+end
+
+---
+-- C_Timer.After(1, function()
+--  ML:FineGrid(16, 8)
+-- end)
+---
 ML:Debug("MoLib UI file loaded")
