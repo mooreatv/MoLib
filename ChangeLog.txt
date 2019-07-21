@@ -4,6 +4,8 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.00.01 July 21st 2019
+- Fix for modification for center cross (grid demo) was changing the whole line after it
 v7.00.00 July 21st 2019
 - Pixel perfect for real now - See PixelPerfectAlign demo addon
   :FineGrid() and :DisplayInfo()

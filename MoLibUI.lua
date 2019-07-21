@@ -632,8 +632,8 @@ function ML:FineGrid(numX, numY)
   local red = {1, .1, .1, .8}
   local color
   for i = 0, numX do
-    local x = math.floor(i * (w - 1) / numX) + 0.5
     for j = 0, numY do
+      local x = math.floor(i * (w - 1) / numX) + 0.5
       local y = math.floor(j * (h - 1) / numY) + 0.5
       color = gold
       local sp = 0
