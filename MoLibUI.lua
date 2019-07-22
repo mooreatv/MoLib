@@ -594,6 +594,9 @@ function ML:WipeFrame(f, ...)
     return -- nothing to wipe
   end
   f:Hide() -- first hide before we change children etc
+  if f.UnregisterAllEvents then
+    f:UnregisterAllEvents()
+  end
   local oType = f:GetObjectType()
   local name = f:GetName() -- likely nil for our stuff
   self:Debug(6, "Wiping % name %", oType, name)
@@ -687,11 +690,16 @@ function ML:FineGrid(numX, numY, length)
   f:SetSize(w, h)
   local th = 1 -- thickness
   length = length or 16
+  -- we round up most cases except for special 1 pixel request
   local off1 = math.ceil(length / 2) + 0.5
+  if length == 1 then
+    off1 = 0.5
+  end
   local gold = {1, 0.8, 0.05, 0.5}
   local red = {1, .1, .1, .8}
   local color
   local seenCenter = false
+  self:Debug(1, "Making % x % (+1) crosses of length %", numX, numY, off1)
   for i = 0, numX do
     for j = 0, numY do
       local x = math.floor(i * (w - 1) / numX) + 0.5
@@ -702,15 +710,25 @@ function ML:FineGrid(numX, numY, length)
         -- center, make a red side cross instead
         seenCenter = true
         color = red
-        off2 = off1 + 0.5
-        x = x - 0.5
-        y = y - 0.5
+        if length ~= 1 then -- special case for 1 pixel in center
+          off2 = off1 + 0.5
+          x = x - 0.5
+          y = y - 0.5
+        end
       end
       self:DrawCross(f, x, y, off1, off2, th, color)
     end
   end
   if not seenCenter then
-    self:DrawCross(f, math.ceil(w / 2), math.ceil(h / 2), off1, off1 + 0.5, 1, red)
+    local x = math.floor(w / 2)
+    local y = math.floor(h / 2)
+    local off2 = off1 + 0.5
+    if length == 1 then -- another special case for 1 pixel long center
+      x = x - 0.5
+      y = y - 0.5
+      off2 = 0
+    end
+    self:DrawCross(f, x, y, off1, off2, th, red)
   end
   return f
 end

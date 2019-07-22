@@ -5,6 +5,7 @@ https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua
 but also meant to be reused in other addons, not just mine.
 
 v7.01.00 July 21st 2019
+- Allow single pixel for grid with length == 1 in :FineGrid()
 - :PixelPerfectScale() to update scale on PP frames and using it on change screen/scale events
 - :AspectRatio() calc and showing in DisplayInfo, always show a center cross even for even aspect ratios
 - added .defaultFont and .defaultTextColor properties to Frame() used by .addText()
