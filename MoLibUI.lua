@@ -313,7 +313,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
   end
 
   f.addText = function(self, text, font)
-    font = font or "GameFontHighlightSmall" -- different default?
+    font = font or self.defaultFont or "GameFontHighlightSmall" -- different default?
     local fontObj = nil
     if type(font) ~= "string" then
       fontObj = font
@@ -322,6 +322,9 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     local t = self:CreateFontString(nil, "ARTWORK", font)
     if fontObj then
       t:SetFontObject(fontObj)
+    end
+    if self.defaultTextColor then
+      t:SetTextColor(unpack(self.defaultTextColor))
     end
     t:SetText(text)
     t:SetJustifyH("LEFT")
@@ -584,35 +587,75 @@ function ML:PreloadTextures(texture, ...)
   ML:PreloadTextures(...)
 end
 
-function ML:WipeFrame(f)
+-- Wipes a frame and it's children to reduce memory usage to a minimum
+-- (note this is not a pool but could be modified to do resetting of object in pool)
+function ML:WipeFrame(f, ...)
   if not f then
     return -- nothing to wipe
   end
+  f:Hide() -- first hide before we change children etc
+  local oType = f:GetObjectType()
+  local name = f:GetName() -- likely nil for our stuff
+  self:Debug(6, "Wiping % name %", oType, name)
+  -- depth first: children then us then siblings
+  if f.GetChildren then
+    self:WipeFrame(f:GetChildren())
+  else
+    assert(not f.children)
+  end
+  if name then
+    _G[name] = nil
+  end
+  f:SetScale(1)
   f:ClearAllPoints()
-  f:Hide()
-  f:SetParent(nil)
+  local status, err = pcall(function()
+    f:SetParent(nil)
+  end)
+  if not status then
+    self:Debug(7, "(Expected) Error clearing Parent on % %: %", oType, name, err)
+  end
   wipe(f)
+  self:WipeFrame(...)
   return nil
 end
 
 --- Test / debug functions
 
+-- classic compatible
+function ML:GetCVar(...)
+  local f
+  if C_CVar then
+    f = C_CVar.GetCVar
+  else
+    f = GetCVar
+  end
+  return f(...)
+end
+
 function ML:DisplayInfo(x, y, scale)
   local f = ML:Frame()
+  f.defaultTextColor = {.5, .6, 1, 1}
+  f.defaultFont = "Game13FontShadow"
+  f:SetFrameStrata("FULLSCREEN")
   f:SetPoint("CENTER", x, -y)
   f:SetSize(1, 1)
-  f:SetScale(scale)
+  f:SetScale((scale or 1) / f:GetParent():GetScale())
+  f:SetAlpha(0.95)
   f:addText("Dimensions snapshot by MoLib:"):Place()
   f:addText(string.format("UI parent: %.3f x %.3f (scale %.5f eff.scale %.5f)", UIParent:GetWidth(),
                           UIParent:GetHeight(), UIParent:GetScale(), UIParent:GetEffectiveScale())):Place()
   f:addText(string.format("WorldFrame: %.3f x %.3f (scale %.5f eff.scale %.5f)", WorldFrame:GetWidth(),
                           WorldFrame:GetHeight(), WorldFrame:GetScale(), WorldFrame:GetEffectiveScale())):Place()
   local w, h = GetPhysicalScreenSize()
-  f:addText(ML:format("Actual pixels % x % (from GetPhysicalScreenSize())", w, h)):Place()
-  f:addText(ML:format("Renderscale % uiScale %", C_CVar.GetCVar("RenderScale"), C_CVar.GetCVar("uiScale"))):Place()
-  f:addText(
+  f:addText(ML:format("Actual pixels % x %", w, h)):Place()
+  f:addText(ML:format("Renderscale % uiScale %", self:GetCVar("RenderScale"), self:GetCVar("uiScale"))):Place()
+  local aX = 16
+  local aY, aYi = self:AspectRatio(aX)
+  f:addText(ML:format("Aspect ratio is ~ %:% (%:%)", aX, aY, aX, aYi)):Place()
+  --[[   f:addText(
     string.format("This pos: %.3f x %.3f (scale %.5f eff.scale %.5f)", x, y, f:GetScale(), f:GetEffectiveScale()))
     :Place()
+ ]]
   f:Show()
   self:Debug("done with % % %", x, y, scale)
   return f
@@ -620,43 +663,84 @@ end
 
 --- Grid demo for pixel perfect (used by PixelPerfectAlign)
 
-function ML:FineGrid(numX, numY)
+-- Draws 2 line crossing in center x,y either vertical/horizontal if off2 is 0
+-- or diagonally if off2 is == off1
+function ML:DrawCross(f, x, y, off1, off2, thickness, color)
+  local l = f:CreateLine(nil, "BACKGROUND")
+  l:SetThickness(thickness)
+  l:SetColorTexture(unpack(color))
+  l:SetStartPoint("BOTTOMLEFT", x - off1, y - off2)
+  l:SetEndPoint("BOTTOMLEFT", x + off1, y + off2)
+  l = f:CreateLine(nil, "BACKGROUND")
+  l:SetThickness(thickness)
+  l:SetColorTexture(unpack(color))
+  l:SetStartPoint("BOTTOMLEFT", x + off2, y - off1)
+  l:SetEndPoint("BOTTOMLEFT", x - off2, y + off1)
+end
+
+function ML:FineGrid(numX, numY, length)
   local pp = self:PixelPerfectFrame(true) -- WorldFrame version
   local f = CreateFrame("Frame", nil, pp)
-  f:SetPoint("BOTTOMLEFT", 0, 0) -- where 0,0 is
-  local w, h = GetPhysicalScreenSize() -- TODO: change offset for odd vs even for the center cross
+  f:SetPoint("BOTTOMLEFT", 0, 0) -- BOTTOMLEFT is where 0,0 is
+  -- consider change offset for odd vs even for the center cross
+  local w, h = GetPhysicalScreenSize()
   f:SetSize(w, h)
   local th = 1 -- thickness
-  local xs = 17 / 2
+  length = length or 16
+  local off1 = math.ceil(length / 2) + 0.5
   local gold = {1, 0.8, 0.05, 0.5}
   local red = {1, .1, .1, .8}
   local color
+  local seenCenter = false
   for i = 0, numX do
     for j = 0, numY do
       local x = math.floor(i * (w - 1) / numX) + 0.5
       local y = math.floor(j * (h - 1) / numY) + 0.5
       color = gold
-      local sp = 0
+      local off2 = 0
       if i == numX / 2 and j == numY / 2 then
         -- center, make a red side cross instead
+        seenCenter = true
         color = red
-        sp = xs + 0.5
+        off2 = off1 + 0.5
         x = x - 0.5
         y = y - 0.5
       end
-      local l = f:CreateLine(nil, "BACKGROUND")
-      l:SetThickness(th)
-      l:SetColorTexture(unpack(color))
-      l:SetStartPoint("BOTTOMLEFT", x - xs, y - sp)
-      l:SetEndPoint("BOTTOMLEFT", x + xs, y + sp)
-      l = f:CreateLine(nil, "BACKGROUND")
-      l:SetThickness(th)
-      l:SetColorTexture(unpack(color))
-      l:SetStartPoint("BOTTOMLEFT", x + sp, y - xs)
-      l:SetEndPoint("BOTTOMLEFT", x - sp, y + xs)
+      self:DrawCross(f, x, y, off1, off2, th, color)
     end
   end
+  if not seenCenter then
+    self:DrawCross(f, math.ceil(w / 2), math.ceil(h / 2), off1, off1 + 0.5, 1, red)
+  end
   return f
+end
+
+-- Returns nY closest int in proportion to aspect ratio
+-- eg on a 16:9 screen passing in 16 will return 9
+-- also returns the not rounded one
+function ML:AspectRatio(nX)
+  local w, h = GetPhysicalScreenSize()
+  local nY = self:round(h / w * nX, 0.01)
+  local nYi = self:round(nY, 1)
+  self:Debug(2, "Aspect ratio %:% - rounded to %:%", nX, nY, nX, nYi)
+  return nYi, nY
+end
+
+-- Sets the scale to match physical pixels
+function ML:PixelPerfectScale(f)
+  local w, h = GetPhysicalScreenSize()
+  -- use width as divisor as that's (typically) the largest numbers so better precision
+  f:SetSize(w, h)
+  local p = f:GetParent()
+  local sx = p:GetWidth() / w
+  local sy = p:GetHeight() / h
+  f:SetScale(sx)
+  self:Debug(1, "Set Pixel Perfect w % h % scale sx % (sy %) rect %", w, h, sx, sy, {f:GetRect()})
+end
+
+function ML.OnPPEvent(frame, event, ...)
+  ML:Debug(1, "frame % got %: %", frame:GetName(), event, {...})
+  ML:PixelPerfectScale(frame)
 end
 
 -- Creates/Returns a frame taking the whole screen and for which every whole coordinate is a physical pixel
@@ -675,16 +759,15 @@ function ML:PixelPerfectFrame(worldFrame)
     return _G[name]
   end
   local f = CreateFrame("Frame", name, parent)
-  local w, h = GetPhysicalScreenSize()
-  -- use width as diviser as that's (typically) the largest numbers so better precision
-  f:SetPoint("BOTTOMLEFT", 0, 0) -- where 0,0 is
-  f:SetSize(w, h)
-  local p = f:GetParent()
-  local sx = p:GetWidth() / w
-  local sy = p:GetHeight() / h
-  f:SetScale(sx)
-  self:Debug(1, "Created Pixel Perfect w % h % sx % sy % rect %", w, h, sx, sy, {f:GetRect()})
+  f:SetPoint("BOTTOMLEFT", 0, 0) -- BOTTOMLEFT is where 0,0 is/starts
+  self:PixelPerfectScale(f)
   f:Show()
+  f:SetScript("OnEvent", self.OnPPEvent)
+  f:RegisterEvent("DISPLAY_SIZE_CHANGED")
+  if not worldFrame then
+    -- world ppf is based of fixed x768 parent so doesn't need UI scale changed events
+    f:RegisterEvent("UI_SCALE_CHANGED")
+  end
   return f -- same as _G[name]
 end
 

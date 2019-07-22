@@ -24,6 +24,9 @@ globals = {
     "RealmIdsByName",
     "GetPhysicalScreenSize",
     "WorldFrame",
+    "wipe",
+    "C_CVar",
+    "GetCVar",
 }
 max_line_length = 132
 ignore = {
