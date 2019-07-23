@@ -642,7 +642,12 @@ function ML:DisplayInfo(x, y, scale)
   f:SetFrameStrata("FULLSCREEN")
   f:SetPoint("CENTER", x, -y)
   f:SetSize(1, 1)
-  f:SetScale((scale or 1) / f:GetParent():GetScale())
+  local p = f:GetParent()
+  local ps = 1
+  if p then
+    ps = p:GetScale()
+  end
+  f:SetScale((scale or 1) / ps)
   f:SetAlpha(0.95)
   f:addText("Dimensions snapshot by MoLib:"):Place()
   f:addText(string.format("UI parent: %.3f x %.3f (scale %.5f eff.scale %.5f)", UIParent:GetWidth(),
@@ -666,6 +671,8 @@ end
 
 --- Grid demo for pixel perfect (used by PixelPerfectAlign)
 
+ML.drawn = 0
+
 -- Draws 2 line crossing in center x,y either vertical/horizontal if off2 is 0
 -- or diagonally if off2 is == off1
 function ML:DrawCross(f, x, y, off1, off2, thickness, color)
@@ -679,11 +686,17 @@ function ML:DrawCross(f, x, y, off1, off2, thickness, color)
   l:SetColorTexture(unpack(color))
   l:SetStartPoint("BOTTOMLEFT", x + off2, y - off1)
   l:SetEndPoint("BOTTOMLEFT", x - off2, y + off1)
+  self.drawn = self.drawn + 2
 end
 
-function ML:FineGrid(numX, numY, length)
-  local pp = self:PixelPerfectFrame(true) -- WorldFrame version
-  local f = CreateFrame("Frame", nil, pp)
+function ML:FineGrid(numX, numY, length, name, parent)
+  local pp = self:pixelPerfectFrame(name, parent) -- potentially a shiny new frame
+  local f = pp
+  if name then
+    -- if parent is one of the named one then make a new child, otherwise use the one we just made
+    f = CreateFrame("Frame", nil, pp)
+  end
+  f:SetFlattensRenderLayers(true)
   f:SetPoint("BOTTOMLEFT", 0, 0) -- BOTTOMLEFT is where 0,0 is
   -- consider change offset for odd vs even for the center cross
   local w, h = GetPhysicalScreenSize()
@@ -733,6 +746,20 @@ function ML:FineGrid(numX, numY, length)
   return f
 end
 
+function ML:Demo()
+  local sum = 0
+  local num = 0
+  local before = self.drawn
+  for i = 60, 89 do
+    ML:FineGrid(i, i, 1)
+    sum = sum + 2 * ((i + 1) * (i + 1) + math.fmod(i, 2))
+    num = num + 1
+  end
+  local msg = self:format("created % (%, % total) textures across % frames", sum, self.drawn - before, self.drawn, num)
+  self:PrintDefault(msg)
+  return msg
+end
+
 -- Returns nY closest int in proportion to aspect ratio
 -- eg on a 16:9 screen passing in 16 will return 9
 -- also returns the not rounded one
@@ -749,7 +776,7 @@ function ML:PixelPerfectScale(f)
   local w, h = GetPhysicalScreenSize()
   -- use width as divisor as that's (typically) the largest numbers so better precision
   f:SetSize(w, h)
-  local p = f:GetParent()
+  local p = f:GetParent() or WorldFrame
   local sx = p:GetWidth() / w
   local sy = p:GetHeight() / h
   f:SetScale(sx)
@@ -773,7 +800,12 @@ function ML:PixelPerfectFrame(worldFrame)
     parent = WorldFrame
   end
   name = name .. "Frame"
-  if _G[name] then
+  return self:pixelPerfectFrame(name, parent)
+end
+
+function ML:pixelPerfectFrame(name, parent)
+  if name and _G[name] then
+    self:Debug(8, "ppf returning existing % whose parent is %", name, _G[name]:GetParent())
     return _G[name]
   end
   local f = CreateFrame("Frame", name, parent)
@@ -782,7 +814,7 @@ function ML:PixelPerfectFrame(worldFrame)
   f:Show()
   f:SetScript("OnEvent", self.OnPPEvent)
   f:RegisterEvent("DISPLAY_SIZE_CHANGED")
-  if not worldFrame then
+  if parent == nil or parent == WorldFrame then
     -- world ppf is based of fixed x768 parent so doesn't need UI scale changed events
     f:RegisterEvent("UI_SCALE_CHANGED")
   end
@@ -793,5 +825,33 @@ end
 -- C_Timer.After(1, function()
 --  ML:FineGrid(16, 8)
 -- end)
+---
+
+function ML:minimapButton(icon)
+  local b = CreateFrame("Button", nil, Minimap)
+  b:SetFrameStrata("MEDIUM")
+  b:SetSize(32, 32)
+  -- b:SetFrameLevel(8)
+  b:RegisterForClicks("AnyUp")
+  b:RegisterForDrag("LeftButton")
+  b:SetHighlightTexture(136477) -- interface/minimap/ui-minimap-zoombutton-highlight
+  local i = b:CreateTexture(nil, "ARTWORK")
+  i:SetSize(16, 16)
+  i:SetTexture(icon)
+  i:SetPoint("TOPLEFT", 7, -6)
+  b.icon = i
+  local bg = b:CreateTexture(nil, "BACKGROUND")
+  bg:SetSize(20, 20)
+  bg:SetTexture(136467) -- interface/minimap/ui-minimap-background
+  bg:SetPoint("TOPLEFT", 7, -5)
+  local o = b:CreateTexture(nil, "OVERLAY")
+  o:SetSize(53, 53)
+  o:SetTexture(136430) -- interface/minimap/minimap-trackingborder
+  o:SetPoint("TOPLEFT")
+  b:SetPoint("CENTER", -70, 25)
+  self:Debug("Created minimap button %", b)
+  return b
+end
+
 ---
 ML:Debug("MoLib UI file loaded")

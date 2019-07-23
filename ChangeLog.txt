@@ -4,18 +4,24 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.02.00 July 22nd 2019
+- Beat the 16k limit (well 16k at a time) for Textures/Lines count.
+- WIP mimimap button/icon/launcher
+
 v7.01.00 July 21st 2019
 - Allow single pixel for grid with length == 1 in :FineGrid()
 - :PixelPerfectScale() to update scale on PP frames and using it on change screen/scale events
 - :AspectRatio() calc and showing in DisplayInfo, always show a center cross even for even aspect ratios
 - added .defaultFont and .defaultTextColor properties to Frame() used by .addText()
 - :GetCVar for classic/bfa compat
+
 v7.00.01 July 21st 2019
 - Fix for modification for center cross (grid demo) was changing the whole line after it
 v7.00.00 July 21st 2019
 - Pixel perfect for real now - See PixelPerfectAlign demo addon
   :FineGrid() and :DisplayInfo()
 - new :addLine() :addBorder() :WipeFrame()
+
 v6.00.02 July 20th 2019
 - added :DebugStack(...) that prints message and stack trace
 v6.00.01 July 18th 2019

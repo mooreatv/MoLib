@@ -27,6 +27,7 @@ globals = {
     "wipe",
     "C_CVar",
     "GetCVar",
+    "Minimap",
 }
 max_line_length = 132
 ignore = {
