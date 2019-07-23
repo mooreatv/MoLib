@@ -5,7 +5,7 @@ https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua
 but also meant to be reused in other addons, not just mine.
 
 v7.02.00 July 22nd 2019
-- Beat the 16k limit (well 16k at a time) for Textures/Lines count.
+- Beat the 16k limit (well 16k at a time) for Textures/Lines count (use :Demo() to see and MoLib_PP_Demo:Hide()/Show() to toggle)
 - WIP mimimap button/icon/launcher
 
 v7.01.00 July 21st 2019

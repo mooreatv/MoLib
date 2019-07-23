@@ -751,7 +751,7 @@ function ML:Demo()
   local num = 0
   local before = self.drawn
   for i = 60, 89 do
-    ML:FineGrid(i, i, 1)
+    ML:FineGrid(i, i, 1, "MoLib_PP_Demo", WorldFrame)
     sum = sum + 2 * ((i + 1) * (i + 1) + math.fmod(i, 2))
     num = num + 1
   end
