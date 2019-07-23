@@ -6,7 +6,9 @@ but also meant to be reused in other addons, not just mine.
 
 v7.02.00 July 22nd 2019
 - Beat the 16k limit (well 16k at a time) for Textures/Lines count (use :Demo() to see and MoLib_PP_Demo:Hide()/Show() to toggle)
-- WIP mimimap button/icon/launcher
+- Expose grid demo colors .gold/.red
+- minimap button/icon/launcher, allow to restore saved position
+- move :ShowToolTip() from DynamicBoxer (to use in PPA)
 
 v7.01.00 July 21st 2019
 - Allow single pixel for grid with length == 1 in :FineGrid()

@@ -689,6 +689,9 @@ function ML:DrawCross(f, x, y, off1, off2, thickness, color)
   self.drawn = self.drawn + 2
 end
 
+ML.gold = {1, 0.8, 0.05, 0.5}
+ML.red = {1, .1, .1, .8}
+
 function ML:FineGrid(numX, numY, length, name, parent)
   local pp = self:pixelPerfectFrame(name, parent) -- potentially a shiny new frame
   local f = pp
@@ -708,8 +711,6 @@ function ML:FineGrid(numX, numY, length, name, parent)
   if length == 1 then
     off1 = 0.5
   end
-  local gold = {1, 0.8, 0.05, 0.5}
-  local red = {1, .1, .1, .8}
   local color
   local seenCenter = false
   self:Debug(1, "Making % x % (+1) crosses of length %", numX, numY, off1)
@@ -717,12 +718,12 @@ function ML:FineGrid(numX, numY, length, name, parent)
     for j = 0, numY do
       local x = math.floor(i * (w - 1) / numX) + 0.5
       local y = math.floor(j * (h - 1) / numY) + 0.5
-      color = gold
+      color = self.gold
       local off2 = 0
       if i == numX / 2 and j == numY / 2 then
         -- center, make a red side cross instead
         seenCenter = true
-        color = red
+        color = self.red
         if length ~= 1 then -- special case for 1 pixel in center
           off2 = off1 + 0.5
           x = x - 0.5
@@ -741,7 +742,7 @@ function ML:FineGrid(numX, numY, length, name, parent)
       y = y - 0.5
       off2 = 0
     end
-    self:DrawCross(f, x, y, off1, off2, th, red)
+    self:DrawCross(f, x, y, off1, off2, th, self.red)
   end
   return f
 end
@@ -827,30 +828,42 @@ end
 -- end)
 ---
 
-function ML:minimapButton(icon)
+function ML:minimapButton(pos)
   local b = CreateFrame("Button", nil, Minimap)
-  b:SetFrameStrata("MEDIUM")
+  b:SetFrameStrata("HIGH")
+  if pos then
+    local pt, xOff, yOff = unpack(pos)
+    b:SetPoint(pt, nil, pt, xOff, yOff) -- dragging gives position from nil (screen)
+  else
+    b:SetPoint("CENTER", -71, 37)
+  end
   b:SetSize(32, 32)
   -- b:SetFrameLevel(8)
   b:RegisterForClicks("AnyUp")
   b:RegisterForDrag("LeftButton")
   b:SetHighlightTexture(136477) -- interface/minimap/ui-minimap-zoombutton-highlight
-  local i = b:CreateTexture(nil, "ARTWORK")
-  i:SetSize(16, 16)
-  i:SetTexture(icon)
-  i:SetPoint("TOPLEFT", 7, -6)
-  b.icon = i
   local bg = b:CreateTexture(nil, "BACKGROUND")
-  bg:SetSize(20, 20)
+  bg:SetSize(24, 24)
   bg:SetTexture(136467) -- interface/minimap/ui-minimap-background
-  bg:SetPoint("TOPLEFT", 7, -5)
+  bg:SetPoint("CENTER", 1, 1)
   local o = b:CreateTexture(nil, "OVERLAY")
-  o:SetSize(53, 53)
+  o:SetSize(54, 54)
   o:SetTexture(136430) -- interface/minimap/minimap-trackingborder
   o:SetPoint("TOPLEFT")
-  b:SetPoint("CENTER", -70, 25)
   self:Debug("Created minimap button %", b)
   return b
+end
+
+-- initially from DynamicBoxer DBoxUI.lua
+
+function ML:ShowToolTip(f, anchor)
+  self:Debug("Show tool tip...")
+  if f.tooltipText then
+    GameTooltip:SetOwner(f, anchor or "ANCHOR_RIGHT")
+    GameTooltip:SetText(f.tooltipText, 0.9, 0.9, 0.9, 1, false)
+  else
+    self:Debug("No .tooltipText set on %", f:GetName())
+  end
 end
 
 ---

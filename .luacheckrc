@@ -28,6 +28,7 @@ globals = {
     "C_CVar",
     "GetCVar",
     "Minimap",
+    "GameTooltip",
 }
 max_line_length = 132
 ignore = {
