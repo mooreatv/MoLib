@@ -310,6 +310,17 @@ function ML:DebugEvCall(level, ...)
   self:Debug(level, "On ev " .. ML:Dump(...))
 end
 
+
+-- returns name, realm when passed a name-realm full name
+function ML:SplitFullName(fullName)
+  if type(fullName) ~= 'string' then
+    self:DebugStack("trying to split non string %", fullName)
+    return
+  end
+  return fullName:match("(.+)-(.+)")
+end
+
+
 -- Returns the normalized fully qualified name of the player
 function ML:GetMyFQN()
   local p, realm = UnitFullName("player")
