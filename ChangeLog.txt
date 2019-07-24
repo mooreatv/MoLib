@@ -9,7 +9,7 @@ v7.02.00 July 22nd 2019
 - Expose grid demo colors .gold/.red
 - minimap button/icon/launcher, allow to restore saved position
 - moved :ShowToolTip() and :SplitFullName() from DynamicBoxer (to use in PPA/by others)
-
+- new lisp like function :first() (car ...) :rest() (cdr ...) and :Map(fn, ...) to apply a function to each remaining argument.
 v7.01.00 July 21st 2019
 - Allow single pixel for grid with length == 1 in :FineGrid()
 - :PixelPerfectScale() to update scale on PP frames and using it on change screen/scale events

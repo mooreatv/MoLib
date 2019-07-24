@@ -310,6 +310,31 @@ function ML:DebugEvCall(level, ...)
   self:Debug(level, "On ev " .. ML:Dump(...))
 end
 
+--- Lisp inspired functions ---
+
+--- Returns the first argument (lisp's (car...)
+function ML:first(first) -- implied , ...
+  return first
+end
+--- Returns the remaining of the list after first argument (lisp's (cdr ...))
+function ML:rest(_first, ...)
+  return ...
+end
+--- Length of argument list
+function ML:numArgs(...)
+  return select("#", ...)
+end
+--- Map (in lisp term) applies function to each of the arguments
+--- works when passed fn, x, nil, y and doesn't stop at first nil
+function ML:Map(fn, ...)
+  if self:numArgs(...) == 0 then
+    -- end of recursion/we're done
+    return
+  end
+  return fn(self:first(...)), self:Map(fn, self:rest(...))
+end
+
+--- end of lisp --
 
 -- returns name, realm when passed a name-realm full name
 function ML:SplitFullName(fullName)
@@ -319,7 +344,6 @@ function ML:SplitFullName(fullName)
   end
   return fullName:match("(.+)-(.+)")
 end
-
 
 -- Returns the normalized fully qualified name of the player
 function ML:GetMyFQN()
