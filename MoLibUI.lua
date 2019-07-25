@@ -350,15 +350,19 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
  ]]
 
   -- adds a line of given thickness and color
-  f.addLine = function(self, thickness, r, g, b, a, layer)
+  f.addLine = function(self, thickness, r, g, b, a, layer, dontaddtochildren)
     local l = self:CreateLine(nil, layer or "BACKGROUND")
-    l:SetThickness(thickness or 1)
+    l.originalThickness = thickness or 1
+    l:SetThickness(l.originalThickness)
     l:SetColorTexture(r or 1, g or 1, b or 1, a or 1)
-    self:addMethods(l)
+    if not dontaddtochildren then
+      self:addMethods(l)
+    end
     return l
   end
 
-  -- adds a border
+  -- adds a border, thickness is in pixels (will be altered based on scale)
+  -- the border isn't added to regular children
   f.addBorder = function(self, padX, padY, thickness, r, g, b, alpha, layer)
     padX = padX or 0.5
     padY = padY or 0.5
@@ -368,20 +372,41 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     b = b or 1
     alpha = alpha or 1
     thickness = thickness or 1
-    -- set self.top create or update
-    local top = self:addLine(thickness, r, g, b, alpha, layer)
+    if not f.border then
+      f.border = {}
+    end
+    -- true argument to addLine == only store the line in the border list, so it doesn't get wiped/handled like regular children
+    local top = self:addLine(thickness, r, g, b, alpha, layer, true)
     top:SetStartPoint("TOPLEFT", padX, -padY)
     top:SetEndPoint("TOPRIGHT", -padX, -padY)
-    local left = self:addLine(thickness, r, g, b, alpha, layer)
+    top:SetIgnoreParentAlpha(true)
+    table.insert(f.border, top)
+    local left = self:addLine(thickness, r, g, b, alpha, layer, true)
     left:SetStartPoint("TOPLEFT", padX, -padY)
     left:SetEndPoint("BOTTOMLEFT", padX, padY)
-    local bottom = self:addLine(thickness, r, g, b, alpha, layer)
+    left:SetIgnoreParentAlpha(true)
+    table.insert(f.border, left)
+    local bottom = self:addLine(thickness, r, g, b, alpha, layer, true)
     bottom:SetStartPoint("BOTTOMLEFT", padX, padY)
     bottom:SetEndPoint("BOTTOMRIGHT", -padX, padY)
-    local right = self:addLine(thickness, r, g, b, alpha, layer)
+    bottom:SetIgnoreParentAlpha(true)
+    table.insert(f.border, bottom)
+    local right = self:addLine(thickness, r, g, b, alpha, layer, true)
     right:SetStartPoint("BOTTOMRIGHT", -padX, padY)
     right:SetEndPoint("TOPRIGHT", -padX, -padY)
+    right:SetIgnoreParentAlpha(true)
+    table.insert(f.border, right)
+    self:updateBorder()
+  end
 
+  f.updateBorder = function(self)
+    if not self.border or #self.border == 0 then
+      return
+    end
+    local s = self:GetScale()
+    for _, b in ipairs(self.border) do
+      b:SetThickness(b.originalThickness / s)
+    end
   end
 
   -- creates a texture so it can be placed
@@ -579,6 +604,8 @@ function ML:ChangeScale(f, newScale)
              y, ptMult)
   f:SetScale(newScale)
   f:SetPoint(pt1, parent, pt2, x * ptMult, y * ptMult)
+  f:updateBorder()
+  return oldScale
 end
 
 -- Frame to attach all textures for (async) preloading: TODO actually wait for them to be loaded

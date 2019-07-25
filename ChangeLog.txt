@@ -13,6 +13,8 @@ v7.03.01 July 25th 2019
 - Opsa fixed collision between "first" as init marker and the new :first() lisp function
 - Also fixed handling of UI_SCALED_CHANGED broken recently for UIParent based Pixel Perfect base frames.
 - added :DrawPixel and use that for 1 pixel crosses instead of 2 lines (!)
+- addBorder remembers the lines made in f.border and the desired pixel thickness and adjusts on rescale to keep it
+- addLine option, used by addBorder to not add the line to the handled children of the frame
 
 v7.02.00 July 22nd 2019
 - Beat the 16k limit (well 16k at a time) for Textures/Lines count (use :Demo() to see and MoLib_PP_Demo:Hide()/Show() to toggle)
