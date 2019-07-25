@@ -826,8 +826,8 @@ function ML:pixelPerfectFrame(name, parent)
   f:Show()
   f:SetScript("OnEvent", self.OnPPEvent)
   f:RegisterEvent("DISPLAY_SIZE_CHANGED")
-  if parent == nil or parent == WorldFrame then
-    -- world ppf is based of fixed x768 parent so doesn't need UI scale changed events
+  if parent ~= nil and parent ~= WorldFrame then
+    -- nil and world ppf are based of fixed x768 parent so doesn't need UI scale changed events
     f:RegisterEvent("UI_SCALE_CHANGED")
   end
   return f -- same as _G[name]
@@ -917,7 +917,10 @@ function ML:MakeMoveable(f, callback, dragButton)
   f.afterMoveCallBack = callback
   f:SetMovable(true)
   f:RegisterForDrag(dragButton or "LeftButton")
-  f:SetScript("OnDragStart", f.StartMoving)
+  f:SetScript("OnDragStart", function(w)
+    w:StartMoving()
+    w:SetUserPlaced(false) -- TODO consider using that mechanism to save our pos?
+  end)
   f:SetScript("OnDragStop", function(w, ...)
     w:StopMovingOrSizing(...)
     self:SavePosition(w) -- must be first to get the points relative to nearest screen point
@@ -929,6 +932,7 @@ function ML:SavePosition(f)
   -- we must extract the position before snap changes the anchor point,
   -- so we keep getting pos "closest to correct part of the screen"
   f:StartMoving()
+  f:SetUserPlaced(false)
   f:StopMovingOrSizing()
   local point, relTo, relativePoint, xOfs, yOfs = f:GetPoint()
   local scale = f:GetScale()

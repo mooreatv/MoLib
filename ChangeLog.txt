@@ -11,7 +11,8 @@ v7.03.00 July 24th 2019
     - use new :PixelPerfectSnap() for :Snap()
 - roundUp() works for negative numbers too (like point offsets from the top)
 - Opsa fixed collision between "first" as init marker and the new :first() lisp function
-   
+- Also fixed handling of UI_SCALED_CHANGED broken recently for UIParent based Pixel Perfect base frames.
+
 v7.02.00 July 22nd 2019
 - Beat the 16k limit (well 16k at a time) for Textures/Lines count (use :Demo() to see and MoLib_PP_Demo:Hide()/Show() to toggle)
 - Expose grid demo colors .gold/.red
