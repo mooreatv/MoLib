@@ -684,9 +684,24 @@ end
 
 ML.drawn = 0
 
+function ML:DrawPixel(f, x, y, color, layer)
+  local t = f:CreateTexture(nil, layer or "BACKGROUND")
+  x = math.floor(x)
+  y = math.floor(y)
+  t:SetSize(1, 1)
+  t:SetColorTexture(unpack(color))
+  t:SetPoint("BOTTOMLEFT", x, y)
+  self.drawn = self.drawn + 1
+  return t
+end
+
 -- Draws 2 line crossing in center x,y either vertical/horizontal if off2 is 0
 -- or diagonally if off2 is == off1
 function ML:DrawCross(f, x, y, off1, off2, thickness, color)
+  if off1 < 1 and thickness <= 1 then
+    ML:DrawPixel(f, x, y, color)
+    return
+  end
   local l = f:CreateLine(nil, "BACKGROUND")
   l:SetThickness(thickness)
   l:SetColorTexture(unpack(color))
@@ -762,9 +777,9 @@ function ML:Demo()
   local sum = 0
   local num = 0
   local before = self.drawn
-  for i = 60, 89 do
+  for i = 96, 126 do
     ML:FineGrid(i, i, 1, "MoLib_PP_Demo", WorldFrame)
-    sum = sum + 2 * ((i + 1) * (i + 1) + math.fmod(i, 2))
+    sum = sum + ((i + 1) * (i + 1) + math.fmod(i, 2))
     num = num + 1
   end
   local msg = self:format("created % (%, % total) textures across % frames", sum, self.drawn - before, self.drawn, num)

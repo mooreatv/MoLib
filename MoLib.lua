@@ -167,7 +167,7 @@ function ML:MoLibInit()
   return false -- so caller can continue with 1 time init
 end
 
--- Realm functions
+-- Realm functions (optional, if used it needs the auto-generated Realms.lua)
 
 function ML:InitRealms()
   if RealmIdsByName then
