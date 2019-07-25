@@ -16,10 +16,17 @@ function ML:round(x, precision)
   return i
 end
 
-function ML:roundUp(x, precision) -- for sizes, don't shrink but also... 0.9 because floating pt math
+-- for sizes, don't shrink but also... 0.9 because floating pt math
+-- also works symmetrically for negative numbers (ie round up -1.3 -> -2)
+function ML:roundUp(x, precision)
   precision = precision or 1
+  local sign = 1
+  if x < 0 then
+    sign = -1
+    x = -x
+  end
   local i, _f = math.modf(math.ceil(x / precision - 0.1)) * precision
-  return i
+  return sign * i
 end
 
 function ML:scale(x, s, precision)
@@ -34,7 +41,8 @@ end
 -- bottom right corner that it has on top left with its children objects.
 -- returns a new scale to potentially be used if not recalculating the bottom right margins
 function ML:SnapFrame(f)
-  local s = f:GetScale() -- assumes our parent is the PixelPerfectFrame so getrect coords * s are in pixels
+  return self:PixelPerfectSnap(f, 2, true) -- 2 so we get dividable by 2 dimensions, true = from top and not bottom corner
+  --[[   local s = f:GetScale() -- assumes our parent is the PixelPerfectFrame so getrect coords * s are in pixels
   local point, relTo, relativePoint, xOfs, yOfs = f:GetPoint()
   local x, y, w, h = f:GetRect()
   self:Debug(6, "Before: % % % %    % %   % %", x, y, w, h, point, relativePoint, xOfs, yOfs)
@@ -58,6 +66,7 @@ function ML:SnapFrame(f)
   f:SetPoint(point, relTo, relativePoint, xOfs + deltaX, yOfs + deltaY)
   self:Debug(5, "ns % : % % % % ( % % ): %", ns, x, y, nw, nh, deltaX, deltaY, f:GetScale())
   return f:GetScale() * ns
+ ]]
 end
 
 -- WARNING, Y axis is such as positive is down, unlike rest of the wow api which has + offset going up
@@ -351,14 +360,15 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
 
   -- adds a border
   f.addBorder = function(self, padX, padY, thickness, r, g, b, alpha, layer)
-    padX = padX or 0
-    padY = padY or 0
+    padX = padX or 0.5
+    padY = padY or 0.5
     layer = layer or "BACKGROUND"
     r = r or 1
     g = g or 1
     b = b or 1
     alpha = alpha or 1
     thickness = thickness or 1
+    -- set self.top create or update
     local top = self:addLine(thickness, r, g, b, alpha, layer)
     top:SetStartPoint("TOPLEFT", padX, -padY)
     top:SetEndPoint("TOPRIGHT", -padX, -padY)
@@ -371,6 +381,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     local right = self:addLine(thickness, r, g, b, alpha, layer)
     right:SetStartPoint("BOTTOMRIGHT", -padX, padY)
     right:SetEndPoint("TOPRIGHT", -padX, -padY)
+
   end
 
   -- creates a texture so it can be placed
@@ -822,6 +833,41 @@ function ML:pixelPerfectFrame(name, parent)
   return f -- same as _G[name]
 end
 
+-- Moves a frame to have pixel perfect alignment. Doesn't fix the scale, only the boundaries
+function ML:PixelPerfectSnap(f, resolution, top)
+  resolution = resolution or 1 -- should be 2, 1 or 0.5
+  local fs = f:GetEffectiveScale()
+  local ps = self:PixelPerfectFrame():GetEffectiveScale()
+  -- get the rect in pixel perfect coordinates
+  local ppx, ppy, ppw, pph = self:Map(function(v)
+    return v * fs / ps
+  end, f:GetRect())
+  local point1 = "BOTTOMLEFT" -- natural point with 0,0 bottom left
+  if top then
+    -- switch which point is calculated/rounded
+    ppy = ppy + pph
+    point1 = "TOPLEFT"
+  end
+  -- round the bottom corner to nearest 1/2 pixel
+  ppx = self:round(ppx, resolution)
+  ppy = self:round(ppy, resolution)
+  -- round the width/heigh up to 1/2 pixel dimension
+  -- (not that 0.55 still rounds "up" to 0.5 and 0.56 is the first to round to 1.0)
+  ppw = self:roundUp(ppw, resolution)
+  pph = self:roundUp(pph, resolution)
+  -- change the frame
+  self:Debug("About to change from x % y % w % h %", f:GetRect())
+  self:Debug("ps % fs % to x % y % w % h % -> scaled back to wf x % y % - new w % h %", ps, fs, ppx, ppy, ppw, pph,
+             ppx * ps, ppy * ps, ppw * ps, pph * ps)
+  self:Debug("size before % %", f:GetSize())
+  f:ClearAllPoints()
+  local mult = ps / fs -- put back in screen+frame's scale/coordinate
+  f:SetPoint(point1, nil, "BOTTOMLEFT", ppx * mult, ppy * mult)
+  f:SetSize(ppw * mult, pph * mult)
+  -- f:SetPoint(point2, nil, "BOTTOMLEFT", (ppx + ppw) * mult, (ppy + pph) * mult)
+  self:Debug("scale after %, size after % %", f:GetScale(), f:GetSize())
+  return ps, ppw, pph
+end
 ---
 -- C_Timer.After(1, function()
 --  ML:FineGrid(16, 8)
@@ -864,6 +910,43 @@ function ML:ShowToolTip(f, anchor)
   else
     self:Debug("No .tooltipText set on %", f:GetName())
   end
+end
+
+-- callback will be called with (f, pos, scale)
+function ML:MakeMoveable(f, callback, dragButton)
+  f.afterMoveCallBack = callback
+  f:SetMovable(true)
+  f:RegisterForDrag(dragButton or "LeftButton")
+  f:SetScript("OnDragStart", f.StartMoving)
+  f:SetScript("OnDragStop", function(w, ...)
+    w:StopMovingOrSizing(...)
+    self:SavePosition(w) -- must be first to get the points relative to nearest screen point
+    self:PixelPerfectSnap(w) -- then snap for perfect pixels
+  end)
+end
+
+function ML:SavePosition(f)
+  -- we must extract the position before snap changes the anchor point,
+  -- so we keep getting pos "closest to correct part of the screen"
+  local point, relTo, relativePoint, xOfs, yOfs = f:GetPoint()
+  local scale = f:GetScale()
+  self:Debug("Stopped moving/scaling widget % % % % relative to % % - scale %", point, relativePoint, xOfs, yOfs, relTo,
+             relTo and relTo:GetName(), scale)
+  local pos = {point, xOfs, yOfs} -- relativePoint seems to always be same as point, when called at the right time
+  if f.afterMoveCallBack then
+    f:afterMoveCallBack(pos, scale)
+  else
+    self:Debug("No after move callback for %", f)
+  end
+end
+
+function ML:RestorePosition(f, pos, scale)
+  if scale then
+    f:SetScale(scale)
+  end
+  f:ClearAllPoints()
+  f:SetPoint(unpack(pos))
+  f:Snap()
 end
 
 ---

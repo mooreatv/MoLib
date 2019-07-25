@@ -4,6 +4,14 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.03.00 July 24th 2019
+- Moved more code from DynamicBoxer to share with (my and other's) addons:
+    - new :MakeMoveable() to add dragging to a frame, with callback at the end to :SavePosition()
+    - new :RestorePosition() to call with what is saved by the MakeMoveable cb and SavePosition()
+    - use new :PixelPerfectSnap() for :Snap()
+- roundUp() works for negative numbers too (like point offsets from the top)
+- Opsa fixed collision between "first" as init marker and the new :first() lisp function
+   
 v7.02.00 July 22nd 2019
 - Beat the 16k limit (well 16k at a time) for Textures/Lines count (use :Demo() to see and MoLib_PP_Demo:Hide()/Show() to toggle)
 - Expose grid demo colors .gold/.red

@@ -152,16 +152,16 @@ function ML:PrintInfo(...)
   ML:Print(ML:format(...), .6, .9, 1)
 end
 
-ML.first = 1
+ML.initNotDone = 1
 ML.manifestVersion = GetAddOnMetadata(addon, "Version")
 local globe = "MooreaTvLibrary"
 
 -- Returns 1 if already done; must be called with : (as method, to access state)
 function ML:MoLibInit()
-  if not (self.first == 1) then
+  if not (self.initNotDone == 1) then
     return true
   end
-  self.first = 0
+  self.initNotDone = 0
   local version = "(" .. addon .. " / " .. self.name .. " " .. ML.manifestVersion .. " / " .. _G[globe] .. ")"
   ML:Print("MoLib embedded in " .. version)
   return false -- so caller can continue with 1 time init
