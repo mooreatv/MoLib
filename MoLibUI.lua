@@ -928,6 +928,8 @@ end
 function ML:SavePosition(f)
   -- we must extract the position before snap changes the anchor point,
   -- so we keep getting pos "closest to correct part of the screen"
+  f:StartMoving()
+  f:StopMovingOrSizing()
   local point, relTo, relativePoint, xOfs, yOfs = f:GetPoint()
   local scale = f:GetScale()
   self:Debug("Stopped moving/scaling widget % % % % relative to % % - scale %", point, relativePoint, xOfs, yOfs, relTo,
@@ -946,7 +948,7 @@ function ML:RestorePosition(f, pos, scale)
   end
   f:ClearAllPoints()
   f:SetPoint(unpack(pos))
-  f:Snap()
+  self:SnapFrame(f)
 end
 
 ---
