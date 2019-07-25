@@ -943,12 +943,19 @@ function ML:SavePosition(f)
 end
 
 function ML:RestorePosition(f, pos, scale)
+  self:Debug("Restoring % %", pos, scale)
   if scale then
     f:SetScale(scale)
   end
   f:ClearAllPoints()
   f:SetPoint(unpack(pos))
-  self:SnapFrame(f)
+  -- if our widget we use the widget function, otherwise the generic snap
+  -- todo: why is the outcome different for dbox ?
+  if f.Snap then
+    f:Snap()
+  else
+    self:SnapFrame(f)
+  end
 end
 
 ---
