@@ -4,7 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
-v7.03.01 July 25th 2019
+v7.03.02 July 25th 2019 (matches ppa v1.04.00)
+- Added :GetCursorCoordinates() returning (pixelX, pixelY, uicoordX, uicoordY) for the cursor
+v7.03.01 July 25th 2019 (matches dbox v2.01.00)
 - Moved more code from DynamicBoxer to share with (my and other's) addons:
     - new :MakeMoveable() to add dragging to a frame, with callback at the end to :SavePosition()
     - new :RestorePosition() to call with what is saved by the MakeMoveable cb and SavePosition()

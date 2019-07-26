@@ -74,6 +74,7 @@ end
 
 function ML.Frame(addon, name, global) -- to not shadow self below but really call with Addon:Frame(name)
   local f = CreateFrame("Frame", global, addon:PixelPerfectFrame())
+  f:SetSize(1, 1) -- need a starting size for most operations
   if addon.debug and addon.debug >= 8 then
     addon:Debug(8, "Debug level 8 is on, putting debug background on frame %", name)
     f.bg = f:CreateTexture(nil, "BACKGROUND")
@@ -679,7 +680,6 @@ function ML:DisplayInfo(x, y, scale)
   f.defaultFont = "Game13FontShadow"
   f:SetFrameStrata("FULLSCREEN")
   f:SetPoint("CENTER", x, -y)
-  f:SetSize(1, 1)
   local p = f:GetParent()
   local ps = 1
   if p then
@@ -1002,6 +1002,16 @@ function ML:RestorePosition(f, pos, scale)
   else
     self:SnapFrame(f)
   end
+end
+
+-- Returns coordinates (pixelX, pixelY, uicoordX, uicoordY)
+-- in actual pixels and in UIParent's coordinates
+function ML:GetCursorCoordinates()
+  local pw = GetPhysicalScreenSize()
+  local sw = WorldFrame:GetWidth() / pw
+  local uis = UIParent:GetScale()
+  local x, y = GetCursorPosition()
+  return ML:round(x / sw), ML:round(y / sw), x / uis, y / uis
 end
 
 ---
