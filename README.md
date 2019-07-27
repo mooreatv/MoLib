@@ -23,3 +23,5 @@ Other functions include
 - ...more / to be updated but in meantime see the lua files...
 
 See also [ChangeLog.txt](ChangeLog.txt).
+
+MoLib library sources are at https://github.com/mooreatv/MoLib

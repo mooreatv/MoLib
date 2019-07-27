@@ -3,6 +3,8 @@
   Covered by the GNU General Public License version 3 (GPLv3)
   NO WARRANTY
   (contact the author if you need a different license)
+
+  MoLib library sources are at https://github.com/mooreatv/MoLib
 ]] --
 --
 -- name of the addon embedding us, our empty default anonymous ns (not used)
