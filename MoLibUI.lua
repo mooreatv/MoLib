@@ -957,6 +957,7 @@ end
 -- callback will be called with (f, pos, scale)
 function ML:MakeMoveable(f, callback, dragButton)
   f.afterMoveCallBack = callback
+  f:SetClampedToScreen(true)
   f:SetMovable(true)
   f:RegisterForDrag(dragButton or "LeftButton")
   f:SetScript("OnDragStart", function(w)
