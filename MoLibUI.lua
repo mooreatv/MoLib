@@ -124,7 +124,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
         addon:Debug(3, "changing corners % %", x, y)
         -- fontstring objects, possibly got wrapped to more than 1 line, we always use as 1 line
         x = l + v:GetStringWidth() + (v.extraWidth or 0) + 0.5
-        --y = t - v:GetStringHeight()
+        -- y = t - v:GetStringHeight()
         addon:Debug(3, "to % % because of % x %", x, y, v:GetStringWidth(), v:GetStringHeight())
         -- v:SetHeight(v:GetStringHeight())
       end
@@ -930,7 +930,7 @@ function ML:minimapButton(pos)
   b:SetFrameStrata("HIGH")
   if pos then
     local pt, xOff, yOff = unpack(pos)
-    b:SetPoint(pt, nil, pt, xOff, yOff) -- dragging gives position from nil (screen)
+    b:SetPoint("TOPLEFT", nil, pt, xOff, yOff) -- dragging gives position from nil (screen)
   else
     b:SetPoint("CENTER", -71, 37)
   end
@@ -980,17 +980,32 @@ function ML:MakeMoveable(f, callback, dragButton)
   end)
 end
 
+-- doesn't move a frame, just changes it's anchor to top left (from bottom left coord or whichever the anchor was)
+function ML:SetTopLeft(f)
+  local x, y, w, h = f:GetRect()
+  f:ClearAllPoints()
+  f:SetPoint("TOPLEFT", nil, "BOTTOMLEFT", x, y + h)
+  f:SetSize(w, h)
+end
+
 function ML:SavePosition(f)
-  -- we must extract the position before snap changes the anchor point,
-  -- so we keep getting pos "closest to correct part of the screen"
+--[[
+  -- we used to extract the position before snap changes the anchor point,
+  -- to get pos "closest to correct part of the screen" but that doesn't work with
+  -- restore of widgets that don't yet have their full height like the dbox status
+  -- so we just use screen coordinates and rely on SetClampedToScreen to not loose
+  -- the window (doesn't work as well when resizing though)
   f:StartMoving()
   f:SetUserPlaced(false)
   f:StopMovingOrSizing()
+]]
+  -- change point to TOPLEFT
+  self:SetTopLeft(f)
   local point, relTo, relativePoint, xOfs, yOfs = f:GetPoint()
   local scale = f:GetScale()
   self:Debug("Stopped moving/scaling widget % % % % relative to % % - scale %", point, relativePoint, xOfs, yOfs, relTo,
              relTo and relTo:GetName(), scale)
-  local pos = {point, xOfs, yOfs} -- relativePoint seems to always be same as point, when called at the right time
+  local pos = {relativePoint, xOfs, yOfs} -- relativePoint seems to always be same as point, when called at the right time
   if f.afterMoveCallBack then
     f:afterMoveCallBack(pos, scale)
   else
@@ -1004,7 +1019,7 @@ function ML:RestorePosition(f, pos, scale)
     f:SetScale(scale)
   end
   f:ClearAllPoints()
-  f:SetPoint(unpack(pos))
+  f:SetPoint("TOPLEFT", nil, unpack(pos))
   -- if our widget we use the widget function, otherwise the generic snap
   -- todo: why is the outcome different for dbox ?
   if f.Snap then

@@ -8,6 +8,8 @@ v7.03.03 July 27th 2019
 - added :SetClampedToScreen(true) (Issue #11)
 - Workaround/Fix for https://github.com/mooreatv/DynamicBoxer/issues/65
 - Handle right aligned text better using 2 snap and the fontstring un wrapped width
+- added :SetTopLeft and use it to Fix https://github.com/mooreatv/DynamicBoxer/issues/64
+  by forcing TOPLEFT anchor for save/restore (as the widgets grow right and down, not up)
 
 v7.03.02 July 25th 2019 (matches ppa v1.04.00)
 - Added :GetCursorCoordinates() returning (pixelX, pixelY, uicoordX, uicoordY) for the cursor
