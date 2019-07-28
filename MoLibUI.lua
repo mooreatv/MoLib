@@ -136,7 +136,8 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     local x = self:GetLeft()
     local y = self:GetTop()
     if not x or not y then
-      addon:Debug("Frame has no left or top! % %", x, y)
+      addon:Warning("Frame has no left or top! % %", x, y)
+      return
     end
     local w = mx - l
     local h = t - my
