@@ -116,12 +116,20 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     local maxY = 0
     local numChildren = 0
     for _, v in ipairs(self.children) do
-      local x = v:GetRight()
-      local y = v:GetBottom()
-      local l = v:GetLeft()
-      local t = v:GetTop()
-      maxX = math.max(maxX, x or 0)
-      minX = math.min(minX, l or 0)
+      local x = v:GetRight() or 0
+      local l = v:GetLeft() or 0
+      local y = v:GetBottom() or 0
+      local t = v:GetTop() or 0
+      if v.GetStringWidth then
+        addon:Debug(3, "changing corners % %", x, y)
+        -- fontstring objects, possibly got wrapped to more than 1 line, we always use as 1 line
+        x = l + v:GetStringWidth() + (v.extraWidth or 0) + 0.5
+        --y = t - v:GetStringHeight()
+        addon:Debug(3, "to % % because of % x %", x, y, v:GetStringWidth(), v:GetStringHeight())
+        -- v:SetHeight(v:GetStringHeight())
+      end
+      maxX = math.max(maxX, x)
+      minX = math.min(minX, l)
       maxY = math.max(maxY, t or 0)
       minY = math.min(minY, y or 0)
       numChildren = numChildren + 1
@@ -991,7 +999,7 @@ function ML:SavePosition(f)
 end
 
 function ML:RestorePosition(f, pos, scale)
-  self:Debug("Restoring % %", pos, scale)
+  self:Debug("# Restoring % %", pos, scale)
   if scale then
     f:SetScale(scale)
   end
@@ -1001,6 +1009,7 @@ function ML:RestorePosition(f, pos, scale)
   -- todo: why is the outcome different for dbox ?
   if f.Snap then
     f:Snap()
+    f:Snap() -- twice because of right alignment
   else
     self:SnapFrame(f)
   end
