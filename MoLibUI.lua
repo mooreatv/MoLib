@@ -520,6 +520,35 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     return c
   end
 
+  f.addEditBox = function(self)
+    local e = CreateFrame("EditBox", nil, self)
+    e:SetFontObject(GameFontNormal)
+    if self.defaultTextColor then
+      e:SetTextColor(unpack(self.defaultTextColor))
+    end
+    self:addMethods(e)
+    return e
+  end
+
+  f.addScrollEditFrame = function(self, width, height)
+    width = width or 400
+    height = height or 300
+    local s = CreateFrame("ScrollFrame", nil, self, "UIPanelScrollFrameTemplate")
+    s:SetSize(width, height)
+    local e = CreateFrame("EditBox", nil, s)
+    e:SetWidth(width) -- scroll bar is extra/outside
+    e:SetFontObject(ChatFontNormal)
+    if self.defaultTextColor then
+      e:SetTextColor(unpack(self.defaultTextColor))
+    end
+    e:SetMultiLine(true)
+    e:SetMaxLetters(65535)
+    s:SetScrollChild(e)
+    s.editBox = e
+    self:addMethods(s)
+    return s
+  end
+
   local function dropdownInit(d)
     addon:Debug(5, "drop down init called initDone=%", d.initDone)
     if d.initDone then
@@ -955,6 +984,7 @@ end
 -- callback will be called with (f, pos, scale)
 function ML:MakeMoveable(f, callback, dragButton)
   f.afterMoveCallBack = callback
+  f:EnableMouse(true) -- hard to drag without clicking
   f:SetClampedToScreen(true)
   f:SetMovable(true)
   f:RegisterForDrag(dragButton or "LeftButton")
@@ -998,7 +1028,7 @@ function ML:SavePosition(f)
   if f.afterMoveCallBack then
     f:afterMoveCallBack(pos, scale)
   else
-    self:Debug(3, "No after move callback for %", f)
+    self:Debug(3, "No after move callback for %", f:GetName())
   end
 end
 
@@ -1026,6 +1056,69 @@ function ML:GetCursorCoordinates()
   local uis = UIParent:GetScale()
   local x, y = GetCursorPosition()
   return ML:round(x / sw), ML:round(y / sw), x / uis, y / uis
+end
+
+-- sets an editbox such as the text can't be changed, only copied
+function ML:SetReadOnly(e, text)
+  local f = function(w)
+    w:SetText(text)
+    w:SetCursorPosition(0)
+    w:HighlightText()
+    w:SetCursorPosition(0)
+  end
+  f(e)
+  e:SetFocus()
+  e:SetScript("OnTextChanged", f)
+  e:SetScript("OnMouseUp", f)
+end
+
+--- (De)Bug report frame
+function ML:BugReport(subtitle, text)
+  local f = self.bugReportFrame
+  local title = "Bug Report for " .. addonName
+  if not f then
+    f = self:Frame()
+    f.defaultFont = ChatFontNormal
+    self.bugReportFrame = f
+    self:MakeMoveable(f)
+    local t = f:CreateTexture()
+    t:SetAllPoints()
+    t:SetColorTexture(.8, .1, .1, .8)
+    f.title = f:addText(title, "Fancy22Font"):Place()
+    f.defaultTextColor = {.9, .9, .9, .9}
+    f.subTitle = f:addText(subtitle):Place()
+    f.instructions = f:addText("Copy (Ctrl-C) and Paste in the report, adding any additional context\n" ..
+                                 "and a screenshot if possible and then close this"):Place()
+    local _, h = ChatFontNormal:GetFont()
+    -- a bit of hack because the scrollbars are not counted in height/width so we set our width
+    -- to less than the above wide text
+    f.seb = f:addScrollEditFrame(f.instructions:GetStringWidth() - 16, h * 8) -- 8 lines
+    f.seb:Place()
+    local tt = f.seb:CreateTexture()
+    tt:SetAllPoints()
+    tt:SetColorTexture(0, 0, 0, .3)
+    local eb = f.seb.editBox
+    eb:SetTextColor(.3, .3, .3, .8)
+    f:addButton("Take a Screenshot", "Make a screenshot, find it in your\n" ..
+                  "Wow Screenshots folder and paste online\nalong the text copied above.", function()
+      Screenshot()
+    end):Place()
+    f:addButton("Close", "Copy paste and submit the above,\nthen close this.", function()
+      f:Hide()
+    end):PlaceRight(180)
+    f:addBorder()
+    f:SetPoint("TOP", 0, -120)
+  else
+    f.title:SetText(title)
+    f.subTitle:SetText(subtitle)
+  end
+  local eb = f.seb.editBox
+  self:SetReadOnly(eb,
+                   title .. " " .. self.manifestVersion .. "\n" .. date("%Y/%m/%d %T %z") .. " " .. text ..
+                     "\nSession messages log:\n" .. table.concat(self.sessionLog, "\n"))
+  f:Show()
+  f:Snap()
+  return f
 end
 
 ---

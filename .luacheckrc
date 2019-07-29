@@ -30,6 +30,9 @@ globals = {
     "Minimap",
     "GameTooltip",
     "GetCursorPosition",
+    "ChatFontNormal",
+    "Screenshot",
+    "date",
 }
 max_line_length = 132
 ignore = {

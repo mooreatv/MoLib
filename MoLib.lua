@@ -26,7 +26,7 @@ ML.Factions = {"Horde", "Alliance", "Neutral"}
 function ML:deepmerge(dstTable, dstKey, src)
   if type(src) ~= 'table' then
     if not dstKey then
-      self:ErrorAndThrow("can't call deepmerge on non nil key % with src not a table: %", dstKey, src)
+      self:ErrorAndThrow("can't call deepmerge on nil key % with src not a table: %", dstKey, src)
     end
     dstTable[dstKey] = src
     return
@@ -59,15 +59,18 @@ end
 function ML:MoLibInstallInto(namespace, name)
   ML:deepmerge(namespace, nil, ML)
   namespace.name = name
-  ML:Print("MoLib aliased into " .. name)
+  namespace:Print("MoLib aliased into " .. name)
 end
 
 -- to force debug from empty state, uncomment: (otherwise "/<addon> debug on" to turn on later
 -- and /reload to get it save/start over)
 -- ML.debug = 1
 
-function ML:Print(...)
-  DEFAULT_CHAT_FRAME:AddMessage(...)
+ML.sessionLog = {}
+
+function ML:Print(msg, ...)
+  DEFAULT_CHAT_FRAME:AddMessage(msg, ...)
+  table.insert(self.sessionLog, msg)
 end
 
 -- like format except simpler... just use % to replace a value that will be tostring()'ed
@@ -114,25 +117,26 @@ end
 
 function ML:debugPrint(level, ...)
   local ts = string.format("%05.2f ", (100 * select(2, math.modf(GetTime() / 100)) + 0.5))
-  ML:Print(ts .. self.name .. " DBG[" .. tostring(level) .. "]: " .. ML:format(...), .1, .65, .1)
+  self:Print(ts .. self.name .. " DBG[" .. tostring(level) .. "]: " .. ML:format(...), .1, .65, .1)
 end
 
 function ML:Error(...)
-  ML:Print(self.name .. " Error: " .. ML:format(...), 0.9, .1, .1)
+  self:Print(self.name .. " Error: " .. ML:format(...), 0.9, .1, .1)
 end
 
 function ML:ErrorAndThrow(...)
   local msg = self.name .. " Error: " .. ML:format(...)
-  ML:Print(msg, 0.9, .1, .1)
+  self:Print(msg, 0.9, .1, .1)
+  self:BugReport("MoLib detected bug, email moorea@ymail.com", msg .. "\nStack:\n" .. debugstack(2))
   error(msg)
 end
 
 function ML:Warning(...)
-  ML:Print(self.name .. " Warning: " .. ML:format(...), 0.96, 0.63, 0.26)
+  self:Print(self.name .. " Warning: " .. ML:format(...), 0.96, 0.63, 0.26)
 end
 
 function ML:DebugStack(...)
-  ML:Print(self.name .. " Debug: " .. ML:format(...) .. ". Stack:\n" .. debugstack(2, 4, 3), 0.96, 0.63, 0.26)
+  self:Print(self.name .. " Debug: " .. ML:format(...) .. ". Stack:\n" .. debugstack(2, 4, 3), 0.96, 0.63, 0.26)
 end
 
 -- color translations
@@ -146,12 +150,12 @@ end
 
 -- default printing (white) with our formatting
 function ML:PrintDefault(...)
-  ML:Print(ML:format(...))
+  self:Print(ML:format(...))
 end
 
 -- info printing (blue-ish) with our formatting, for more important messages, not warning/errors
 function ML:PrintInfo(...)
-  ML:Print(ML:format(...), .6, .9, 1)
+  self:Print(ML:format(...), .6, .9, 1)
 end
 
 ML.initNotDone = 1
@@ -165,7 +169,7 @@ function ML:MoLibInit()
   end
   self.initNotDone = 0
   local version = "(" .. addon .. " / " .. self.name .. " " .. ML.manifestVersion .. " / " .. _G[globe] .. ")"
-  ML:Print("MoLib embedded in " .. version)
+  self:Print("MoLib embedded in " .. version)
   return false -- so caller can continue with 1 time init
 end
 
