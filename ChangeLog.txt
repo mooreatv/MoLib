@@ -4,6 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.03.04 July 28th 2019
+- Fix for "..." of strings at some scale and removed need for double snap
+  also avoids shimmering when stop scaling (for DynamicBoxer status frame)
 v7.03.03 July 28th 2019
 - added :SetClampedToScreen(true) (Issue #11)
 - Workaround/Fix for https://github.com/mooreatv/DynamicBoxer/issues/65

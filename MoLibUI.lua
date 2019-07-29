@@ -42,31 +42,6 @@ end
 -- returns a new scale to potentially be used if not recalculating the bottom right margins
 function ML:SnapFrame(f)
   return self:PixelPerfectSnap(f, 2, true) -- 2 so we get dividable by 2 dimensions, true = from top and not bottom corner
-  --[[   local s = f:GetScale() -- assumes our parent is the PixelPerfectFrame so getrect coords * s are in pixels
-  local point, relTo, relativePoint, xOfs, yOfs = f:GetPoint()
-  local x, y, w, h = f:GetRect()
-  self:Debug(6, "Before: % % % %    % %   % %", x, y, w, h, point, relativePoint, xOfs, yOfs)
-  local nw = self:scaleUp(w, s, 2)
-  local nh = self:scaleUp(h, s, 2)
-  self:Debug(6, "new WxH: % %", nw, nh)
-  if self.NO_SNAPSCALE then
-    self:DebugStack("NO_SNAPSCALE: Not SNAPing tp w % x h %", nw, nh)
-    return
-  end
-  f:SetWidth(nw)
-  f:SetHeight(nh)
-  x, y, w, h = f:GetRect()
-  self:Debug(6, "Mid: % % % % : %", x, y, w, h, f:GetScale())
-  f:ClearAllPoints()
-  local nx = self:scale(x, s)
-  local ny = self:scale(y, s)
-  local ns = nh / h
-  local deltaX = nx - x
-  local deltaY = ny - y
-  f:SetPoint(point, relTo, relativePoint, xOfs + deltaX, yOfs + deltaY)
-  self:Debug(5, "ns % : % % % % ( % % ): %", ns, x, y, nw, nh, deltaX, deltaY, f:GetScale())
-  return f:GetScale() * ns
- ]]
 end
 
 -- WARNING, Y axis is such as positive is down, unlike rest of the wow api which has + offset going up
@@ -88,8 +63,8 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
   f.numObjects = 0
 
   f.Snap = function(w)
-    addon:SnapFrame(w)
     w:setSizeToChildren()
+    addon:SnapFrame(w)
   end
 
   f.Scale = function(w, ...)
@@ -120,13 +95,19 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
       local l = v:GetLeft() or 0
       local y = v:GetBottom() or 0
       local t = v:GetTop() or 0
-      if v.GetStringWidth then
-        addon:Debug(3, "changing corners % %", x, y)
-        -- fontstring objects, possibly got wrapped to more than 1 line, we always use as 1 line
-        x = l + v:GetStringWidth() + (v.extraWidth or 0) + 0.5
-        -- y = t - v:GetStringHeight()
-        addon:Debug(3, "to % % because of % x %", x, y, v:GetStringWidth(), v:GetStringHeight())
-        -- v:SetHeight(v:GetStringHeight())
+      if v.GetStringWidth and v:GetText() then
+        -- recover from the ... truncation
+        local curW = ML:round(x - l, 0.001)
+        local extra = v.extraWidth or 0
+        local strWextra = ML:round(v:GetStringWidth() + extra, 0.001)
+        if strWextra ~= curW then
+          local nx = l + v:GetStringWidth() + extra -- not rounding here
+          addon:Debug(4, "changing font coords for % % to % because of str width % vs cur w %", v:GetText(), x, nx,
+                      strWextra, curW)
+          x = nx
+        else
+          addon:Debug(8, "not changing % w % strW %", v:GetText(), curW, strWextra)
+        end
       end
       maxX = math.max(maxX, x)
       minX = math.min(minX, l)
@@ -151,13 +132,15 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     local h = t - my
     local paddingX = 2 * (l - x)
     local paddingY = 2 * (y - t)
-    addon:Debug(7, "Calculated bottom right x % y % -> w % h % padding % x %", x, y, w, h, paddingX, paddingY)
+    addon:Debug(4, "Calculated bottom right x % y % -> w % h % padding % x %", x, y, w, h, paddingX, paddingY)
     self:SetWidth(w + paddingX)
     self:SetHeight(h + paddingY)
   end
 
   -- Scales a frame so the children objects fill up the frame in width or height
-  -- (aspect ratio isn't changed) while also keeping the snap to pixel effect of SnapFrame
+  -- (aspect ratio isn't changed)
+  -- This is used for the dbox full screen splash for instance.
+  -- TODO: combine scale change with pixel perfect to do change directly right
   f.setScale = function(self, overridePadding)
     local mx, my, l, t = self:calcCorners()
     local x = self:GetLeft()
@@ -325,8 +308,8 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
       widget.DoEnable = widget.Enable
     end
     widget.Snap = function(w)
-      addon:SnapFrame(w)
       w:setSizeToChildren()
+      addon:SnapFrame(w)
     end
     table.insert(self.children, widget) -- keep track of children objects
   end
@@ -436,7 +419,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
       addon:Warning("Texture % not loaded yet... use ML:PreloadTextures()...", baseId)
       base:SetSize(64, 64)
     end
-    addon:Debug("Setting base texture % - height = %", baseId, base:GetHeight())
+    addon:Debug(1, "Setting base texture % - height = %", baseId, base:GetHeight())
     local glow = self:CreateTexture(nil, layer or "BACKGROUND")
     glow:SetTexture(glowId)
     glow:SetBlendMode("ADD")
@@ -538,11 +521,11 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
   end
 
   local function dropdownInit(d)
-    addon:Debug("drop down init called initDone=%", d.initDone)
+    addon:Debug(5, "drop down init called initDone=%", d.initDone)
     if d.initDone then
       return
     end
-    addon:Debug("drop down first time init called")
+    addon:Debug(5, "drop down first time init called")
     d.initDone = true
     UIDropDownMenu_JustifyText(d, "CENTER")
     UIDropDownMenu_Initialize(d, function(_w, _level, _menuList)
@@ -566,7 +549,7 @@ function ML.Frame(addon, name, global) -- to not shadow self below but really ca
     UIDropDownMenu_SetText(d, d.text)
     -- Uh? one global for all dropdowns?? also possible taint issues
     local width = _G["DropDownList1"] and _G["DropDownList1"].maxWidth or 0
-    addon:Debug("Found dropdown width to be %", width)
+    addon:Debug(4, "Found dropdown width to be %", width)
     if width > 0 then
       UIDropDownMenu_SetWidth(d, width)
     end
@@ -615,6 +598,7 @@ function ML:ChangeScale(f, newScale)
   f:SetScale(newScale)
   f:SetPoint(pt1, parent, pt2, x * ptMult, y * ptMult)
   f:updateBorder()
+  f:Snap()
   return oldScale
 end
 
@@ -712,7 +696,7 @@ function ML:DisplayInfo(x, y, scale)
     :Place()
  ]]
   f:Show()
-  self:Debug("done with % % %", x, y, scale)
+  self:Debug(1, "Info display done with % % %", x, y, scale)
   return f
 end
 
@@ -885,7 +869,9 @@ function ML:pixelPerfectFrame(name, parent)
 end
 
 -- Moves a frame to have pixel perfect alignment. Doesn't fix the scale, only the boundaries
-function ML:PixelPerfectSnap(f, resolution, top)
+-- if dontChangeSize is true it will return instead of setting the size
+-- returns the size with UI scale, the scale and the pixel size
+function ML:PixelPerfectSnap(f, resolution, top, dontChangeSize)
   resolution = resolution or 1 -- should be 2, 1 or 0.5
   local fs = f:GetEffectiveScale()
   local ps = self:PixelPerfectFrame():GetEffectiveScale()
@@ -907,17 +893,20 @@ function ML:PixelPerfectSnap(f, resolution, top)
   ppw = self:roundUp(ppw, resolution)
   pph = self:roundUp(pph, resolution)
   -- change the frame
-  self:Debug("About to change from x % y % w % h %", f:GetRect())
-  self:Debug("ps % fs % to x % y % w % h % -> scaled back to wf x % y % - new w % h %", ps, fs, ppx, ppy, ppw, pph,
+  self:Debug(6, "About to change from x % y % w % h %", f:GetRect())
+  self:Debug(6, "ps % fs % to x % y % w % h % -> scaled back to wf x % y % - new w % h %", ps, fs, ppx, ppy, ppw, pph,
              ppx * ps, ppy * ps, ppw * ps, pph * ps)
-  self:Debug("size before % %", f:GetSize())
+  self:Debug(6, "size before % %", f:GetSize())
   f:ClearAllPoints()
   local mult = ps / fs -- put back in screen+frame's scale/coordinate
   f:SetPoint(point1, nil, "BOTTOMLEFT", ppx * mult, ppy * mult)
-  f:SetSize(ppw * mult, pph * mult)
+  local newWidth, newHeight = ppw * mult, pph * mult
+  if not dontChangeSize then
+    f:SetSize(newWidth, newHeight)
+    self:Debug(6, "scale after %, size after % %", f:GetScale(), f:GetSize())
+  end
   -- f:SetPoint(point2, nil, "BOTTOMLEFT", (ppx + ppw) * mult, (ppy + pph) * mult)
-  self:Debug("scale after %, size after % %", f:GetScale(), f:GetSize())
-  return ps, ppw, pph
+  return newWidth, newHeight, ps, ppw, pph
 end
 ---
 -- C_Timer.After(1, function()
@@ -954,12 +943,12 @@ end
 -- initially from DynamicBoxer DBoxUI.lua
 
 function ML:ShowToolTip(f, anchor)
-  self:Debug("Show tool tip...")
+  self:Debug(3, "Show tool tip...")
   if f.tooltipText then
     GameTooltip:SetOwner(f, anchor or "ANCHOR_RIGHT")
     GameTooltip:SetText(f.tooltipText, 0.9, 0.9, 0.9, 1, false)
   else
-    self:Debug("No .tooltipText set on %", f:GetName())
+    self:Debug(2, "No .tooltipText set on %", f:GetName())
   end
 end
 
@@ -975,8 +964,8 @@ function ML:MakeMoveable(f, callback, dragButton)
   end)
   f:SetScript("OnDragStop", function(w, ...)
     w:StopMovingOrSizing(...)
-    self:SavePosition(w) -- must be first to get the points relative to nearest screen point
-    self:PixelPerfectSnap(w) -- then snap for perfect pixels
+    self:PixelPerfectSnap(w) -- snap for perfect pixels though doesn't seem really needed?
+    self:SavePosition(w) -- save
   end)
 end
 
@@ -989,7 +978,7 @@ function ML:SetTopLeft(f)
 end
 
 function ML:SavePosition(f)
---[[
+  --[[
   -- we used to extract the position before snap changes the anchor point,
   -- to get pos "closest to correct part of the screen" but that doesn't work with
   -- restore of widgets that don't yet have their full height like the dbox status
@@ -1003,13 +992,13 @@ function ML:SavePosition(f)
   self:SetTopLeft(f)
   local point, relTo, relativePoint, xOfs, yOfs = f:GetPoint()
   local scale = f:GetScale()
-  self:Debug("Stopped moving/scaling widget % % % % relative to % % - scale %", point, relativePoint, xOfs, yOfs, relTo,
-             relTo and relTo:GetName(), scale)
+  self:Debug(2, "SavePosition: Stopped moving/scaling widget % % % % relative to % % - scale %", point, relativePoint,
+             xOfs, yOfs, relTo, relTo and relTo:GetName(), scale)
   local pos = {relativePoint, xOfs, yOfs} -- relativePoint seems to always be same as point, when called at the right time
   if f.afterMoveCallBack then
     f:afterMoveCallBack(pos, scale)
   else
-    self:Debug("No after move callback for %", f)
+    self:Debug(3, "No after move callback for %", f)
   end
 end
 
@@ -1024,7 +1013,6 @@ function ML:RestorePosition(f, pos, scale)
   -- todo: why is the outcome different for dbox ?
   if f.Snap then
     f:Snap()
-    f:Snap() -- twice because of right alignment
   else
     self:SnapFrame(f)
   end
@@ -1041,4 +1029,4 @@ function ML:GetCursorCoordinates()
 end
 
 ---
-ML:Debug("MoLib UI file loaded")
+ML:Debug(1, "MoLib UI file loaded")
