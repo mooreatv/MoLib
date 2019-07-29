@@ -6,7 +6,7 @@ but also meant to be reused in other addons, not just mine.
 
 v7.04.00 July 29th 2019
 - New :BugReport function to easily copy pastable / submitable issues,
-  we keep a .sessionLog of all messages to add to the bug report.
+  we keep a .sessionLog of all messages to add to the bug report. (Issue #3)
 
 v7.03.04 July 28th 2019
 - Fix for "..." of strings at some scale and removed need for double snap
