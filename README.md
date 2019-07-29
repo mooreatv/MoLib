@@ -11,6 +11,8 @@ MooreaTv addons common libs
 Both extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
+It now also includes Pixel Perfect drawing support as demonstrated in
+https://github.com/mooreatv/PixelPerfectAlign 
 
 Library by default installs in the addon namespace but can also be copied to a new namespace using
 `_G[addon].MoLibInstallInto(NewNamespace, shortName)`
