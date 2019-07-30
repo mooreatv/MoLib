@@ -8,7 +8,8 @@ v7.04.01 July 29th 2019
 - Using standard wow look and feel + pixel perfect snap for BugReport, it's much nicer!
 - Made :StandardFrame() for reuse beyond :BugReport plus some tweaks
 - handle addScrollEditFrame() extra scrollbar width for correct bounding boxes
--  fixed case of last line getting an update with a right aligned string that doesn't fit
+- added inset to addScrollEditFrame
+- fixed case of last line getting an update with a right aligned string that doesn't fit
 
 v7.04.00 July 29th 2019
 - New :BugReport function to easily copy pastable / submitable issues,

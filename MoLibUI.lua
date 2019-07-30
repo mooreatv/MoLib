@@ -538,11 +538,16 @@ function ML.Frame(addon, name, global, template) -- to not shadow self below but
     return e
   end
 
-  f.addScrollEditFrame = function(self, width, height)
+  f.addScrollEditFrame = function(self, width, height, noInset)
     width = width or 400
     height = height or 300
     local s = CreateFrame("ScrollFrame", nil, self, "UIPanelScrollFrameTemplate")
     s:SetSize(width, height)
+    if not noInset then
+      local inset = CreateFrame("Frame", nil, s, "InsetFrameTemplate")
+      inset:SetPoint("BOTTOMLEFT", -4, -4)
+      inset:SetPoint("TOPRIGHT", 4, 4)
+    end
     local e = CreateFrame("EditBox", nil, s)
     e:SetWidth(width) -- scroll bar is extra/outside
     e:SetFontObject(ChatFontNormal)
@@ -1103,14 +1108,11 @@ function ML:BugReport(subtitle, text)
     f = ML:StandardFrame(frameName, title)
     self.bugReportFrame = f
     f.subTitle = f:addText(subtitle):Place()
-    f.instructions = f:addText("Copy (Ctrl-C) and Paste in the report, adding any additional context\n" ..
-                                 "and a screenshot if possible and then close this."):Place()
+    f:addText("Copy (Ctrl-C) and Paste in the report, adding any additional context\n" ..
+                "and a screenshot if possible and then close this."):Place()
     local _, h = ChatFontNormal:GetFont()
     f.seb = f:addScrollEditFrame(400, h * 8) -- 8 lines
-    f.seb:Place(0, 14)
-    local tt = f.seb:CreateTexture()
-    tt:SetAllPoints()
-    tt:SetColorTexture(0, 0, 0, .3) -- darkens the scroll area
+    f.seb:Place(5, 14) -- 4 is inset
     local eb = f.seb.editBox
     eb:SetTextColor(.3, .3, .3, .8)
     f:addButton("Take a Screenshot", "Make a screenshot, find it in your\n" ..
