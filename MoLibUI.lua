@@ -47,8 +47,8 @@ end
 -- WARNING, Y axis is such as positive is down, unlike rest of the wow api which has + offset going up
 -- but all the negative numbers all over, just for Y axis, got to me
 
-function ML.Frame(addon, name, global) -- to not shadow self below but really call with Addon:Frame(name)
-  local f = CreateFrame("Frame", global, addon:PixelPerfectFrame())
+function ML.Frame(addon, name, global, template) -- to not shadow self below but really call with Addon:Frame(name)
+  local f = CreateFrame("Frame", global, addon:PixelPerfectFrame(), template)
   f:SetSize(1, 1) -- need a starting size for most operations
   if addon.debug and addon.debug >= 8 then
     addon:Debug(8, "Debug level 8 is on, putting debug background on frame %", name)
@@ -1075,18 +1075,17 @@ end
 --- (De)Bug report frame
 function ML:BugReport(subtitle, text)
   local f = self.bugReportFrame
-  local title = "Bug Report for " .. addonName
+  local title = "|cFFFF1010Bug|r Report for " .. addonName
   if not f then
-    f = self:Frame()
+    local frameName = "MoLib" .. self.name .. "BugReport"
+    f = self:Frame(frameName, frameName, "BasicFrameTemplate")
     f.defaultFont = ChatFontNormal
     self.bugReportFrame = f
     self:MakeMoveable(f)
-    local t = f:CreateTexture()
-    t:SetAllPoints()
-    t:SetColorTexture(.8, .1, .1, .8)
-    f.title = f:addText(title, "Fancy22Font"):Place()
+    f.TitleText:SetText(title)
     f.defaultTextColor = {.9, .9, .9, .9}
-    f.subTitle = f:addText(subtitle):Place()
+    f:addText(" "):Place() -- title placeholder and defines default padding
+    f.subTitle = f:addText(subtitle):Place(0, 8)
     f.instructions = f:addText("Copy (Ctrl-C) and Paste in the report, adding any additional context\n" ..
                                  "and a screenshot if possible and then close this"):Place()
     local _, h = ChatFontNormal:GetFont()
@@ -1103,21 +1102,20 @@ function ML:BugReport(subtitle, text)
                   "Wow Screenshots folder and paste online\nalong the text copied above.", function()
       Screenshot()
     end):Place()
-    f:addButton("Close", "Copy paste and submit the above,\nthen close this.", function()
-      f:Hide()
-    end):PlaceRight(180)
-    f:addBorder()
     f:SetPoint("TOP", 0, -120)
   else
-    f.title:SetText(title)
+    f.TitleText:SetText(title)
     f.subTitle:SetText(subtitle)
   end
   local eb = f.seb.editBox
-  self:SetReadOnly(eb,
-                   title .. " " .. self.manifestVersion .. "\n" .. date("%Y/%m/%d %T %z") .. " " .. text ..
-                     "\nSession messages log:\n" .. table.concat(self.sessionLog, "\n"))
-  f:Show()
+  local fullText = title .. " " .. self.manifestVersion .. "\n" .. date("%Y/%m/%d %T %z") .. " " .. text ..
+  "\nSession messages log:\n"
+  for i = #self.sessionLog, 1, -1 do
+    fullText = fullText .. self.sessionLog[i] .. "\n"
+  end
+  self:SetReadOnly(eb, fullText)
   f:Snap()
+  f:Show()
   return f
 end
 

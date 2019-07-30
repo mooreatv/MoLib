@@ -4,6 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.04.01 July 29th 2019
+- Using standard wow look and feel + pixel perfect snap for BugReport, it's much nicer!
+
 v7.04.00 July 29th 2019
 - New :BugReport function to easily copy pastable / submitable issues,
   we keep a .sessionLog of all messages to add to the bug report. (Issue #3)
