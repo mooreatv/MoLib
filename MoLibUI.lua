@@ -1093,7 +1093,7 @@ function ML:StandardFrame(frameName, title)
   f.TitleText:SetText(title)
   f.defaultFont = ChatFontNormal
   f.defaultTextColor = {.9, .9, .9, 1}
-  f:addText(" "):Place() -- title placeholder and defines default padding
+  f:addText(" "):Place(10, 10) -- title placeholder and defines default padding
   f:SetFrameStrata("DIALOG")
   f:SetPoint("TOP", 0, -120)
   return f
