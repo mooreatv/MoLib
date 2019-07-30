@@ -95,25 +95,33 @@ function ML.Frame(addon, name, global, template) -- to not shadow self below but
       local l = v:GetLeft() or 0
       local y = v:GetBottom() or 0
       local t = v:GetTop() or 0
-      if v.GetStringWidth and v:GetText() then
+      local extra = v.extraWidth or 0
+      -- ignore nil strings (which have wild width somehow)
+      local validChildren = (v.GetText == nil) or (v:GetText() ~= nil and #v:GetText() > 0)
+      if v.GetStringWidth and validChildren then
         -- recover from the ... truncation
         local curW = ML:round(x - l, 0.001)
-        local extra = v.extraWidth or 0
         local strWextra = ML:round(v:GetStringWidth() + extra, 0.001)
         if strWextra ~= curW then
           local nx = l + v:GetStringWidth() + extra -- not rounding here
           addon:Debug(4, "changing font coords for % % to % because of str width % vs cur w %", v:GetText(), x, nx,
                       strWextra, curW)
           x = nx
+          -- We need to ignore/fix the height as it's also wrong and GetStringHeight() is also not 1 line...
+          local _, fh = v:GetFont()
+          y = t - fh
         else
           addon:Debug(8, "not changing % w % strW %", v:GetText(), curW, strWextra)
         end
+        extra = 0
       end
-      maxX = math.max(maxX, x)
-      minX = math.min(minX, l)
-      maxY = math.max(maxY, t or 0)
-      minY = math.min(minY, y or 0)
-      numChildren = numChildren + 1
+      if validChildren then
+        maxX = math.max(maxX, x + extra)
+        minX = math.min(minX, l)
+        maxY = math.max(maxY, t)
+        minY = math.min(minY, y)
+        numChildren = numChildren + 1
+      end
     end
     addon:Debug(6, "Found corners for % children to be topleft % , % to bottomright %, %", numChildren, maxX, minY,
                 minX, maxY)
@@ -545,6 +553,7 @@ function ML.Frame(addon, name, global, template) -- to not shadow self below but
     e:SetMaxLetters(65535)
     s:SetScrollChild(e)
     s.editBox = e
+    s.extraWidth = 24 -- scrollbar is outside
     self:addMethods(s)
     return s
   end
@@ -1072,44 +1081,49 @@ function ML:SetReadOnly(e, text)
   e:SetScript("OnMouseUp", f)
 end
 
+function ML:StandardFrame(frameName, title)
+  local f = self:Frame(frameName, frameName, "BasicFrameTemplate")
+  self:MakeMoveable(f)
+  f:SetAlpha(0.9)
+  f.TitleText:SetText(title)
+  f.defaultFont = ChatFontNormal
+  f.defaultTextColor = {.9, .9, .9, 1}
+  f:addText(" "):Place() -- title placeholder and defines default padding
+  f:SetFrameStrata("DIALOG")
+  f:SetPoint("TOP", 0, -120)
+  return f
+end
+
 --- (De)Bug report frame
 function ML:BugReport(subtitle, text)
   local f = self.bugReportFrame
   local title = "|cFFFF1010Bug|r Report for " .. addonName
   if not f then
     local frameName = "MoLib" .. self.name .. "BugReport"
-    f = self:Frame(frameName, frameName, "BasicFrameTemplate")
-    f.defaultFont = ChatFontNormal
+    f = ML:StandardFrame(frameName, title)
     self.bugReportFrame = f
-    self:MakeMoveable(f)
-    f.TitleText:SetText(title)
-    f.defaultTextColor = {.9, .9, .9, .9}
-    f:addText(" "):Place() -- title placeholder and defines default padding
-    f.subTitle = f:addText(subtitle):Place(0, 8)
+    f.subTitle = f:addText(subtitle):Place()
     f.instructions = f:addText("Copy (Ctrl-C) and Paste in the report, adding any additional context\n" ..
-                                 "and a screenshot if possible and then close this"):Place()
+                                 "and a screenshot if possible and then close this."):Place()
     local _, h = ChatFontNormal:GetFont()
-    -- a bit of hack because the scrollbars are not counted in height/width so we set our width
-    -- to less than the above wide text
-    f.seb = f:addScrollEditFrame(f.instructions:GetStringWidth() - 16, h * 8) -- 8 lines
-    f.seb:Place()
+    f.seb = f:addScrollEditFrame(400, h * 8) -- 8 lines
+    f.seb:Place(0, 14)
     local tt = f.seb:CreateTexture()
     tt:SetAllPoints()
-    tt:SetColorTexture(0, 0, 0, .3)
+    tt:SetColorTexture(0, 0, 0, .3) -- darkens the scroll area
     local eb = f.seb.editBox
     eb:SetTextColor(.3, .3, .3, .8)
     f:addButton("Take a Screenshot", "Make a screenshot, find it in your\n" ..
                   "Wow Screenshots folder and paste online\nalong the text copied above.", function()
       Screenshot()
-    end):Place()
-    f:SetPoint("TOP", 0, -120)
+    end):Place(0, 14)
   else
     f.TitleText:SetText(title)
     f.subTitle:SetText(subtitle)
   end
   local eb = f.seb.editBox
   local fullText = title .. " " .. self.manifestVersion .. "\n" .. date("%Y/%m/%d %T %z") .. " " .. text ..
-  "\nSession messages log:\n"
+                     "\nSession messages log:\n"
   for i = #self.sessionLog, 1, -1 do
     fullText = fullText .. self.sessionLog[i] .. "\n"
   end
