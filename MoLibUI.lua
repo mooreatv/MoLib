@@ -44,6 +44,23 @@ function ML:SnapFrame(f)
   return self:PixelPerfectSnap(f, 2, true) -- 2 so we get dividable by 2 dimensions, true = from top and not bottom corner
 end
 
+function ML:NormalizeFont(font)
+  if not font then
+    self:Debug(4, "leaving unspecified font %", font)
+    return font
+  end
+  local fontObj = font
+  if type(font) == "string" then
+    if _G[font] then
+      fontObj = _G[font]
+    else
+      ML:DebugStack("Invalid font name %", font)
+      return nil
+    end
+  end
+  return fontObj
+end
+
 -- WARNING, Y axis is such as positive is down, unlike rest of the wow api which has + offset going up
 -- but all the negative numbers all over, just for Y axis, got to me
 
@@ -61,6 +78,11 @@ function ML.Frame(addon, name, global, template) -- to not shadow self below but
   f.name = name
   f.children = {}
   f.numObjects = 0
+
+  -- either a font name or a font object, convert to object
+  f.SetDefaultFont = function(w, font)
+    w.defaultFont = addon:NormalizeFont(font)
+  end
 
   f.Snap = function(w)
     w:setSizeToChildren()
@@ -323,16 +345,9 @@ function ML.Frame(addon, name, global, template) -- to not shadow self below but
   end
 
   f.addText = function(self, text, font)
-    font = font or self.defaultFont or "GameFontHighlightSmall" -- different default?
-    local fontObj = nil
-    if type(font) ~= "string" then
-      fontObj = font
-      font = nil
-    end
-    local t = self:CreateFontString(nil, "ARTWORK", font)
-    if fontObj then
-      t:SetFontObject(fontObj)
-    end
+    local fontObj = addon:NormalizeFont(font) or self.defaultFont or GameFontHighlightSmall -- different default?
+    local t = self:CreateFontString(nil, "ARTWORK", nil)
+    t:SetFontObject(fontObj)
     if self.defaultTextColor then
       t:SetTextColor(unpack(self.defaultTextColor))
     end
@@ -538,7 +553,7 @@ function ML.Frame(addon, name, global, template) -- to not shadow self below but
     return e
   end
 
-  f.addScrollEditFrame = function(self, width, height, noInset)
+  f.addScrollEditFrame = function(self, width, height, font, noInset)
     width = width or 400
     height = height or 300
     local s = CreateFrame("ScrollFrame", nil, self, "UIPanelScrollFrameTemplate")
@@ -549,13 +564,14 @@ function ML.Frame(addon, name, global, template) -- to not shadow self below but
       inset:SetPoint("TOPRIGHT", 4, 4)
     end
     local e = CreateFrame("EditBox", nil, s)
-    e:SetWidth(width) -- scroll bar is extra/outside
-    e:SetFontObject(ChatFontNormal)
+    e:SetWidth(width)
+    e:SetFontObject(font or f.defaultFont or ChatFontNormal)
     if self.defaultTextColor then
       e:SetTextColor(unpack(self.defaultTextColor))
     end
     e:SetMultiLine(true)
-    e:SetMaxLetters(65535)
+    --    e:GetRegions():SetNonSpaceWrap(false)
+    --    e:GetRegions():SetWordWrap(false)
     s:SetScrollChild(e)
     s.editBox = e
     s.extraWidth = 24 -- scrollbar is outside
@@ -713,7 +729,7 @@ end
 function ML:DisplayInfo(x, y, scale)
   local f = ML:Frame()
   f.defaultTextColor = {.5, .6, 1, 1}
-  f.defaultFont = "Game13FontShadow"
+  f.SetDefaultFont("Game13FontShadow")
   f:SetFrameStrata("FULLSCREEN")
   f:SetPoint("CENTER", x, -y)
   local p = f:GetParent()
@@ -1110,11 +1126,12 @@ function ML:BugReport(subtitle, text)
     f.subTitle = f:addText(subtitle):Place()
     f:addText("Copy (Ctrl-C) and Paste in the report, adding any additional context\n" ..
                 "and a screenshot if possible and then close this."):Place()
-    local _, h = ChatFontNormal:GetFont()
-    f.seb = f:addScrollEditFrame(400, h * 8) -- 8 lines
+    local font = self:NormalizeFont("Tooltip_Small")
+    local _, h = font:GetFont()
+    f.seb = f:addScrollEditFrame(400, h * 8, font) -- 8 lines
     f.seb:Place(5, 14) -- 4 is inset
     local eb = f.seb.editBox
-    eb:SetTextColor(.3, .3, .3, .8)
+    eb:SetTextColor(0, 0, 0, 1)
     f:addButton("Take a Screenshot", "Make a screenshot, find it in your\n" ..
                   "Wow Screenshots folder and paste online\nalong the text copied above.", function()
       Screenshot()
@@ -1126,9 +1143,43 @@ function ML:BugReport(subtitle, text)
   local eb = f.seb.editBox
   local fullText = title .. " " .. self.manifestVersion .. "\n" .. date("%Y/%m/%d %T %z") .. " " .. text ..
                      "\nSession messages log:\n"
-  for i = #self.sessionLog, 1, -1 do
-    fullText = fullText .. self.sessionLog[i] .. "\n"
+  local numEntries = #self.sessionLog
+  local skipped = 0
+  local maxLines = 225
+  local keepFirst = 75
+  local keepRecent = 150
+  local maxEntryLen = 400
+  local truncated = 0
+  local utf8 = 0
+  local pipes = 0
+  for i = numEntries, 1, -1 do
+    if numEntries > maxLines and i <= keepFirst or i > numEntries - keepRecent then
+      local l = self.sessionLog[i]
+      if #l > maxEntryLen then
+        l = l:sub(1, maxEntryLen)
+        truncated = truncated + 1
+        -- if we cut right mid ||, this assumes there is no actual valid escape in the sessionLog
+        if l:sub(-1) == "|" then
+          l = l:sub(1, -2)
+          pipes = pipes + 1
+        end
+        while (string.byte(l:sub(-1)) > 127) and #l >= 0 do
+          l = l:sub(1, -2)
+          utf8 = utf8 + 1
+        end
+        l = l .. "..."
+      end
+      fullText = fullText .. l .. "\n"
+    else
+      if skipped == 0 then
+        fullText = fullText .. "[...skipped " .. tostring(numEntries - maxLines) .. " lines...]\n"
+      end
+      skipped = skipped + 1
+    end
   end
+  self:Debug(1, "Size of bug report text is % bytes and ~ % lines, skipped % middle lines, " ..
+               "truncated % entries, utf8 shortening %, % pipes", #fullText, #self.sessionLog + 3, skipped, truncated,
+             utf8, pipes)
   self:SetReadOnly(eb, fullText)
   f:Snap()
   f:Show()

@@ -4,7 +4,14 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
-v7.04.01 July 29th 2019
+v7.04.02 July 29th 2019
+- :NormalizeFont() to always get font object, and use defaultFont object in addScrollEditFrame
+- Change bug report font
+- Escape illegal in edit box characters (like EMA/AceComm-3.0's raw \004)
+  new :EscNonPrintable() and :EscNonPrintableAndPipe() for that purpose
+- Truncate bug reports that are too long (in utf8 aware manner)
+
+v7.04.01 July 29th 2019 (dbox 2.03.00)
 - Using standard wow look and feel + pixel perfect snap for BugReport, it's much nicer!
 - Made :StandardFrame() for reuse beyond :BugReport plus some tweaks
 - handle addScrollEditFrame() extra scrollbar width for correct bounding boxes

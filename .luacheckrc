@@ -8,6 +8,7 @@ globals = {
     "GetTime",
     "DEFAULT_CHAT_FRAME",
     "GameFontNormal",
+    "GameFontHighlightSmall",
     "GetAddOnMetadata",
     "GetPlayerInfoByGUID",
     "UnitFullName",

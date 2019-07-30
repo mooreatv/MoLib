@@ -73,6 +73,33 @@ function ML:Print(msg, ...)
   table.insert(self.sessionLog, msg)
 end
 
+-- Escapes non printable characters
+function ML:EscNonPrintable(str)
+  local s, _count = gsub(str, "%c", function(match)
+    if match == "\n" then -- maybe add \r too but...
+      return match
+    end
+    return string.format("\\%03d", string.byte(match))
+  end)
+  return s
+end
+
+-- Escapes non printable characters (copy pasted most from
+-- previous function for efficiency as we do this a lot)
+function ML:EscNonPrintableAndPipe(str)
+  local s = gsub(str, "[%c|]", function(match)
+    if match == "\n" then -- maybe add \r too but...
+      return match
+    end
+    if match == "|" then
+      return "||"
+    end
+    return string.format("\\%03d", string.byte(match))
+  end)
+  s = gsub(s, "||||", "||") -- we can double escape pipes when going through layers
+  return s
+end
+
 -- like format except simpler... just use % to replace a value that will be tostring()'ed
 -- string arguments are quoted (ie "Zone") so you can distinguish nil from "nil" etc
 -- and works for all types (like boolean), unlike format
@@ -84,7 +111,7 @@ function ML:format(fmtstr, firstarg, ...)
   local t = type(firstarg)
   local s
   if t == "string" then -- if the argument is a string, quote it, also escape | sequences
-    s = string.format("%q", gsub(firstarg, '|', '||'))
+    s = '"' .. self:EscNonPrintableAndPipe(firstarg) .. '"'
   elseif t == "table" then
     local tt = {}
     local seen = {id = 0, t = {}}
@@ -256,7 +283,7 @@ end
 ML.DumpT = {}
 ML.DumpT["string"] = function(into, v)
   table.insert(into, "\"")
-  local e, _ = gsub(v, '|', '||')
+  local e, _ = ML:EscNonPrintableAndPipe(v)
   table.insert(into, e)
   table.insert(into, "\"")
 end
