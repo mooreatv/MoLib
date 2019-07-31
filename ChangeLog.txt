@@ -4,6 +4,11 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.04.03 July 31st 2019
+- bug fix in DisplayInfo's call to SetDefaultFont
+- new measure() function to measure run time and used it to dispell myth about needing
+  to "cache" global function calls
+
 v7.04.02 July 29th 2019
 - :NormalizeFont() to always get font object, and use defaultFont object in addScrollEditFrame
 - Change bug report font

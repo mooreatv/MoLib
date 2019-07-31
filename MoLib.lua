@@ -768,4 +768,38 @@ function ML:WatchedTable()
   return t
 end
 
+---
+-- perf tests
+
+function ML.testPerfGlobal(n)
+  local x
+  for i = 1, n do
+    x = math.sin(i)
+  end
+  return x
+end
+function ML.testPerfLocal(n)
+  local x
+  local sin = math.sin
+  for i = 1, n do
+    x = sin(i)
+  end
+  return x
+end
+
+function ML:measure(msg, f, n)
+  local x
+  local t1 = debugprofilestop()
+  x = f(n)
+  local t2 = debugprofilestop()
+  self:PrintDefault("Perf measure: % calls result is % after % iter: %", msg, x, n, t2 - t1)
+end
+
+function ML:testPerfLocalGlobal(n)
+  self:measure("global", ML.testPerfGlobal, n)
+  self:measure("local", ML.testPerfLocal, n)
+  self:measure("global", ML.testPerfGlobal, n)
+  self:measure("local", ML.testPerfLocal, n)
+end
+---
 ML:Debug(2, "Done loading MoLib.lua #%", _G[globe])

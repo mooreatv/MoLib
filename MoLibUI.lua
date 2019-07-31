@@ -729,7 +729,7 @@ end
 function ML:DisplayInfo(x, y, scale)
   local f = ML:Frame()
   f.defaultTextColor = {.5, .6, 1, 1}
-  f.SetDefaultFont("Game13FontShadow")
+  f:SetDefaultFont("Game13FontShadow")
   f:SetFrameStrata("FULLSCREEN")
   f:SetPoint("CENTER", x, -y)
   local p = f:GetParent()

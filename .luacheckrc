@@ -34,6 +34,7 @@ globals = {
     "ChatFontNormal",
     "Screenshot",
     "date",
+    "debugprofilestop",
 }
 max_line_length = 132
 ignore = {
