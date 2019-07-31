@@ -1121,7 +1121,7 @@ function ML:BugReport(subtitle, text)
   local title = "|cFFFF1010Bug|r Report for " .. addonName
   if not f then
     local frameName = "MoLib" .. self.name .. "BugReport"
-    f = ML:StandardFrame(frameName, title)
+    f = self:StandardFrame(frameName, title)
     self.bugReportFrame = f
     f.subTitle = f:addText(subtitle):Place()
     f:addText("Copy (Ctrl-C) and Paste in the report, adding any additional context\n" ..
@@ -1153,7 +1153,7 @@ function ML:BugReport(subtitle, text)
   local utf8 = 0
   local pipes = 0
   for i = numEntries, 1, -1 do
-    if numEntries > maxLines and i <= keepFirst or i > numEntries - keepRecent then
+    if numEntries < maxLines or i <= keepFirst or i > numEntries - keepRecent then
       local l = self.sessionLog[i]
       if #l > maxEntryLen then
         l = l:sub(1, maxEntryLen)
