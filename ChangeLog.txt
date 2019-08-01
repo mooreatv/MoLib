@@ -10,6 +10,7 @@ v7.04.03 July 31st 2019
   to "cache" global function calls
 - bug fix in bug report log truncation
 - :GetCursorCoordinates() now returns raw (worldframe) coordinates too.
+- option to make a worldframe (pp) attached frame: :WorldFrame()
 
 v7.04.02 July 29th 2019
 - :NormalizeFont() to always get font object, and use defaultFont object in addScrollEditFrame

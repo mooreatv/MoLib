@@ -64,8 +64,12 @@ end
 -- WARNING, Y axis is such as positive is down, unlike rest of the wow api which has + offset going up
 -- but all the negative numbers all over, just for Y axis, got to me
 
-function ML.Frame(addon, name, global, template) -- to not shadow self below but really call with Addon:Frame(name)
-  local f = CreateFrame("Frame", global, addon:PixelPerfectFrame(), template)
+function ML.WorldFrame(addon)
+  return addon:Frame(nil, nil, nil, true) -- world frame attached frame
+end
+
+function ML.Frame(addon, name, global, template, worldFrame) -- to not shadow self below but really call with Addon:Frame(name)
+  local f = CreateFrame("Frame", global, addon:PixelPerfectFrame(worldFrame), template)
   f:SetSize(1, 1) -- need a starting size for most operations
   if addon.debug and addon.debug >= 8 then
     addon:Debug(8, "Debug level 8 is on, putting debug background on frame %", name)
