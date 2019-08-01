@@ -1085,7 +1085,7 @@ function ML:GetCursorCoordinates()
   local sw = WorldFrame:GetWidth() / pw
   local uis = UIParent:GetScale()
   local x, y = GetCursorPosition()
-  return ML:round(x / sw), ML:round(y / sw), x / uis, y / uis
+  return ML:round(x / sw), ML:round(y / sw), x / uis, y / uis, x, y
 end
 
 -- sets an editbox such as the text can't be changed, only copied
