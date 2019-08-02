@@ -4,6 +4,8 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.04.04 Aug 1st 2019
+- Allow :Frame() to specify a parent (but it must be a child of a pixel perfect frame)
 v7.04.03 July 31st 2019
 - bug fix in DisplayInfo's call to SetDefaultFont
 - new measure() function to measure run time and used it to dispell myth about needing

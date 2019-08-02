@@ -65,11 +65,12 @@ end
 -- but all the negative numbers all over, just for Y axis, got to me
 
 function ML.WorldFrame(addon)
-  return addon:Frame(nil, nil, nil, true) -- world frame attached frame
+  return addon:Frame(nil, nil, nil, addon:PixelPerfectFrame(true)) -- world frame attached frame
 end
 
-function ML.Frame(addon, name, global, template, worldFrame) -- to not shadow self below but really call with Addon:Frame(name)
-  local f = CreateFrame("Frame", global, addon:PixelPerfectFrame(worldFrame), template)
+-- parent should be null or a child or grandchild of a pixelPerfectFrame()
+function ML.Frame(addon, name, global, template, parent) -- to not shadow self below but really call with Addon:Frame(name)
+  local f = CreateFrame("Frame", global, parent or addon:PixelPerfectFrame(), template)
   f:SetSize(1, 1) -- need a starting size for most operations
   if addon.debug and addon.debug >= 8 then
     addon:Debug(8, "Debug level 8 is on, putting debug background on frame %", name)
@@ -925,7 +926,7 @@ function ML:pixelPerfectFrame(name, parent)
   f:SetScript("OnEvent", self.OnPPEvent)
   f:RegisterEvent("DISPLAY_SIZE_CHANGED")
   if parent ~= nil and parent ~= WorldFrame then
-    -- nil and world ppf are based of fixed x768 parent so doesn't need UI scale changed events
+    -- nil and world ppf are based of fixed x768 parent so they don't need UI scale changed events
     f:RegisterEvent("UI_SCALE_CHANGED")
   end
   return f -- same as _G[name]
