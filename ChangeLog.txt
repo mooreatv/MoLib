@@ -4,6 +4,11 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.04.06 Aug 3rd 2019
+- Switched to pixel perfect ScreenFrame from WorldFrame because WorldFrame can be moved
+  and handle that nil parent case properly in display size changed events.
+  (also renamed :WorldFrame() to :ScreenFrame())
+  fixes https://www.curseforge.com/wow/addons/pixel-perfect-align/issues/1
 v7.04.05 Aug 2nd 2019
 - Added notion of extra height and used it for the scroll frame inset / was off by 8 PixelPerfectScale
 - allow StandardFrame to have a parent (like ppa's always visible pixel perfect parent frame)

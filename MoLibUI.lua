@@ -64,8 +64,9 @@ end
 -- WARNING, Y axis is such as positive is down, unlike rest of the wow api which has + offset going up
 -- but all the negative numbers all over, just for Y axis, got to me
 
-function ML.WorldFrame(addon)
-  return addon:Frame(nil, nil, nil, addon:PixelPerfectFrame(true)) -- world frame attached frame
+-- physical screen based attached frame (used to be WorldFrame but that can be moved)
+function ML.ScreenFrame(addon)
+  return addon:Frame(nil, nil, nil, addon:PixelPerfectFrame(true))
 end
 
 -- parent should be null or a child or grandchild of a pixelPerfectFrame()
@@ -865,7 +866,7 @@ function ML:Demo()
   local num = 0
   local before = self.drawn
   for i = 96, 126 do
-    ML:FineGrid(i, i, 1, "MoLib_PP_Demo", WorldFrame)
+    ML:FineGrid(i, i, 1, "MoLib_PP_Demo", nil)
     sum = sum + ((i + 1) * (i + 1) + math.fmod(i, 2))
     num = num + 1
   end
@@ -888,9 +889,15 @@ end
 -- Sets the scale to match physical pixels
 function ML:PixelPerfectScale(f)
   local w, h = GetPhysicalScreenSize()
+  local p = f:GetParent()
+  if not p then -- special case for the Screen base frame
+    f:SetScale(1) -- important
+    f:SetAllPoints()
+    p = f
+  else
+    f:SetSize(w, h)
+  end
   -- use width as divisor as that's (typically) the largest numbers so better precision
-  f:SetSize(w, h)
-  local p = f:GetParent() or WorldFrame
   local sx = p:GetWidth() / w
   local sy = p:GetHeight() / h
   f:SetScale(sx)
@@ -904,14 +911,14 @@ end
 
 -- Creates/Returns a frame taking the whole screen and for which every whole coordinate is a physical pixel
 -- Thus any children frame of this one is always pixel perfect/aligned when using whole numbers + 0.5
--- Makes 2 frames, on child of UIParent for most UI and one, if passed true, of WorldFrame so it can be
--- shown always.
-function ML:PixelPerfectFrame(worldFrame)
+-- Makes 2 frames, on child of UIParent for most UI and one, if passed true, of a ScreenFrame (which
+-- is like WorldFrame except some viewport addons can change WorldFrame) so it can be shown always.
+function ML:PixelPerfectFrame(screenFrame)
   local name = "MoLibPixelPerfect"
   local parent = UIParent
-  if worldFrame then
-    name = name .. "World"
-    parent = WorldFrame
+  if screenFrame then
+    name = name .. "Screen"
+    parent = nil
   end
   name = name .. "Frame"
   return self:pixelPerfectFrame(name, parent)
