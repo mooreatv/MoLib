@@ -4,6 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.04.05 Aug 2nd 2019
+- Added notion of extra height and used it for the scroll frame inset / was off by 8 PixelPerfectScale
+- allow StandardFrame to have a parent (like ppa's always visible pixel perfect parent frame)
 v7.04.04 Aug 1st 2019
 - Allow :Frame() to specify a parent (but it must be a child of a pixel perfect frame)
 v7.04.03 July 31st 2019

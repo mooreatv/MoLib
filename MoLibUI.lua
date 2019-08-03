@@ -122,15 +122,16 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
       local l = v:GetLeft() or 0
       local y = v:GetBottom() or 0
       local t = v:GetTop() or 0
-      local extra = v.extraWidth or 0
+      local extraW = v.extraWidth or 0
+      local extraH = v.extraHeight or 0
       -- ignore nil strings (which have wild width somehow)
       local validChildren = (v.GetText == nil) or (v:GetText() ~= nil and #v:GetText() > 0)
       if v.GetStringWidth and validChildren then
         -- recover from the ... truncation
         local curW = ML:round(x - l, 0.001)
-        local strWextra = ML:round(v:GetStringWidth() + extra, 0.001)
+        local strWextra = ML:round(v:GetStringWidth() + extraW, 0.001)
         if strWextra ~= curW then
-          local nx = l + v:GetStringWidth() + extra -- not rounding here
+          local nx = l + v:GetStringWidth() + extraW -- not rounding here
           addon:Debug(4, "changing font coords for % % to % because of str width % vs cur w %", v:GetText(), x, nx,
                       strWextra, curW)
           x = nx
@@ -140,13 +141,13 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
         else
           addon:Debug(8, "not changing % w % strW %", v:GetText(), curW, strWextra)
         end
-        extra = 0
+        extraW = 0
       end
       if validChildren then
-        maxX = math.max(maxX, x + extra)
+        maxX = math.max(maxX, x + extraW)
         minX = math.min(minX, l)
         maxY = math.max(maxY, t)
-        minY = math.min(minY, y)
+        minY = math.min(minY, y - extraH)
         numChildren = numChildren + 1
       end
     end
@@ -273,8 +274,9 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
       self.leftMargin = 0
     else
       optOffsetX = optOffsetX or 0
+      local y = (optOffsetY or 8) + (self.lastAdded.extraHeight or 0)
       -- subsequent, place after the previous one but relative to initial left margin
-      object:placeBelow(self.lastAdded, optOffsetX - self.leftMargin, optOffsetY, point1, point2)
+      object:placeBelow(self.lastAdded, optOffsetX - self.leftMargin, y, point1, point2)
       self.leftMargin = optOffsetX
     end
     self.lastAdded = object
@@ -567,6 +569,7 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
       local inset = CreateFrame("Frame", nil, s, "InsetFrameTemplate")
       inset:SetPoint("BOTTOMLEFT", -4, -4)
       inset:SetPoint("TOPRIGHT", 4, 4)
+      s.extraHeight = 8 -- inset is 4+4 outside
     end
     local e = CreateFrame("EditBox", nil, s)
     e:SetWidth(width)
@@ -1107,8 +1110,8 @@ function ML:SetReadOnly(e, text)
   e:SetScript("OnMouseUp", f)
 end
 
-function ML:StandardFrame(frameName, title)
-  local f = self:Frame(frameName, frameName, "BasicFrameTemplate")
+function ML:StandardFrame(frameName, title, parent)
+  local f = self:Frame(frameName, frameName, "BasicFrameTemplate", parent)
   self:MakeMoveable(f)
   f:SetAlpha(0.9)
   f.TitleText:SetText(title)
