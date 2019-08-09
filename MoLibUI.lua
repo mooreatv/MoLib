@@ -566,13 +566,14 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     height = height or 300
     local s = CreateFrame("ScrollFrame", nil, self, "UIPanelScrollFrameTemplate")
     s:SetSize(width, height)
+    local e = CreateFrame("EditBox", nil, s)
     if not noInset then
       local inset = CreateFrame("Frame", nil, s, "InsetFrameTemplate")
       inset:SetPoint("BOTTOMLEFT", -4, -4)
       inset:SetPoint("TOPRIGHT", 4, 4)
       s.extraHeight = 8 -- inset is 4+4 outside
+      e:SetFrameLevel(inset:GetFrameLevel() + 1)
     end
-    local e = CreateFrame("EditBox", nil, s)
     e:SetWidth(width)
     e:SetFontObject(font or f.defaultFont or ChatFontNormal)
     if self.defaultTextColor then

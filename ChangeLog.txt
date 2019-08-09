@@ -4,6 +4,10 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.04.07 Aug 9th 2019
+- Fix for fix for https://github.com/mooreatv/PixelPerfectAlign/issues/6
+  the inset didn't have a set frame level making the text unreadable only
+  on classic - thanks Meorawr for the fix idea!
 v7.04.06 Aug 3rd 2019
 - Switched to pixel perfect ScreenFrame from WorldFrame because WorldFrame can be moved
   and handle that nil parent case properly in display size changed events.
