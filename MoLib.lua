@@ -21,6 +21,8 @@ local ML = _G[addon]
 
 ML.name = addon
 
+ML.isClassic = (_G.WOW_PROJECT_ID == _G.WOW_PROJECT_CLASSIC)
+
 ML.Factions = {"Horde", "Alliance", "Neutral"}
 
 function ML:deepmerge(dstTable, dstKey, src)
@@ -195,8 +197,11 @@ function ML:MoLibInit()
     return true
   end
   self.initNotDone = 0
-  local version = "(" .. addon .. " / " .. self.name .. " " .. ML.manifestVersion .. " / " .. _G[globe] .. ")"
-  self:Print("MoLib embedded in " .. version)
+  local version = addon .. " / " .. self.name .. " " .. ML.manifestVersion .. " / " .. _G[globe]
+  local wowV, wowP = GetBuildInfo()
+  self.WowVersion = " v" .. wowV .. "-" .. wowP
+  self:Print("MoLib embedded in " .. version .. " running on WoW " .. (self.isClassic and "classic" or "mainline") ..
+               self.WowVersion)
   return false -- so caller can continue with 1 time init
 end
 

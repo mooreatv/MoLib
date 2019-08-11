@@ -35,6 +35,7 @@ globals = {
     "Screenshot",
     "date",
     "debugprofilestop",
+    "GetBuildInfo",
 }
 max_line_length = 132
 ignore = {

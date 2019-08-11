@@ -771,6 +771,11 @@ end
 
 --- Grid demo for pixel perfect (used by PixelPerfectAlign)
 
+-- Todo: Check effects of
+-- Texture:SetSnapToPixelGrid()
+-- Texture:SetTexelSnappingBias()
+-- IsSnappingToPixelGrid, GetTexelSnappingBias
+
 ML.drawn = 0
 
 function ML:DrawPixel(f, x, y, color, layer)
@@ -1040,7 +1045,11 @@ function ML:MakeMoveable(f, callback, dragButton)
   end)
   f:SetScript("OnDragStop", function(w, ...)
     w:StopMovingOrSizing(...)
-    self:PixelPerfectSnap(w) -- snap for perfect pixels though doesn't seem really needed?
+    if w.Snap then
+      w:Snap()
+    else
+      self:PixelPerfectSnap(w) -- snap for perfect pixels though doesn't seem really needed?
+    end
     self:SavePosition(w) -- save
   end)
 end

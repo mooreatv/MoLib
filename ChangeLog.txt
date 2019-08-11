@@ -4,6 +4,8 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.05.00 Aug 10th 2019
+- added .isClassic boolean 
 v7.04.07 Aug 9th 2019
 - Fix for fix for https://github.com/mooreatv/PixelPerfectAlign/issues/6
   the inset didn't have a set frame level making the text unreadable only
