@@ -36,6 +36,8 @@ globals = {
     "date",
     "debugprofilestop",
     "GetBuildInfo",
+    "cos",
+    "sin",
 }
 max_line_length = 132
 ignore = {
