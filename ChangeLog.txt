@@ -6,6 +6,8 @@ but also meant to be reused in other addons, not just mine.
 
 v7.05.00 Aug 10th 2019
 - added .isClassic boolean 
+- use `.minimapButtonAngle` to set the :minimapButton() initial position, default 154 degree,
+  must be changed for each addon (137 for Mama)
 v7.04.07 Aug 9th 2019
 - Fix for fix for https://github.com/mooreatv/PixelPerfectAlign/issues/6
   the inset didn't have a set frame level making the text unreadable only

@@ -994,6 +994,14 @@ end
 -- end)
 ---
 
+function ML:onCircle(angle, distance)
+  local x = distance * cos(angle)
+  local y = distance * sin(angle)
+  return x, y
+end
+
+ML.minimapButtonAngle = 154 -- Make sure this is unique to your addon
+
 function ML:minimapButton(pos)
   local b = CreateFrame("Button", nil, Minimap)
   b:SetFrameStrata("HIGH")
@@ -1001,7 +1009,17 @@ function ML:minimapButton(pos)
     local pt, xOff, yOff = unpack(pos)
     b:SetPoint("TOPLEFT", nil, pt, xOff, yOff) -- dragging gives position from nil (screen)
   else
-    b:SetPoint("CENTER", -71, 37)
+    local distance = 80
+    local x, y = self:onCircle(self.minimapButtonAngle, distance)
+    self:Debug("x = %, y = %", x, y)
+    -- b:SetPoint("CENTER", -71, 37)
+    b:SetPoint("CENTER", x, y)
+    --[[     C_Timer.NewTicker(.05, function()
+      angle = (angle + 5) % 360
+      b:ClearAllPoints()
+      b:SetPoint("CENTER", self:onCircle(angle, distance))
+    end)
+ ]]
   end
   b:SetSize(32, 32)
   -- b:SetFrameLevel(8)
