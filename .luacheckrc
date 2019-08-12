@@ -38,6 +38,7 @@ globals = {
     "GetBuildInfo",
     "cos",
     "sin",
+    "CanSendAuctionQuery",
     "QueryAuctionItems",
     "GetNumAuctionItems",
     "GetAuctionItemInfo",
