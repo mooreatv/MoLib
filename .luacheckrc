@@ -38,6 +38,10 @@ globals = {
     "GetBuildInfo",
     "cos",
     "sin",
+    "QueryAuctionItems",
+    "GetNumAuctionItems",
+    "GetAuctionItemInfo",
+    "GetAuctionItemLink",
 }
 max_line_length = 132
 ignore = {

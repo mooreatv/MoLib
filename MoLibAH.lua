@@ -26,13 +26,13 @@ function ML:AHdump()
     self:Error("Unexpected mismatch between batch % and count % for a dump all of AH", batch, count)
     -- SetAuctionsTabShowing(true)
     return
-  else
-    if count == 0 then
-      self:PrintDefault("Result not ready, try :AHdump() shortly")
-      return
-    end
-    self:PrintInfo("Got % items from AH all dump.", count)
   end
+  if count == 0 then
+    -- TODO wait for AUCTION_ITEM_LIST_UPDATE
+    self:PrintDefault("Result not ready, try :AHdump() again shortly")
+    return
+  end
+  self:PrintInfo("Got % items from AH all dump.", count)
   local res = {}
   for i = 1, count do
     table.insert(res, {info = {GetAuctionItemInfo("list", i)}, link = GetAuctionItemLink("list", i)})
@@ -42,6 +42,6 @@ function ML:AHdump()
     self.savedVar.ah = {}
   end
   local p, r = UnitFullName("player")
-  table.insert(self.savedVar.ah, {realm=r, ts = GetServerTime(), data = res, char=p})
+  table.insert(self.savedVar.ah, {realm = r, ts = GetServerTime(), data = res, char = p})
   return res
 end
