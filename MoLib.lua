@@ -773,6 +773,15 @@ function ML:WatchedTable()
   return t
 end
 
+-- saved var (reference to which is expected to be in self.savedVar) handling
+
+function ML:SetSaved(name, value)
+  self[name] = value
+  self.savedVar[name] = value
+  self:Debug(7, "(Saved) Setting % set to %", name, value)
+end
+
+
 ---
 -- perf tests
 
