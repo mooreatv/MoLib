@@ -4,6 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.06.00 Aug 14th 2019
+- more common code: .OnEvent, :RegisterEventHandlers
+- also fixed SetSaved to return changed count (like the newer version add except dbox)
 v7.05.00 Aug 10th 2019
 - added .isClassic boolean 
 - use `.minimapButtonAngle` to set the :minimapButton() initial position, default 154 degree,

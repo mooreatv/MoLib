@@ -775,12 +775,48 @@ end
 
 -- saved var (reference to which is expected to be in self.savedVar) handling
 
+-- returns 1 if changed, 0 if same as live value
+-- number instead of boolean so we can add them in handleOk
+-- (saved var isn't checked/always set)
 function ML:SetSaved(name, value)
+  local changed = (value ~= self[name])
   self[name] = value
   self.savedVar[name] = value
   self:Debug(7, "(Saved) Setting % set to %", name, value)
+  if changed then
+    return 1
+  else
+    return 0
+  end
 end
 
+-- more common code
+
+function ML.OnEvent(frame, event, first, ...)
+  local addonP = frame.addonPtr
+  if not addonP then
+    ML:ErrorAndThrow("Unexpected event processing % on frame % without addonPtr!", event, frame)
+  end
+  addonP:Debug(8, "OnEvent called for %,% e=% %", frame:GetName(), frame.name, event, first)
+  local handler = addonP.EventHdlrs and addonP.EventHdlrs[event]
+  if handler then
+    return handler(frame, event, first, ...)
+  end
+  addonP:ErrorAndThrow("Unexpected event without handler % (frame is % - %)", event, frame:GetName(), frame.name)
+end
+
+-- Assumes the frame is self.frame and the event handlers in .EventHdlrs
+function ML:RegisterEventHandlers()
+  if not self.frame then
+    self.frame = CreateFrame("Frame")
+    self.frame.name = self.name
+  end
+  self.frame.addonPtr = self
+  self.frame:SetScript("OnEvent", self.OnEvent)
+  for k, _ in pairs(self.EventHdlrs) do
+    self.frame:RegisterEvent(k)
+  end
+end
 
 ---
 -- perf tests
