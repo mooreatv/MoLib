@@ -4,6 +4,10 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.07.00 Aug 15th 2019
+- more common code: handling of saved var and onload event (see Mama.lua for example of use)
+- deal with sandbox bug where realm is missing from UnitFullName but present in GetRealmName
+- wip Base64
 v7.06.00 Aug 14th 2019
 - more common code: .OnEvent, :RegisterEventHandlers
 - also fixed SetSaved to return changed count (like the newer version add except dbox)

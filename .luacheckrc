@@ -43,6 +43,7 @@ globals = {
     "GetNumAuctionItems",
     "GetAuctionItemInfo",
     "GetAuctionItemLink",
+    "GetRealmName",
 }
 max_line_length = 132
 ignore = {

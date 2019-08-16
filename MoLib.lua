@@ -386,7 +386,16 @@ end
 -- Returns the normalized fully qualified name of the player
 function ML:GetMyFQN()
   local p, realm = UnitFullName("player")
-  self:Debug(1, "GetMyFQN % , %", p, realm)
+  local rn = GetRealmName()
+  self:Debug(1, "GetMyFQN % , % - %", p, realm, rn)
+  if realm then
+    if realm ~= rn then
+      self:Warning("GetMyFQN(): Unexpected difference between realm from UnitFullName % vs GetRealmName %", realm, rn)
+    end
+  else
+    self:Warning("GetMyFQN(): Got nil realm from UnitFullName() trying GetRealmName() = % instead", rn)
+    realm = rn
+  end
   if not realm then
     self:ErrorAndThrow("GetMyFQN: Realm not yet available!, called too early (wait until PLAYER_ENTERING_WORLD)!")
   end
@@ -394,16 +403,33 @@ function ML:GetMyFQN()
 end
 
 ML.AlphaNum = {}
+ML.Base64 = {}
 
--- generate the 62 alphanums (A-Za-z0-9 but in 1 pass so not in order)
+-- Generate the 62 alphanums (A-Za-z0-9 but in 1 pass so not in order)
+-- and the 64 std Base64 alphabet
 for i = 1, 26 do
-  table.insert(ML.AlphaNum, string.format("%c", 64 + i)) -- 'A'-1
-  table.insert(ML.AlphaNum, string.format("%c", 64 + 32 + i)) -- 'a'-1
+  local ascii = 64 + i -- 'A' - 1 
+  local upper = string.format("%c", ascii)
+  local lower = string.format("%c", ascii + 32) -- 'a'-1
+  ML.Base64[i] = upper
+  ML.Base64[i + 26] = lower
+  table.insert(ML.AlphaNum, upper)
+  table.insert(ML.AlphaNum, lower)
   if i <= 10 then
-    table.insert(ML.AlphaNum, string.format("%c", 47 + i)) -- '0'-1
+    local digit = string.format("%c", 47 + i) -- '0'-1
+    ML.Base64[i + 52] = digit
+    table.insert(ML.AlphaNum, digit)
   end
 end
+ML.Base64[63] = "+"
+ML.Base64[64] = "/"
 ML:Debug("Done generating AlphaNum table, % elems: %", #ML.AlphaNum, ML.AlphaNum)
+ML:Debug("and Base64 table, % elems: %", #ML.Base64, ML.Base64)
+
+--function ML:Base64Encode(_binary)
+  --  for i = 1, #binary, 3 do
+  --  end
+--end
 
 function ML:RandomId(len)
   local res = {}
@@ -792,6 +818,46 @@ end
 
 -- more common code
 
+-- default event handlers
+
+function ML:AfterSavedVars()
+  -- Nothing special by default; overridable in addons that need it
+end
+
+ML.author = "MooreaTv" -- default author
+
+ML.EventHdlrs = {
+
+  ADDON_LOADED = function(frame, _event, name)
+    local addonP = frame.addonPtr
+    addonP:Debug(9, "Addon % loaded", name)
+    if name ~= addon then
+      return -- not us, return
+    end
+    -- check for dev version (need to split the tags or they get substituted)
+    if addonP.manifestVersion == "@" .. "project-version" .. "@" then
+      addonP.manifestVersion = "vX.YY.ZZ"
+    end
+    addonP:PrintDefault(addonP.name .. " " .. addonP.manifestVersion .. " by " .. addonP.author .. ": type /" ..
+                          addonP.slashCmdName .. " for command list/help.")
+    if not addonP.savedVarName then
+      addonP:ErrorAndThrow("addon % didn't set the required savedVarName", addonP.name)
+    end
+    if _G[addonP.savedVarName] == nil then
+      addonP:Debug("Initialized empty saved vars")
+      _G[addonP.savedVarName] = {}
+    end
+    local savedVar = _G[addonP.savedVarName]
+    savedVar.addonVersion = addonP.manifestVersion
+    savedVar.addonHash = addonP.addonHash
+    addonP:deepmerge(addonP, nil, savedVar)
+    addonP.savedVar = savedVar -- reference not copy, changes to one change the other
+    addonP:Debug(3, "Merged in saved variables.")
+    addonP:AfterSavedVars()
+  end
+
+}
+
 function ML.OnEvent(frame, event, first, ...)
   local addonP = frame.addonPtr
   if not addonP then
@@ -806,7 +872,12 @@ function ML.OnEvent(frame, event, first, ...)
 end
 
 -- Assumes the frame is self.frame and the event handlers in .EventHdlrs
-function ML:RegisterEventHandlers()
+function ML:RegisterEventHandlers(handlers)
+  if handlers then
+    for k, v in pairs(handlers) do
+      self.EventHdlrs[k] = v
+    end
+  end
   if not self.frame then
     self.frame = CreateFrame("Frame")
     self.frame.name = self.name
