@@ -408,7 +408,7 @@ ML.Base64 = {}
 -- Generate the 62 alphanums (A-Za-z0-9 but in 1 pass so not in order)
 -- and the 64 std Base64 alphabet
 for i = 1, 26 do
-  local ascii = 64 + i -- 'A' - 1 
+  local ascii = 64 + i -- 'A' - 1
   local upper = string.format("%c", ascii)
   local lower = string.format("%c", ascii + 32) -- 'a'-1
   ML.Base64[i] = upper
