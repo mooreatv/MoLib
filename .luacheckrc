@@ -45,6 +45,8 @@ globals = {
     "GetAuctionItemLink",
     "GetRealmName",
     "UnitFactionGroup",
+    "AuctionFrameBrowse",
+    "C_Timer",
 }
 max_line_length = 132
 ignore = {

@@ -1158,6 +1158,10 @@ function ML:StandardFrame(frameName, title, parent)
   return f
 end
 
+ML.bugReportMaxLines = 225
+ML.bugReportKeepFirst = 25
+ML.bugReportMaxEntryLen = 400
+
 --- (De)Bug report frame
 function ML:BugReport(subtitle, text)
   local f = self.bugReportFrame
@@ -1188,10 +1192,10 @@ function ML:BugReport(subtitle, text)
                      "\nSession messages log:\n"
   local numEntries = #self.sessionLog
   local skipped = 0
-  local maxLines = 225
-  local keepFirst = 75
-  local keepRecent = 150
-  local maxEntryLen = 400
+  local maxLines = self.bugReportMaxLine
+  local keepFirst = self.bugReportKeepFirst
+  local keepRecent = maxLines - keepFirst
+  local maxEntryLen = self.bugReportMaxEntryLen
   local truncated = 0
   local utf8 = 0
   local pipes = 0
