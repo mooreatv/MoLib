@@ -4,6 +4,11 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.08.00 Aug 19th 2019
+- More AH code for AuctionDB addon
+- switched License from GPLv3 to GNU Lesser General Public License v3.0 (LGPLv3)
+  (as I always intended as this is a library and needs to be embedded, also WoW is proprietary
+  which I believe implies no Addon can be plain GPL)
 v7.07.00 Aug 15th 2019
 - more common code: handling of saved var and onload event (see Mama.lua for example of use)
 - deal with sandbox bug where realm is missing from UnitFullName but present in GetRealmName

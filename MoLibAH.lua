@@ -1,6 +1,6 @@
 --[[
   MoLib (Auction House part) -- (c) 2019 moorea@ymail.com (MooreaTv)
-  Covered by the GNU General Public License version 3 (GPLv3)
+  Covered by the GNU Lesser General Public License v3.0 (LGPLv3)
   NO WARRANTY
   (contact the author if you need a different license)
 ]] --
@@ -8,6 +8,17 @@
 local addonName, _ns = ...
 
 local ML = _G[addonName]
+
+function ML:AHContext()
+  self:InitRealms()
+  local context = {}
+  context.classic = self.isClassic
+  context.region = self:GetMyRegion()
+  context.realm = GetRealmName()
+  context.faction = UnitFactionGroup("target") or "Neutral"
+  self:PrintInfo("" .. context.faction .. " auction house on " .. context.region .. " / " .. context.realm)
+  return context
+end
 
 function ML:AHSaveAll()
   local _, dumpOk = CanSendAuctionQuery()
@@ -41,7 +52,11 @@ function ML:AHdump()
   if not self.savedVar.ah then
     self.savedVar.ah = {}
   end
-  local p, r = UnitFullName("player")
-  table.insert(self.savedVar.ah, {realm = r, ts = GetServerTime(), data = res, char = p})
+  local toon = self.GetMyFQN()
+  local entry = self.AHContext()
+  entry.ts = GetServerTime()
+  entry.data = res
+  entry.char = toon
+  table.insert(self.savedVar.ah, entry)
   return res
 end

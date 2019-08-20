@@ -1,6 +1,6 @@
 --[[
   MoLib -- (c) 2009-2019 moorea@ymail.com (MooreaTv)
-  Covered by the GNU General Public License version 3 (GPLv3)
+  Covered by the GNU Lesser General Public License v3.0 (LGPLv3)
   NO WARRANTY
   (contact the author if you need a different license)
 
@@ -226,6 +226,11 @@ end
 function ML:GetMyRegion()
   if self.myRegion then
     return self.myRegion, self.myRid, self.myRealmByGuid
+  end
+  if self.isClassic then
+    self.PrintInfo("We don't yet have a realm DB for classic yet so we'll just use 'classic' as the region for now")
+    self.myRegion = "classic"
+    return self.myRegion, nil, GetRealmName()
   end
   -- we can only get the region, not the server reliably from our own GUID
   self.myGuid = UnitGUID("player")

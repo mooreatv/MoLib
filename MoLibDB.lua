@@ -1,6 +1,6 @@
 --[[
   MoLib (Database part) -- (c) 2019 moorea@ymail.com (MooreaTv)
-  Covered by the GNU General Public License version 3 (GPLv3)
+  Covered by the GNU Lesser General Public License v3.0 (LGPLv3)
   NO WARRANTY
   (contact the author if you need a different license)
 ]] --
@@ -28,7 +28,7 @@ ML.modb = {} -- assumes saved var will restore the actual DB
   - seller db ?
 
   - region/realm
-  
+
   - submitted id (by battle.net)
 
   ]]
