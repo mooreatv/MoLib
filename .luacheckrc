@@ -47,6 +47,7 @@ globals = {
     "UnitFactionGroup",
     "AuctionFrameBrowse",
     "C_Timer",
+    "SetAuctionsTabShowing",
 }
 max_line_length = 132
 ignore = {

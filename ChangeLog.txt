@@ -4,9 +4,10 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
-v7.08.01 Aug 20th 2019
+v7.08.02 Aug 20th 2019
 - More AH code for AuctionDB addon:
   - Fully functional, fast, full scan (:AHFullSave()) - does generate a huge amount of data though.
+  - Now setup with a per Wow product line (classic, bfa at the moment) ItemDB with short key and Scan result
 - switched License from GPLv3 to GNU Lesser General Public License v3.0 (LGPLv3)
   (as I always intended as this is a library and needs to be embedded, also WoW is proprietary
   which I believe implies no Addon can be plain GPL)

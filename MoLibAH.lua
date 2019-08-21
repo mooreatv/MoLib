@@ -3,11 +3,60 @@
   Covered by the GNU Lesser General Public License v3.0 (LGPLv3)
   NO WARRANTY
   (contact the author if you need a different license)
+
+  "doc" for GetAuctionItemInfo
+  name, texture, count, quality, canUse, level, levelColHeader, minBid, minIncrement, buyoutPrice,
+  bidAmount, highBidder, bidderFullName, owner, ownerFullName, saleStatus, itemId, hasAllInfo =  GetAuctionItemInfo("list", i)
+
 ]] --
 -- our name, our empty default (and unused) anonymous ns
 local addonName, _ns = ...
 
 local ML = _G[addonName]
+
+-- In bfa at least, only 2 types of AH items seen so far:
+-- ["link"] = "|cff1eff00|Hitem:24767::::::::29:70:512:36:2:1679:3850:112:::|h[Clefthoof Hidemantle of the Quickblade]|h|r",
+-- ["link"] = "|cff0070dd|Hbattlepet:1061:1:3:152:10:13:0000000000000000|h[Darkmoon Hatchling]|h|r",
+
+-- Hitem:38933   :    :      :  :  :          :     :            :49:105::::::
+--       itemid   ench  gemid g2 g3  suffixid   uid   linklevel : specid : upgradetypeid : instancedif
+-- lets shorten those:
+function ML:ItemLinkToId(link)
+  if not link then
+    self:DebugStack("Bad ItemLinkToId(nil) call")
+    return
+  end
+  local idStr = link:match("^|[^|]+|H([^|]+)|")
+  if not idStr then
+    self:Error("Unexpected item link format %", link)
+    return
+  end
+  local short = idStr
+  short = string.gsub(short, "^(.)[^:]+:", "%1")
+  -- get rid of :uid:linklevel:specid:upgradetype section
+  short = string.gsub(short, "^(i[-%d]+:[-%d]*:[-%d]*:[-%d]*:[-%d]*:[-%d]*):[-%d]*:[-%d]*:[-%d]*:[-%d]*(.*)$", "%1%2")
+  -- remove trailing ::::: and 00000 (battlepet)
+  short = string.gsub(short, ":[:0]*$", "")
+  self:Debug(5, "ItemLinkToId % -> %", idStr, short)
+  return short
+end
+
+function ML:AddToItemDB(link)
+  local key = self:ItemLinkToId(link)
+  local idb = self.savedVar[self.itemDBKey]
+  local existing = idb[key]
+  if existing then
+    -- test can be removed if it continues to never trigger (or left only for debug/dev mode)
+    if link ~= existing then
+      self:Error("key % for link % value mismatch with previous %", key, link, existing)
+      idb[key] = link
+    end
+    return key -- already in there
+  end
+  idb._count_ = idb._count_ + 1 -- lua doesn't expose the number of entries (!)
+  idb[key] = link
+  return key
+end
 
 function ML:AHContext()
   self:InitRealms()
@@ -29,9 +78,18 @@ function ML:AHSaveAll()
     self:Warning("Can't query ALL at AH, try again later...")
     return
   end
-  -- SetAuctionsTabShowing(false)
+  self.itemDBKey = "itemDB_" .. _G.WOW_PROJECT_ID -- split classic and bfa, even though they should never end up in same saved vars
+  if not self.savedVar[self.itemDBKey] then
+    -- create/init itemDB for each wow type (currently BfA vs Classic)
+    self.savedVar[self.itemDBKey] = {}
+    self.savedVar[self.itemDBKey]._formatVersion_ = 1 -- shortKey = fullLink associative array
+    self.savedVar[self.itemDBKey]._count_ = 0
+    self.savedVar[self.itemDBKey]._created_ = GetServerTime()
+    -- else: check version (todo)
+  end
+  SetAuctionsTabShowing(false) -- does this do anything
   self.ahStartTS = debugprofilestop()
-  wipe(self.ahResult)
+  self.ahResult = wipe(self.ahResult)
   QueryAuctionItems("", nil, nil, 0, 0, 0, true)
   self.waitingForAH = true
   self.ahResumeAt = nil
@@ -52,7 +110,9 @@ end
 function ML:AHrestoreNormal()
   self.waitingForAH = nil
   self.ahRetries = 0
+  self.ahResumeAt = nil
   AuctionFrameBrowse:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
+  SetAuctionsTabShowing(true)
 end
 
 -- (default) page size is NUM_AUCTION_ITEMS_PER_PAGE (50) which
@@ -63,7 +123,7 @@ ML.ahRetryTimerInterval = 0.1
 
 function ML:AHdump(fromEvent)
   if not self.waitingForAH then
-    self.Debug("Not expecting AHdump() call")
+    self.Warning("Not expecting AHdump() call...")
     return
   end
   if fromEvent then
@@ -78,7 +138,6 @@ function ML:AHdump(fromEvent)
   local batch, count = GetNumAuctionItems("list")
   if batch ~= count then
     self:Error("Unexpected mismatch between batch % and count % for a dump all of AH", batch, count)
-    -- SetAuctionsTabShowing(true)
     self:AHrestoreNormal()
     return
   end
@@ -106,7 +165,12 @@ function ML:AHdump(fromEvent)
             firstIncomplete = j
           end
         else
-          self.ahResult[j] = {info = {GetAuctionItemInfo("list", j)}, link = linkRes}
+          local key = self:AddToItemDB(linkRes)
+          local _name, _texture, itemCount, _quality, _canUse, _level, _levelColHeader, minBid, _minIncrement,
+                buyoutPrice, _bidAmount, _highBidder, _bidderFullName, owner, ownerFullName, _saleStatus, _itemId,
+                _hasAllInfo = GetAuctionItemInfo("list", j)
+          self.ahResult[j] = string.format("%s,%d,%.0f,%.0f,%s", key, itemCount, minBid, buyoutPrice,
+                                           ownerFullName or owner or "")
         end
       end
       j = j + 1
@@ -152,14 +216,17 @@ function ML:AHdump(fromEvent)
   end
   self.waitingForAH = nil
   self.ahResumeAt = nil
-  -- SetAuctionsTabShowing(true)
   if not self.savedVar.ah then
     self.savedVar.ah = {}
   end
   local toon = self:GetMyFQN()
   local entry = self:AHContext()
   entry.ts = GetServerTime()
-  entry.data = self.ahResult
+  entry.dataFormatVersion = 1
+  entry.dataFormatInfo = "key,itemCount,minBid,buyoutPrice,seller ..."
+  entry.data = table.concat(self.ahResult, " ") -- \n gets escaped into '\' + 'n' so might as well use 1 byte instead
+  self:PrintInfo("MoLib AH Scan data packed to % Mbytes", self:round(#entry.data / 1024 / 1024, .01))
+  self.ahResult = wipe(self.ahResult)
   entry.char = toon
   entry.count = count
   self.ahEndTS = debugprofilestop()
@@ -169,8 +236,8 @@ function ML:AHdump(fromEvent)
   local speed = self:round(count / elapsed, 0.1)
   elapsed = self:round(elapsed, 0.01)
   self:PrintInfo(self.name ..
-                   ": Auction scan complete and captured for % listings in % s (% auctions/sec). Consider /reload to save it asap.",
-                 count, elapsed, speed)
+                   ": Auction scan complete and captured for % listings in % s (% auctions/sec). Item DB has % entries. " ..
+                   "Consider /reload to save asap.", count, elapsed, speed, self.savedVar[self.itemDBKey]._count_)
   self:AHrestoreNormal()
   return entry
 end

@@ -1192,7 +1192,7 @@ function ML:BugReport(subtitle, text)
                      "\nSession messages log:\n"
   local numEntries = #self.sessionLog
   local skipped = 0
-  local maxLines = self.bugReportMaxLine
+  local maxLines = self.bugReportMaxLines
   local keepFirst = self.bugReportKeepFirst
   local keepRecent = maxLines - keepFirst
   local maxEntryLen = self.bugReportMaxEntryLen
