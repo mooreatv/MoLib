@@ -13,6 +13,7 @@ v7.08.03 Aug 22nd 2019
   - expose :AHfullScanPossible()
   - optional :AHendOfScanCB() end of scan callback
   - :AHSaveAll() detects/warns if called before scan finishes
+  - prints up to .showItems new items found during scan
 - switched License from GPLv3 to GNU Lesser General Public License v3.0 (LGPLv3)
   (as I always intended as this is a library and needs to be embedded, also WoW is proprietary
   which I believe implies no Addon can be plain GPL)

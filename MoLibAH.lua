@@ -48,13 +48,25 @@ function ML:AddToItemDB(link)
   if existing then
     -- test can fail when switching toon of different level/spec... so only for dev/debug mode
     if self.debug and link ~= existing then
-      self:Error("key % for link % value mismatch with previous % (could be just the specid or a real issue)", key, link, existing)
+      self:Error("key % for link % value mismatch with previous % (could be just the specid or a real issue)", key,
+                 link, existing)
       idb[key] = link
     end
     return key -- already in there
   end
   idb._count_ = idb._count_ + 1 -- lua doesn't expose the number of entries (!)
   idb[key] = link
+  self:Debug("New item #% key %: %", idb._count_, key, link)
+  if self.showNewItems then
+    local newIdx = idb._count_ - self.itemDBStartingCount
+    if newIdx <= self.showNewItems then
+      local extra = ""
+      if newIdx == self.showNewItems then
+        extra = self.L[" (maximum reached, won't show more for this scan)"]
+      end
+      self:PrintDefault(self.name .. self.L[" Never seen before item #% (%): "] .. link .. extra, newIdx, idb._count_)
+    end
+  end
   return key
 end
 
@@ -113,7 +125,8 @@ function ML:AHSaveAll()
       itemDB = self:InitItemDB()
     end
   end
-  self:Debug("Starting itemDB has % items", itemDB._count_)
+  self:Debug("Starting itemDB has % items (was %)", itemDB._count_, self.itemDBStartingCount)
+  self.itemDBStartingCount = itemDB._count_
   SetAuctionsTabShowing(false) -- does this do anything
   self.ahStartTS = debugprofilestop()
   self.ahResult = wipe(self.ahResult)
@@ -127,9 +140,9 @@ end
 
 ML.EventHdlrs.AUCTION_ITEM_LIST_UPDATE = function(frame, _event, _name)
   local addonP = frame.addonPtr
-  addonP:Debug(2, "AUCTION_ITEM_LIST_UPDATE Event received - in ah wait %", addonP.waitingForAH)
+  addonP:Debug(3, "AUCTION_ITEM_LIST_UPDATE Event received - in ah wait %", addonP.waitingForAH)
   if addonP.waitingForAH then
-    addonP:Debug(1, "Event received, waiting for items for AH, at % got %", addonP.ahResumeAt, #addonP.ahResult)
+    addonP:Debug(2, "Event received, waiting for items for AH, at % got %", addonP.ahResumeAt, #addonP.ahResult)
     addonP:AHdump(true)
   end
 end
@@ -178,7 +191,6 @@ function ML:AHdump(fromEvent)
     self.ahResumeAt = 1
   end
   local itemDB = self.savedVar[self.itemDBKey]
-  local itemDBCount = itemDB._count_
   -- prefetch/request at least .ahPrefetch then reschedule
   local i = self.ahResumeAt
   while (i <= count) do
@@ -264,10 +276,9 @@ function ML:AHdump(fromEvent)
   table.insert(self.savedVar.ah, entry)
   local speed = self:round(count / elapsed, 0.1)
   elapsed = self:round(elapsed, 0.01)
-  local newItems = itemDB._count_ - itemDBCount
+  local newItems = itemDB._count_ - self.itemDBStartingCount
   self:PrintInfo(self.name .. ": Auction scan complete and captured for % listings in % s (% auctions/sec).\n" ..
-                   "% new items in DB, now % entries. " .. "Consider /reload to save asap.", count, elapsed, speed,
-                 newItems, itemDB._count_)
+                   "% new items in DB, now % entries. ", count, elapsed, speed, newItems, itemDB._count_)
   self:AHrestoreNormal()
   self:AHendOfScanCB()
   return entry
