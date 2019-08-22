@@ -4,13 +4,21 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
-v7.08.02 Aug 20th 2019
+v7.08.03 Aug 22nd 2019
 - More AH code for AuctionDB addon:
   - Fully functional, fast, full scan (:AHFullSave()) - does generate a huge amount of data though.
   - Now setup with a per Wow product line (classic, bfa at the moment) ItemDB with short key and Scan result
+  - added item db version check
+  - count and show number of new items found in the scan
+  - expose :AHfullScanPossible()
+  - optional :AHendOfScanCB() end of scan callback
+  - :AHSaveAll() detects/warns if called before scan finishes
 - switched License from GPLv3 to GNU Lesser General Public License v3.0 (LGPLv3)
   (as I always intended as this is a library and needs to be embedded, also WoW is proprietary
   which I believe implies no Addon can be plain GPL)
+- new :HexDump function
+- handle PTR/unknown Realms
+
 - added changeable bug report params: .bugReportMaxLines = 225, .bugReportKeepFirst = 25, .bugReportMaxEntryLen = 400
 
 v7.07.00 Aug 15th 2019

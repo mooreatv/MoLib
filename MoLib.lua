@@ -235,7 +235,13 @@ function ML:GetMyRegion()
   -- we can only get the region, not the server reliably from our own GUID
   self.myGuid = UnitGUID("player")
   self.myRid = ML:extractRealmID(self.myGuid)
-  self.myRealmByGuid, self.myRegion = unpack(Realms[self.myRid])
+  if not Realms[self.myRid] then
+    self:Error("This realm id % (%) is unknown to Realm DB - please report!", self.myRid, GetRealmName())
+    self.myRealmByGuid = "unknown"
+    self.myRegion = "unknown"
+  else
+    self.myRealmByGuid, self.myRegion = unpack(Realms[self.myRid])
+  end
   return self.myRegion, self.myRid, self.myRealmByGuid -- don't rely on last 2
 end
 
@@ -431,10 +437,10 @@ ML.Base64[64] = "/"
 ML:Debug("Done generating AlphaNum table, % elems: %", #ML.AlphaNum, ML.AlphaNum)
 ML:Debug("and Base64 table, % elems: %", #ML.Base64, ML.Base64)
 
---function ML:Base64Encode(_binary)
-  --  for i = 1, #binary, 3 do
-  --  end
---end
+-- function ML:Base64Encode(_binary)
+--  for i = 1, #binary, 3 do
+--  end
+-- end
 
 function ML:RandomId(len)
   local res = {}
@@ -444,6 +450,17 @@ function ML:RandomId(len)
   local strRes = table.concat(res)
   self:Debug(8, "Generated % long id from alphabet of % characters: %", len, #ML.AlphaNum, strRes)
   return strRes
+end
+
+--  (binary) string to hex string
+function ML:HexDump(input)
+  local res = {}
+  local fmt = string.format
+  local byt = string.byte
+  for i = 1, #input do
+    table.insert(res, fmt("%02X", byt(input, i)))
+  end
+  return table.concat(res, "")
 end
 
 -- unsigned 32 bit number (like bit.bxor returns) to hex

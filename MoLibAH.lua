@@ -46,9 +46,9 @@ function ML:AddToItemDB(link)
   local idb = self.savedVar[self.itemDBKey]
   local existing = idb[key]
   if existing then
-    -- test can be removed if it continues to never trigger (or left only for debug/dev mode)
-    if link ~= existing then
-      self:Error("key % for link % value mismatch with previous %", key, link, existing)
+    -- test can fail when switching toon of different level/spec... so only for dev/debug mode
+    if self.debug and link ~= existing then
+      self:Error("key % for link % value mismatch with previous % (could be just the specid or a real issue)", key, link, existing)
       idb[key] = link
     end
     return key -- already in there
@@ -72,21 +72,48 @@ end
 
 ML.ahResult = {}
 
-function ML:AHSaveAll()
+function ML:AHfullScanPossible()
   local _, dumpOk = CanSendAuctionQuery()
-  if not dumpOk then
+  return dumpOk
+end
+
+function ML:InitItemDB()
+  self.savedVar[self.itemDBKey] = {}
+  local itemDB = self.savedVar[self.itemDBKey]
+  itemDB._formatVersion_ = 1 -- shortKey = fullLink associative array
+  itemDB._count_ = 0
+  itemDB._created_ = GetServerTime()
+  -- also clear the ah array itself
+  self.savedVar.ah = wipe(self.savedVar.ah)
+  return itemDB
+end
+
+function ML:AHSaveAll()
+  if not self:AHfullScanPossible() then
     self:Warning("Can't query ALL at AH, try again later...")
     return
   end
-  self.itemDBKey = "itemDB_" .. _G.WOW_PROJECT_ID -- split classic and bfa, even though they should never end up in same saved vars
-  if not self.savedVar[self.itemDBKey] then
-    -- create/init itemDB for each wow type (currently BfA vs Classic)
-    self.savedVar[self.itemDBKey] = {}
-    self.savedVar[self.itemDBKey]._formatVersion_ = 1 -- shortKey = fullLink associative array
-    self.savedVar[self.itemDBKey]._count_ = 0
-    self.savedVar[self.itemDBKey]._created_ = GetServerTime()
-    -- else: check version (todo)
+  if self.waitingForAH then
+    self:Warning("Already doing a scan (%), try a new one later...", self.ahResumeAt)
+    self:AHdump() -- in case previous one got error/got stuck
+    return
   end
+  if not _G.AuctionFrame or not _G.AuctionFrame:IsVisible() then
+    self:Warning("Not at the AH, can't scan...")
+    return
+  end
+  self.itemDBKey = "itemDB_" .. _G.WOW_PROJECT_ID -- split classic and bfa, even though they should never end up in same saved vars
+  local itemDB = self.savedVar[self.itemDBKey]
+  if not itemDB then
+    -- create/init itemDB for each wow type (currently BfA vs Classic)
+    itemDB = self:InitItemDB()
+  else
+    if not itemDB._formatVersion_ or itemDB._formatVersion_ ~= 1 then
+      self:Error("Erasing unknown/past Item DB format %", itemDB._formatVersion_)
+      itemDB = self:InitItemDB()
+    end
+  end
+  self:Debug("Starting itemDB has % items", itemDB._count_)
   SetAuctionsTabShowing(false) -- does this do anything
   self.ahStartTS = debugprofilestop()
   self.ahResult = wipe(self.ahResult)
@@ -150,6 +177,8 @@ function ML:AHdump(fromEvent)
                       self:round((debugprofilestop() - self.ahStartTS) / 1000, 0.01))
     self.ahResumeAt = 1
   end
+  local itemDB = self.savedVar[self.itemDBKey]
+  local itemDBCount = itemDB._count_
   -- prefetch/request at least .ahPrefetch then reschedule
   local i = self.ahResumeAt
   while (i <= count) do
@@ -235,9 +264,15 @@ function ML:AHdump(fromEvent)
   table.insert(self.savedVar.ah, entry)
   local speed = self:round(count / elapsed, 0.1)
   elapsed = self:round(elapsed, 0.01)
-  self:PrintInfo(self.name ..
-                   ": Auction scan complete and captured for % listings in % s (% auctions/sec). Item DB has % entries. " ..
-                   "Consider /reload to save asap.", count, elapsed, speed, self.savedVar[self.itemDBKey]._count_)
+  local newItems = itemDB._count_ - itemDBCount
+  self:PrintInfo(self.name .. ": Auction scan complete and captured for % listings in % s (% auctions/sec).\n" ..
+                   "% new items in DB, now % entries. " .. "Consider /reload to save asap.", count, elapsed, speed,
+                 newItems, itemDB._count_)
   self:AHrestoreNormal()
+  self:AHendOfScanCB()
   return entry
+end
+
+function ML:AHendOfScanCB()
+  self:Debug("Default non overridden AHendOfScanCB()")
 end
