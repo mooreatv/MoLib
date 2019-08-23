@@ -85,8 +85,8 @@ end
 ML.ahResult = {}
 
 function ML:AHfullScanPossible()
-  local _, dumpOk = CanSendAuctionQuery()
-  return dumpOk
+  local normalQueryOk, dumpOk = CanSendAuctionQuery()
+  return dumpOk and normalQueryOk
 end
 
 function ML:InitItemDB()
@@ -96,11 +96,16 @@ function ML:InitItemDB()
   itemDB._count_ = 0
   itemDB._created_ = GetServerTime()
   -- also clear the ah array itself
-  self.savedVar.ah = wipe(self.savedVar.ah)
+  if self.savedVar.ah then
+    self.savedVar.ah = wipe(self.savedVar.ah)
+  end
   return itemDB
 end
 
-function ML:AHSaveAll()
+-- Main entry point for this file/feature: does a full AH query and scan/parse the results into
+-- the addon saved variable.
+-- Debug/test mode:
+function ML:AHSaveAll(dontActuallyQuery)
   if not self:AHfullScanPossible() then
     self:Warning("Can't query ALL at AH, try again later...")
     return
@@ -130,7 +135,17 @@ function ML:AHSaveAll()
   SetAuctionsTabShowing(false) -- does this do anything
   self.ahStartTS = debugprofilestop()
   self.ahResult = wipe(self.ahResult)
-  QueryAuctionItems("", nil, nil, 0, 0, 0, true)
+  if dontActuallyQuery then
+    self:Warning("Running with existing last AH results instead of a real scan")
+    self.ahIsStale = true
+    -- we won't get the first event so schedule the dump for just after this, simulating the event:
+    C_Timer.After(0, function()
+      self:AHdump(true)
+    end)
+  else
+    self.ahIsStale = false
+    QueryAuctionItems("", nil, nil, 0, 0, 0, true)
+  end
   self.waitingForAH = true
   self.ahResumeAt = nil
   AuctionFrameBrowse:UnregisterEvent("AUCTION_ITEM_LIST_UPDATE")
@@ -142,8 +157,13 @@ ML.EventHdlrs.AUCTION_ITEM_LIST_UPDATE = function(frame, _event, _name)
   local addonP = frame.addonPtr
   addonP:Debug(3, "AUCTION_ITEM_LIST_UPDATE Event received - in ah wait %", addonP.waitingForAH)
   if addonP.waitingForAH then
-    addonP:Debug(2, "Event received, waiting for items for AH, at % got %", addonP.ahResumeAt, #addonP.ahResult)
-    addonP:AHdump(true)
+    addonP:Debug(2, "Event received, waiting for items for AH, at % got % - already in is %", addonP.ahResumeAt,
+                 #addonP.ahResult, addonP.AHinDump)
+    if not addonP.AHinDump then
+      addonP:AHdump(true)
+    else
+      addonP:Debug(1, "Skipping item list even because we already are inside AHdump... %", addonP.ahResumeAt)
+    end
   end
 end
 
@@ -151,6 +171,11 @@ function ML:AHrestoreNormal()
   self.waitingForAH = nil
   self.ahRetries = 0
   self.ahResumeAt = nil
+  if self.ahTimer then
+    self:Debug(2, "cancelling previous timer, from restore normal")
+    self.ahTimer:Cancel()
+    self.ahTimer = nil
+  end
   AuctionFrameBrowse:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
   SetAuctionsTabShowing(true)
 end
@@ -159,13 +184,34 @@ end
 -- we don't to prefetch as that's way too slow
 ML.ahPrefetch = 1000
 ML.ahMaxRetries = 10 -- how many retries without making progress (ie 1sec)
-ML.ahRetryTimerInterval = 0.1
+ML.ahBaseTimerInterval = 0.1
+ML.ahMaxRestarts = 10 -- how many times to restart the scan when stepping on an expired auction
+
+function ML:AHscheduleNextDump(msg)
+  if self.ahTimer then
+    self:Debug(4, "cancelling previous timer, from " .. msg)
+    self.ahTimer:Cancel()
+  end
+  self:Debug(5, "scheduling retry in %s", self.ahRetryTimerInterval)
+  self.ahTimer = C_Timer.NewTimer(self.ahCurrentTimerInterval, function()
+    self.ahTimer = nil
+    self:AHdump()
+  end)
+end
 
 function ML:AHdump(fromEvent)
   if not self.waitingForAH then
     self.Warning("Not expecting AHdump() call...")
     return
   end
+  if self.AHinDump then
+    self:Warning("AHdump unexpected reentrance chkpoint %", self.ahResumeAt)
+    self.ahCurrentTimerInterval = math.min(2 * self.ahCurrentTimerInterval + 0.1, 1) -- slow down but only up to 1 sec
+    ML:AHscheduleNextDump("reentered too soon")
+    return
+  end
+  self.AHinDump = true -- where is 'finally' when you need it - must check every return path below
+  self.ahCurrentTimerInterval = self.ahBaseTimerInterval -- (back to) initial speed
   if fromEvent then
     self.ahRetries = 0
     if self.ahTimer then
@@ -179,16 +225,44 @@ function ML:AHdump(fromEvent)
   if batch ~= count then
     self:Error("Unexpected mismatch between batch % and count % for a dump all of AH", batch, count)
     self:AHrestoreNormal()
+    self.AHinDump = false
     return
   end
   if count == 0 then
     self:PrintDefault("Result not ready, will try :AHdump() again shortly")
+    self.AHinDump = false
     return
   end
   if not self.ahResumeAt then
     self:PrintDefault(self.name .. ": Getting % items from AH all dump. (initial list took % sec to get)", count,
                       self:round((debugprofilestop() - self.ahStartTS) / 1000, 0.01))
     self.ahResumeAt = 1
+    self.expectedCount = count
+    self.currentCount = nil
+  else
+    if count ~= self.expectedCount and count ~= self.currentCount then
+      self.ahRestarts = (self.ahRestarts or 0) + 1
+      self:Warning(
+        "Auction list count changed unexpectedly from % to % (likely bad scan, please report) - starting over (restart #%)!",
+        self.currentCount or self.expectedCount, count, self.ahRestarts)
+      self.currentCount = count
+      -- start over
+      if self.ahRestarts > self.ahMaxRestarts then
+        self:Error("Too many (%) restarts of scan for % -> % auctions, aborting, please report!", self.ahRestarts,
+                   self.expectedCount, self.currentCount)
+        self:AHrestoreNormal()
+        self.AHinDump = false
+        return
+      end
+      self.ahResult = wipe(self.ahResult)
+      self.ahResumeAt = 1
+      self.ahIsStale = true
+      C_Timer.After(0.5, function()
+        self:AHdump(true) -- we'll probably get an event
+      end)
+      self.AHinDump = false
+      return
+    end
   end
   local itemDB = self.savedVar[self.itemDBKey]
   -- prefetch/request at least .ahPrefetch then reschedule
@@ -210,13 +284,15 @@ function ML:AHdump(fromEvent)
           local _name, _texture, itemCount, _quality, _canUse, _level, _levelColHeader, minBid, _minIncrement,
                 buyoutPrice, _bidAmount, _highBidder, _bidderFullName, owner, ownerFullName, _saleStatus, _itemId,
                 _hasAllInfo = GetAuctionItemInfo("list", j)
-          self.ahResult[j] = string.format("%s,%d,%.0f,%.0f,%s", key, itemCount, minBid, buyoutPrice,
-                                           ownerFullName or owner or "")
+          local timeLeft = GetAuctionItemTimeLeft("list", j)
+          self.ahResult[j] = string.format("%s,%d,%.0f,%.0f,%s,%d", key, itemCount, minBid, buyoutPrice,
+                                           ownerFullName or owner or "", (timeLeft or 0))
         end
       end
       j = j + 1
     until (j > count) or (numIncomplete == self.ahPrefetch)
     if numIncomplete > 0 then
+      self:Debug(3, "ni % fi % ahR %", numIncomplete, firstIncomplete, self.ahResumeAt)
       local progressMade = (firstIncomplete > self.ahResumeAt)
       if progressMade then
         self:Debug("We made progress from % to %, so resetting retries", self.ahResumeAt, firstIncomplete)
@@ -232,22 +308,17 @@ function ML:AHdump(fromEvent)
                           firstIncomplete, count, self.ahRetries)
       end
       if self.ahRetries > self.ahMaxRetries then
-        self:Error("Too many retries (%) without progress when trying to get to full AH of % with page size %",
-                   self.ahRetries, count, self.ahScanPage)
+        self:Error(
+          "Too many retries (%) without progress when trying to get to full AH of % with page size %, stuck on item %",
+          self.ahRetries, count, self.ahPrefetch, firstIncomplete)
         self:AHrestoreNormal()
+        self.AHinDump = false
         return
       end
       self.ahResumeAt = firstIncomplete
-      if self.ahTimer then
-        self:Debug(4, "cancelling previous timer, from retry loop")
-        self.ahTimer:Cancel()
-      end
-      -- prefer event based... but seems like we need more
-      self:Debug(5, "scheduling retry in %s", self.ahRetryTimerInterval)
-      self.ahTimer = C_Timer.NewTimer(self.ahRetryTimerInterval, function()
-        self.ahTimer = nil
-        self:AHdump()
-      end)
+      -- we would prefer entirely event based... but it seems like we need more than just events but also keep retrying
+      self:AHscheduleNextDump("retry loop")
+      self.AHinDump = false
       return
     end
     self.ahResumeAt = j
@@ -270,6 +341,8 @@ function ML:AHdump(fromEvent)
   self.ahResult = wipe(self.ahResult)
   entry.char = toon
   entry.count = count
+  entry.firstCount = self.expectedCount -- the two should be equal for good scans, probably shud just discard... keeping to study it
+  entry.testScan = self.ahIsStale -- did we really do a query first
   self.ahEndTS = debugprofilestop()
   local elapsed = (self.ahEndTS - self.ahStartTS) / 1000 -- in seconds not ms
   entry.elapsed = elapsed
@@ -277,10 +350,13 @@ function ML:AHdump(fromEvent)
   local speed = self:round(count / elapsed, 0.1)
   elapsed = self:round(elapsed, 0.01)
   local newItems = itemDB._count_ - self.itemDBStartingCount
+  entry.newItems = newItems
+  entry.itemDBcount = itemDB._count_
   self:PrintInfo(self.name .. ": Auction scan complete and captured for % listings in % s (% auctions/sec).\n" ..
                    "% new items in DB, now % entries. ", count, elapsed, speed, newItems, itemDB._count_)
   self:AHrestoreNormal()
   self:AHendOfScanCB()
+  self.AHinDump = false
   return entry
 end
 

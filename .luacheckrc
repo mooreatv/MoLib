@@ -43,6 +43,7 @@ globals = {
     "GetNumAuctionItems",
     "GetAuctionItemInfo",
     "GetAuctionItemLink",
+    "GetAuctionItemTimeLeft",
     "GetRealmName",
     "UnitFactionGroup",
     "AuctionFrameBrowse",
