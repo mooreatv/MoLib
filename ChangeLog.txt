@@ -7,6 +7,7 @@ but also meant to be reused in other addons, not just mine.
 v7.08.04 Aug 23rd 2019
 - AH: fix for Issue #16 - GetAuctionItemTimeLeft() can block and cause reentrance in our timer based block fetch
 - fixed bug with ah record wipe on detected db format change
+- now include auction time left in the ah records
 v7.08.03 Aug 22nd 2019
 - More AH code for AuctionDB addon:
   - Fully functional, fast, full scan (:AHFullSave()) - does generate a huge amount of data though.

@@ -335,7 +335,7 @@ function ML:AHdump(fromEvent)
   local entry = self:AHContext()
   entry.ts = GetServerTime()
   entry.dataFormatVersion = 1
-  entry.dataFormatInfo = "key,itemCount,minBid,buyoutPrice,seller ..."
+  entry.dataFormatInfo = "key,itemCount,minBid,buyoutPrice,seller,timeLeft ..."
   entry.data = table.concat(self.ahResult, " ") -- \n gets escaped into '\' + 'n' so might as well use 1 byte instead
   self:PrintInfo("MoLib AH Scan data packed to % Mbytes", self:round(#entry.data / 1024 / 1024, .01))
   self.ahResult = wipe(self.ahResult)
