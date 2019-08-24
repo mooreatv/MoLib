@@ -4,6 +4,8 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.08.05 Aug 23rd 2019
+- AH: better item link packing, Run Length Encode the ":"s; convert data from v1 to this v2
 v7.08.04 Aug 23rd 2019
 - AH: fix for Issue #16 - GetAuctionItemTimeLeft() can block and cause reentrance in our timer based block fetch
 - fixed bug with ah record wipe on detected db format change

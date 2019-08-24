@@ -17,13 +17,12 @@ local ML = _G[addonName]
 -- In bfa at least, only 2 types of AH items seen so far:
 -- ["link"] = "|cff1eff00|Hitem:24767::::::::29:70:512:36:2:1679:3850:112:::|h[Clefthoof Hidemantle of the Quickblade]|h|r",
 -- ["link"] = "|cff0070dd|Hbattlepet:1061:1:3:152:10:13:0000000000000000|h[Darkmoon Hatchling]|h|r",
-
 -- Hitem:38933   :    :      :  :  :          :     :            :49:105::::::
 --       itemid   ench  gemid g2 g3  suffixid   uid   linklevel : specid : upgradetypeid : instancedif
 -- lets shorten those:
 function ML:ItemLinkToId(link)
-  if not link then
-    self:DebugStack("Bad ItemLinkToId(nil) call")
+  if type(link) ~= "string" then
+    self:DebugStack("Bad ItemLinkToId(%) call", link)
     return
   end
   local idStr = link:match("^|[^|]+|H([^|]+)|")
@@ -37,17 +36,21 @@ function ML:ItemLinkToId(link)
   short = string.gsub(short, "^(i[-%d]+:[-%d]*:[-%d]*:[-%d]*:[-%d]*:[-%d]*):[-%d]*:[-%d]*:[-%d]*:[-%d]*(.*)$", "%1%2")
   -- remove trailing ::::: and 00000 (battlepet)
   short = string.gsub(short, ":[:0]*$", "")
+  -- run length encode :s  1":" is :, 2 is ; (:+1 in ascii), 3 is < etc
+  short = string.gsub(short, "::+", function(match)
+    return string.format("%c", 57 + #match)
+  end)
   self:Debug(5, "ItemLinkToId % -> %", idStr, short)
   return short
 end
 
-function ML:AddToItemDB(link)
+function ML:AddToItemDB(link, batch)
   local key = self:ItemLinkToId(link)
   local idb = self.savedVar[self.itemDBKey]
   local existing = idb[key]
   if existing then
     -- test can fail when switching toon of different level/spec... so only for dev/debug mode
-    if self.debug and link ~= existing then
+    if (batch or self.debug) and link ~= existing then
       self:Error("key % for link % value mismatch with previous % (could be just the specid or a real issue)", key,
                  link, existing)
       idb[key] = link
@@ -57,7 +60,7 @@ function ML:AddToItemDB(link)
   idb._count_ = idb._count_ + 1 -- lua doesn't expose the number of entries (!)
   idb[key] = link
   self:Debug("New item #% key %: %", idb._count_, key, link)
-  if self.showNewItems then
+  if not batch and self.showNewItems then
     local newIdx = idb._count_ - self.itemDBStartingCount
     if newIdx <= self.showNewItems then
       local extra = ""
@@ -89,17 +92,48 @@ function ML:AHfullScanPossible()
   return dumpOk and normalQueryOk
 end
 
-function ML:InitItemDB()
+function ML:InitItemDB(clearAHtoo)
   self.savedVar[self.itemDBKey] = {}
   local itemDB = self.savedVar[self.itemDBKey]
-  itemDB._formatVersion_ = 1 -- shortKey = fullLink associative array
+  itemDB._formatVersion_ = 2 -- shorterKey = fullLink associative array
   itemDB._count_ = 0
   itemDB._created_ = GetServerTime()
   -- also clear the ah array itself
-  if self.savedVar.ah then
+  if clearAHtoo and self.savedVar.ah then
     self.savedVar.ah = wipe(self.savedVar.ah)
   end
   return itemDB
+end
+
+function ML:CheckAndConvertItemDB()
+  local itemDB = self.savedVar[self.itemDBKey]
+  if not itemDB._formatVersion_ then
+    self:Error("Erasing unknown/past Item DB format %", itemDB._formatVersion_)
+    return self:InitItemDB(true)
+  end
+  if itemDB._formatVersion_ == 2 then
+    -- good current version
+    return itemDB
+  end
+  -- version 1: convert to v2
+  self:Warning("Converting item db v% to current - % items", itemDB._formatVersion_, itemDB._count_)
+  local newDB = self:InitItemDB()
+  local oldKeySizes = 0
+  local newKeySizes = 0
+  local valueSizes = 0
+  for k, v in pairs(itemDB) do
+    if k:sub(1, 1) ~= "_" then
+      oldKeySizes = oldKeySizes + #k
+      valueSizes = valueSizes + #v
+      local newKey = self:AddToItemDB(v, true)
+      newKeySizes = newKeySizes + #newKey
+    end
+  end
+  local percent = self:round(100 * (oldKeySizes / newKeySizes - 1), .1)
+  self:Warning("Done converting now v% itemDB - % items\n" ..
+                 "Size reduction % original to old key sizes %, to now % (%\\37 improvement)", newDB._formatVersion_,
+               newDB._count_, valueSizes, oldKeySizes, newKeySizes, percent)
+  return newDB
 end
 
 -- Main entry point for this file/feature: does a full AH query and scan/parse the results into
@@ -125,10 +159,7 @@ function ML:AHSaveAll(dontActuallyQuery)
     -- create/init itemDB for each wow type (currently BfA vs Classic)
     itemDB = self:InitItemDB()
   else
-    if not itemDB._formatVersion_ or itemDB._formatVersion_ ~= 1 then
-      self:Error("Erasing unknown/past Item DB format %", itemDB._formatVersion_)
-      itemDB = self:InitItemDB()
-    end
+    itemDB = self:CheckAndConvertItemDB()
   end
   self:Debug("Starting itemDB has % items (was %)", itemDB._count_, self.itemDBStartingCount)
   self.itemDBStartingCount = itemDB._count_
@@ -334,8 +365,8 @@ function ML:AHdump(fromEvent)
   local toon = self:GetMyFQN()
   local entry = self:AHContext()
   entry.ts = GetServerTime()
-  entry.dataFormatVersion = 1
-  entry.dataFormatInfo = "key,itemCount,minBid,buyoutPrice,seller,timeLeft ..."
+  entry.dataFormatVersion = 2
+  entry.dataFormatInfo = "v2key,itemCount,minBid,buyoutPrice,seller,timeLeft ..."
   entry.data = table.concat(self.ahResult, " ") -- \n gets escaped into '\' + 'n' so might as well use 1 byte instead
   self:PrintInfo("MoLib AH Scan data packed to % Mbytes", self:round(#entry.data / 1024 / 1024, .01))
   self.ahResult = wipe(self.ahResult)
