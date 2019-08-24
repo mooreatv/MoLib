@@ -230,7 +230,7 @@ function ML:GetMyRegion()
   if self.isClassic then
     self.PrintInfo("We don't yet have a realm DB for classic yet so we'll just use 'classic' as the region for now")
     self.myRegion = "classic"
-    return self.myRegion, nil, GetRealmName()
+    return self.myRegion, nil, nil
   end
   -- we can only get the region, not the server reliably from our own GUID
   self.myGuid = UnitGUID("player")
@@ -394,10 +394,14 @@ function ML:SplitFullName(fullName)
   return fullName:match("(.+)-(.+)")
 end
 
+function ML:NormalizeRealm(realm)
+  return string.gsub(realm, "[ -]", "")
+end
+
 -- Returns the normalized fully qualified name of the player
 function ML:GetMyFQN()
   local p, realm = UnitFullName("player")
-  local rn = GetRealmName()
+  local rn = self:NormalizeRealm(GetRealmName())
   self:Debug(1, "GetMyFQN % , % - %", p, realm, rn)
   if realm then
     if realm ~= rn then
@@ -410,7 +414,14 @@ function ML:GetMyFQN()
   if not realm then
     self:ErrorAndThrow("GetMyFQN: Realm not yet available!, called too early (wait until PLAYER_ENTERING_WORLD)!")
   end
+  self.myRealm = realm
   return p .. "-" .. realm
+end
+
+function ML:GetMyRealmAndRegion()
+  self:GetMyFQN()
+  self:GetMyRegion()
+  return self.myRealm, self.myRegion
 end
 
 ML.AlphaNum = {}

@@ -77,8 +77,7 @@ function ML:AHContext()
   self:InitRealms()
   local context = {}
   context.classic = self.isClassic
-  context.region = self:GetMyRegion()
-  context.realm = GetRealmName()
+  context.realm, context.region = self:GetMyRealmAndRegion()
   context.faction = UnitFactionGroup("target") or "Neutral" -- Not needed in BfA
   self:PrintInfo("Scan context info: " .. context.faction .. " auction house on " .. context.region .. " / " ..
                    context.realm)
