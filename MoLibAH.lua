@@ -86,6 +86,7 @@ function ML:AHContext()
 end
 
 ML.ahResult = {}
+ML.ahKeyedResult = {}
 
 function ML:AHfullScanPossible()
   local normalQueryOk, dumpOk = CanSendAuctionQuery()
@@ -131,8 +132,8 @@ function ML:CheckAndConvertItemDB()
   end
   local percent = self:round(100 * (oldKeySizes / newKeySizes - 1), .1)
   self:Warning("Done converting now v% itemDB - % items\n" ..
-                 "Size reduction % original to old key sizes %, to now % (%\\37 improvement)", newDB._formatVersion_,
-               newDB._count_, valueSizes, oldKeySizes, newKeySizes, percent)
+                 "Size reduction % original to old key sizes %, to now % (% percent improvement)",
+               newDB._formatVersion_, newDB._count_, valueSizes, oldKeySizes, newKeySizes, percent)
   return newDB
 end
 
@@ -230,6 +231,17 @@ function ML:AHscheduleNextDump(msg)
   end)
 end
 
+function ML:addToResult(key, seller, auction)
+  if not self.ahKeyedResult[key] then
+    self.ahKeyedResult[key] = {}
+  end
+  local entry = self.ahKeyedResult[key]
+  if not entry[seller] then
+    entry[seller] = {}
+  end
+  table.insert(entry[seller], auction)
+end
+
 function ML:AHdump(fromEvent)
   if not self.waitingForAH then
     self.Warning("Not expecting AHdump() call...")
@@ -286,6 +298,7 @@ function ML:AHdump(fromEvent)
         return
       end
       self.ahResult = wipe(self.ahResult)
+      self.ahKeyedResult = wipe(self.ahKeyedResult)
       self.ahResumeAt = 1
       self.ahIsStale = true
       C_Timer.After(0.5, function()
@@ -316,8 +329,9 @@ function ML:AHdump(fromEvent)
                 buyoutPrice, _bidAmount, _highBidder, _bidderFullName, owner, ownerFullName, _saleStatus, _itemId,
                 _hasAllInfo = GetAuctionItemInfo("list", j)
           local timeLeft = GetAuctionItemTimeLeft("list", j)
-          self.ahResult[j] = string.format("%s,%d,%.0f,%.0f,%s,%d", key, itemCount, minBid, buyoutPrice,
-                                           ownerFullName or owner or "", (timeLeft or 0))
+          self.ahResult[j] = true
+          self:addToResult(key, ownerFullName or owner or "",
+                           string.format("%d,%d,%.0f,%.0f", (timeLeft or 0), itemCount, minBid, buyoutPrice))
         end
       end
       j = j + 1
@@ -365,11 +379,28 @@ function ML:AHdump(fromEvent)
   local toon = self:GetMyFQN()
   local entry = self:AHContext()
   entry.ts = GetServerTime()
-  entry.dataFormatVersion = 2
-  entry.dataFormatInfo = "v2key,itemCount,minBid,buyoutPrice,seller,timeLeft ..."
-  entry.data = table.concat(self.ahResult, " ") -- \n gets escaped into '\' + 'n' so might as well use 1 byte instead
-  self:PrintInfo("MoLib AH Scan data packed to % Mbytes", self:round(#entry.data / 1024 / 1024, .01))
+  entry.dataFormatVersion = 3
+  entry.dataFormatInfo = "v2key!seller!timeleft,itemCount,minBid,buyoutPrice,seller&auction2& ..."
+  local temp = {}
+  local itemsForSale = 0
+  for k, v in pairs(self.ahKeyedResult) do
+    itemsForSale = itemsForSale + 1
+    local tt = {k}
+    if type(v) ~= "table" then
+      self:ErrorAndThrow("bug: for key % v is %", k, v)
+    end
+    for s, a in pairs(v) do
+      table.insert(tt, s)
+      table.insert(tt, table.concat(a, "&"))
+    end
+    table.insert(temp, table.concat(tt, "!"))
+  end
+  entry.itemsCount = itemsForSale
+  entry.data = table.concat(temp, " ") -- \n gets escaped into '\' + 'n' so might as well use 1 byte instead
+  self:PrintInfo("MoLib AH Scan data packed % auctions of % items to % Kbytes", count, itemsForSale,
+                 self:round(#entry.data / 1024, .1))
   self.ahResult = wipe(self.ahResult)
+  self.ahKeyedResult = wipe(self.ahKeyedResult)
   entry.char = toon
   entry.count = count
   entry.firstCount = self.expectedCount -- the two should be equal for good scans, probably shud just discard... keeping to study it
