@@ -17,8 +17,9 @@ local ML = _G[addonName]
 -- In bfa at least, only 2 types of AH items seen so far:
 -- ["link"] = "|cff1eff00|Hitem:24767::::::::29:70:512:36:2:1679:3850:112:::|h[Clefthoof Hidemantle of the Quickblade]|h|r",
 -- ["link"] = "|cff0070dd|Hbattlepet:1061:1:3:152:10:13:0000000000000000|h[Darkmoon Hatchling]|h|r",
--- Hitem:38933   :    :      :  :  :          :     :            :49:105::::::
---       itemid   ench  gemid g2 g3  suffixid   uid   linklevel : specid : upgradetypeid : instancedif
+-- |cffa335ee|Hitem:169929::::::::20:70::6:4:4800:1517:5855:4783:::|h[Cuffs of Soothing Currents]|h|r
+-- item:itemID:enchID:gemdid1:g2:g3:g4:suffixID:uniqueID:linkLevel:specializationID:upgradeTypeID:instanceDifID:numBonusIDs
+-- item:169929:      :       :  :  :  :        :        :       20:              70:             :   6        :4:4800:1517:5855:4783
 -- lets shorten those:
 function ML:ItemLinkToId(link)
   if type(link) ~= "string" then
@@ -32,8 +33,10 @@ function ML:ItemLinkToId(link)
   end
   local short = idStr
   short = string.gsub(short, "^(.)[^:]+:", "%1")
-  -- get rid of :uid:linklevel:specid:upgradetype section
-  short = string.gsub(short, "^(i[-%d]+:[-%d]*:[-%d]*:[-%d]*:[-%d]*:[-%d]*):[-%d]*:[-%d]*:[-%d]*:[-%d]*(.*)$", "%1%2")
+  -- get rid of :uid:linklevel:specid:upgradetype:instancedif section
+  short = string.gsub(short,
+                      "^(i[-%d]+:[-%d]*:[-%d]*:[-%d]*:[-%d]*:[-%d]*:[-%d]*):[-%d]*:[-%d]*:[-%d]*:[-%d]*:[-%d]*(.*)$",
+                      "%1%2")
   -- remove trailing ::::: and 00000 (battlepet)
   short = string.gsub(short, ":[:0]*$", "")
   -- run length encode :s  1":" is :, 2 is ; (:+1 in ascii), 3 is < etc
@@ -49,10 +52,12 @@ function ML:AddToItemDB(link, batch)
   local idb = self.savedVar[self.itemDBKey]
   local existing = idb[key]
   if existing then
-    -- test can fail when switching toon of different level/spec... so only for dev/debug mode
-    if (batch or self.debug) and link ~= existing then
-      self:Error("key % for link % value mismatch with previous % (could be just the specid or a real issue)", key,
-                 link, existing)
+    -- instance difficultyid changes (without non cosmetic impact) and so does the linklevel/specid
+    -- depending on which character scans... so only for dev/debug mode
+    if (batch or (self.debug and self.debug > 2)) and link ~= existing then
+      self:Warning(
+        "key % for link % value mismatch with previous % (could be just the specid, difficultyId or a real issue)", key,
+        link, existing)
       idb[key] = link
     end
     return key -- already in there
@@ -67,7 +72,8 @@ function ML:AddToItemDB(link, batch)
       if newIdx == self.showNewItems then
         extra = self.L[" (maximum reached, won't show more for this scan)"]
       end
-      self:PrintDefault(self.name .. self.L[" Never seen before item #% (%): "] .. link .. extra, newIdx, idb._count_)
+      self:PrintDefault(self.name .. " " .. self.L["Never seen before item #% (%): "] .. link .. extra, newIdx,
+                        idb._count_)
     end
   end
   return key
@@ -77,10 +83,10 @@ function ML:AHContext()
   self:InitRealms()
   local context = {}
   context.classic = self.isClassic
-  context.realm, context.region = self:GetMyRealmAndRegion()
+  context.char, context.shortChar, context.realm, context.region = self:GetMyInfo()
   context.faction = UnitFactionGroup("target") or "Neutral" -- Not needed in BfA
-  self:PrintInfo("Scan context info: " .. context.faction .. " auction house on " .. context.region .. " / " ..
-                   context.realm)
+  self:PrintInfo(self.L["Scan context info: "] .. context.faction .. self.L[" auction house on "] .. context.region ..
+                   " / " .. context.realm)
   return context
 end
 
@@ -95,7 +101,7 @@ end
 function ML:InitItemDB(clearAHtoo)
   self.savedVar[self.itemDBKey] = {}
   local itemDB = self.savedVar[self.itemDBKey]
-  itemDB._formatVersion_ = 2 -- shorterKey = fullLink associative array
+  itemDB._formatVersion_ = 4 -- shorterKey4 = fullLink associative array
   itemDB._count_ = 0
   itemDB._created_ = GetServerTime()
   -- also clear the ah array itself
@@ -111,7 +117,7 @@ function ML:CheckAndConvertItemDB()
     self:Error("Erasing unknown/past Item DB format %", itemDB._formatVersion_)
     return self:InitItemDB(true)
   end
-  if itemDB._formatVersion_ == 2 then
+  if itemDB._formatVersion_ == 4 then
     -- good current version
     return itemDB
   end
@@ -140,8 +146,8 @@ end
 -- the addon saved variable.
 -- Debug/test mode:
 function ML:AHSaveAll(dontActuallyQuery)
-  if not self:AHfullScanPossible() then
-    self:Warning("Can't query ALL at AH, try again later...")
+  if not self:AHfullScanPossible() and not dontActuallyQuery then
+    self:Warning(self.L["Can't query ALL at AH, try again later..."])
     return
   end
   if self.waitingForAH then
@@ -150,7 +156,7 @@ function ML:AHSaveAll(dontActuallyQuery)
     return
   end
   if not _G.AuctionFrame or not _G.AuctionFrame:IsVisible() then
-    self:Warning("Not at the AH, can't scan...")
+    self:Warning(self.L["Not at the AH, can't scan..."])
     return
   end
   self.itemDBKey = "itemDB_" .. _G.WOW_PROJECT_ID -- split classic and bfa, even though they should never end up in same saved vars
@@ -181,7 +187,7 @@ function ML:AHSaveAll(dontActuallyQuery)
   self.ahResumeAt = nil
   AuctionFrameBrowse:UnregisterEvent("AUCTION_ITEM_LIST_UPDATE")
   -- AHdump called through the first event
-  self:PrintInfo("Scan started... please wait...")
+  self:PrintInfo(self.L["AH Scan started... please wait..."])
 end
 
 ML.EventHdlrs.AUCTION_ITEM_LIST_UPDATE = function(frame, _event, _name)
@@ -276,8 +282,8 @@ function ML:AHdump(fromEvent)
     return
   end
   if not self.ahResumeAt then
-    self:PrintDefault(self.name .. ": Getting % items from AH all dump. (initial list took % sec to get)", count,
-                      self:round((debugprofilestop() - self.ahStartTS) / 1000, 0.01))
+    self:PrintDefault(self.name .. self.L[": Getting % items from AH all dump. (initial list took % sec to get)"],
+                      count, self:round((debugprofilestop() - self.ahStartTS) / 1000, 0.01))
     self.ahResumeAt = 1
     self.expectedCount = count
     self.currentCount = nil
@@ -345,10 +351,10 @@ function ML:AHdump(fromEvent)
       self.ahRetries = self.ahRetries + 1
       local retriesMsg = ""
       if self.ahRetries > 1 then
-        retriesMsg = string.format(" retry #%d", self.ahRetries)
+        retriesMsg = string.format(self.L[" retry #%d"], self.ahRetries)
       end
       if not fromEvent or progressMade then
-        self:PrintDefault("Expected incomplete ah % results found at % / %" .. retriesMsg, numIncomplete,
+        self:PrintDefault(self.L["Expected incomplete ah % results found at % / %"] .. retriesMsg, numIncomplete,
                           firstIncomplete, count, self.ahRetries)
       end
       if self.ahRetries > self.ahMaxRetries then
@@ -366,7 +372,7 @@ function ML:AHdump(fromEvent)
       return
     end
     self.ahResumeAt = j
-    self:Debug(1, "Got good page up to %/%", self.ahResumeAt - 1, count)
+    self:Debug(1, "Got complete (last) page up to %/%", self.ahResumeAt - 1, count)
     self.ahRetries = 0
     i = j
   end
@@ -375,11 +381,10 @@ function ML:AHdump(fromEvent)
   if not self.savedVar.ah then
     self.savedVar.ah = {}
   end
-  local toon = self:GetMyFQN()
   local entry = self:AHContext()
   entry.ts = GetServerTime()
-  entry.dataFormatVersion = 3
-  entry.dataFormatInfo = "v2key!seller!timeleft,itemCount,minBid,buyoutPrice,seller&auction2& ..."
+  entry.dataFormatVersion = 4
+  entry.dataFormatInfo = "v4key!seller!timeleft,itemCount,minBid,buyoutPrice,seller&auction2& ..."
   local temp = {}
   local itemsForSale = 0
   for k, v in pairs(self.ahKeyedResult) do
@@ -396,11 +401,10 @@ function ML:AHdump(fromEvent)
   end
   entry.itemsCount = itemsForSale
   entry.data = table.concat(temp, " ") -- \n gets escaped into '\' + 'n' so might as well use 1 byte instead
-  self:PrintInfo("MoLib AH Scan data packed % auctions of % items to % Kbytes", count, itemsForSale,
+  self:PrintInfo("MoLib " .. self.L["AH Scan data packed % auctions of % items to % Kbytes"], count, itemsForSale,
                  self:round(#entry.data / 1024, .1))
   self.ahResult = wipe(self.ahResult)
   self.ahKeyedResult = wipe(self.ahKeyedResult)
-  entry.char = toon
   entry.count = count
   entry.firstCount = self.expectedCount -- the two should be equal for good scans, probably shud just discard... keeping to study it
   entry.testScan = self.ahIsStale -- did we really do a query first
@@ -413,8 +417,8 @@ function ML:AHdump(fromEvent)
   local newItems = itemDB._count_ - self.itemDBStartingCount
   entry.newItems = newItems
   entry.itemDBcount = itemDB._count_
-  self:PrintInfo(self.name .. ": Auction scan complete and captured for % listings in % s (% auctions/sec).\n" ..
-                   "% new items in DB, now % entries. ", count, elapsed, speed, newItems, itemDB._count_)
+  self:PrintInfo(self.name .. self.L[": Auction scan complete and captured for % listings in % s (% auctions/sec)."] ..
+                   "\n" .. self.L["% new items in DB, now % entries."], count, elapsed, speed, newItems, itemDB._count_)
   self:AHrestoreNormal()
   self:AHendOfScanCB()
   self.AHinDump = false

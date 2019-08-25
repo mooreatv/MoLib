@@ -398,8 +398,13 @@ function ML:NormalizeRealm(realm)
   return string.gsub(realm, "[ -]", "")
 end
 
--- Returns the normalized fully qualified name of the player
+-- Returns the normalized fully qualified name of the player and the short name and the
+-- normalized realm name
 function ML:GetMyFQN()
+  if self.myFullName and self.myRealm then
+    self:Debug(4, "Returning already calculated GetMyFQN % % %", self.myFullName, self.myShortName, self.myRealm)
+    return self.myFullName, self.myShortName, self.myRealm
+  end
   local p, realm = UnitFullName("player")
   local rn = self:NormalizeRealm(GetRealmName())
   self:Debug(1, "GetMyFQN % , % - %", p, realm, rn)
@@ -415,13 +420,17 @@ function ML:GetMyFQN()
     self:ErrorAndThrow("GetMyFQN: Realm not yet available!, called too early (wait until PLAYER_ENTERING_WORLD)!")
   end
   self.myRealm = realm
-  return p .. "-" .. realm
+  self.myShortName = p
+  self.myFullName =  p .. "-" .. realm
+  return self.myFullName, self.myShortName, self.myRealm
 end
 
-function ML:GetMyRealmAndRegion()
+-- returns fullname, shortname, realm, region
+-- (ie GetMyFQN and GetMyRegion)
+function ML:GetMyInfo()
   self:GetMyFQN()
   self:GetMyRegion()
-  return self.myRealm, self.myRegion
+  return self.myFullName, self.myShortName, self.myRealm, self.myRegion
 end
 
 ML.AlphaNum = {}
