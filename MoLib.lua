@@ -228,7 +228,7 @@ function ML:GetMyRegion()
     return self.myRegion, self.myRid, self.myRealmByGuid
   end
   if self.isClassic then
-    self.PrintInfo("We don't yet have a realm DB for classic yet so we'll just use 'classic' as the region for now")
+    self:PrintInfo("We don't yet have a realm DB for classic yet so we'll just use 'classic' as the region for now")
     self.myRegion = "classic"
     return self.myRegion, nil, nil
   end
@@ -421,7 +421,7 @@ function ML:GetMyFQN()
   end
   self.myRealm = realm
   self.myShortName = p
-  self.myFullName =  p .. "-" .. realm
+  self.myFullName = p .. "-" .. realm
   return self.myFullName, self.myShortName, self.myRealm
 end
 
