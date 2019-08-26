@@ -79,6 +79,57 @@ function ML:AddToItemDB(link, batch)
   return key
 end
 
+ML.ahAuctionInfoCache = {resCache = {}, ahKeyedResult = {}}
+
+function ML:AHGetAuctionInfoByLink(itemLink)
+  local ikey = self:ItemLinkToId(itemLink)
+  if not ikey then
+    return {error = "INVALID_ITEM_LINK"}
+  end
+  local idb = self.savedVar[self.itemDBKey]
+  self:Debug(8, "AHGetAuctionInfoByLink for " .. itemLink .. " (%) itemDBkey %", ikey, self.itemDBKey)
+  if not idb or not idb[ikey] then
+    return {error = "UNKNOWN_ITEM"}
+  end
+  local resCache = self.ahAuctionInfoCache.resCache
+  if resCache[ikey] then
+    return resCache[ikey]
+  end
+  local ahKeyedResult = self.ahAuctionInfoCache.ahKeyedResult
+  local ts = self.ahAuctionInfoCache.ts
+  local res = {found = true, ts = ts}
+  if ahKeyedResult[ikey] then
+    res.rawData = ahKeyedResult[ikey]
+    res.quantity = 0
+    res.minBid = nil
+    res.minBuyout = nil
+    res.numAuctions = 0
+    for _, auctionsBySeller in pairs(res.rawData) do
+      for _, auction in ipairs(auctionsBySeller) do
+        local _timeLeft, itemCount, minBid, buyoutPrice, bidAmount = self:extractAuctionData(auction)
+        res.quantity = res.quantity + itemCount
+        res.numAuctions = res.numAuctions + 1
+        local bid = bidAmount or minBid
+        if not res.minBid then
+          res.minBid = bid
+        else
+          res.minBid = math.min(res.minBid, bid / itemCount)
+        end
+        if not res.minBuyout then
+          res.minBuyout = buyoutPrice -- could also be nil
+        elseif buyoutPrice then
+          res.minBuyout = math.min(res.minBuyout, buyoutPrice / itemCount)
+        end
+      end
+    end
+  else
+    res.found = false
+  end
+  resCache[ikey] = res
+  self:Debug(1, "AHGetAuctionInfoByLink for " .. itemLink .. " (%) is %", ikey, res)
+  return res
+end
+
 function ML:AHContext()
   self:InitRealms()
   local context = {}
@@ -102,6 +153,7 @@ function ML:InitItemDB(clearAHtoo)
   self.savedVar[self.itemDBKey] = {}
   local itemDB = self.savedVar[self.itemDBKey]
   itemDB._formatVersion_ = 4 -- shorterKey4 = fullLink associative array
+  itemDB._locale_ = GetLocale()
   itemDB._count_ = 0
   itemDB._created_ = GetServerTime()
   -- also clear the ah array itself
@@ -118,6 +170,15 @@ function ML:CheckAndConvertItemDB()
     return self:InitItemDB(true)
   end
   if itemDB._formatVersion_ == 4 then
+    local locale = GetLocale()
+    if not itemDB._locale_ then
+      itemDB._locale_ = locale -- can be removed at version5
+    elseif itemDB._locale_ ~= locale then
+      self:Error(
+        "Item DB Locale mismatch! % vs %. item names will be wrong/there will be errors... consider resetting the addon...",
+        itemDB._locale_, locale)
+      itemDB._locale_ = locale
+    end
     -- good current version
     return itemDB
   end
@@ -142,6 +203,16 @@ function ML:CheckAndConvertItemDB()
   return newDB
 end
 
+function ML:AHSetupEnv()
+  self.itemDBKey = "itemDB_" .. _G.WOW_PROJECT_ID -- split classic and bfa, even though they should never end up in same saved vars
+  local itemDB = self.savedVar[self.itemDBKey]
+  if not itemDB then
+    -- create/init itemDB for each wow type (currently BfA vs Classic)
+    return self:InitItemDB()
+  end
+  return self:CheckAndConvertItemDB()
+end
+
 -- Main entry point for this file/feature: does a full AH query and scan/parse the results into
 -- the addon saved variable.
 -- Debug/test mode:
@@ -159,14 +230,7 @@ function ML:AHSaveAll(dontActuallyQuery)
     self:Warning(self.L["Not at the AH, can't scan..."])
     return
   end
-  self.itemDBKey = "itemDB_" .. _G.WOW_PROJECT_ID -- split classic and bfa, even though they should never end up in same saved vars
-  local itemDB = self.savedVar[self.itemDBKey]
-  if not itemDB then
-    -- create/init itemDB for each wow type (currently BfA vs Classic)
-    itemDB = self:InitItemDB()
-  else
-    itemDB = self:CheckAndConvertItemDB()
-  end
+  local itemDB = self:AHSetupEnv()
   self:Debug("Starting itemDB has % items (was %)", itemDB._count_, self.itemDBStartingCount)
   self.itemDBStartingCount = itemDB._count_
   SetAuctionsTabShowing(false) -- does this do anything
@@ -236,6 +300,46 @@ function ML:AHscheduleNextDump(msg)
   end)
 end
 
+function ML:ahSerializeScanResult()
+  local temp = {}
+  local itemsForSale = 0
+  for k, v in pairs(self.ahKeyedResult) do
+    itemsForSale = itemsForSale + 1
+    local tt = {k}
+    if type(v) ~= "table" then
+      self:ErrorAndThrow("bug: for key % v is %", k, v)
+    end
+    for s, a in pairs(v) do
+      table.insert(tt, s .. "/" .. table.concat(a, "&"))
+    end
+    table.insert(temp, table.concat(tt, "!"))
+  end
+  return itemsForSale, table.concat(temp, " ") -- \n gets escaped into '\' + 'n' so might as well use 1 byte instead
+end
+
+function ML:ahDeserializeScanResult(data)
+  local kr = {}
+  self:Debug("Deserializing data %", #data)
+  local numItems = 0
+  for itemEntry in string.gmatch(data, "[^ ]+") do
+    numItems = numItems + 1
+    local item, rest = itemEntry:match("^([^!]+)!(.*)$")
+    kr[item] = {}
+    local entry = kr[item]
+    self:Debug(8, "for % rest is '%'", item, rest)
+    for sellerAuctions in string.gmatch(rest, "([^!]+)") do
+      local seller, auctions = sellerAuctions:match("^([^/]*)/(.*)$")
+      self:Debug(8, "seller % auctions are '%'", seller, auctions)
+      entry[seller] = {}
+      for a in string.gmatch(auctions, "[^&]+") do
+        table.insert(entry[seller], a)
+      end
+    end
+  end
+  self:Debug("Recreated % items results", numItems)
+  return numItems, kr
+end
+
 function ML:addToResult(key, seller, auction)
   if not self.ahKeyedResult[key] then
     self.ahKeyedResult[key] = {}
@@ -244,7 +348,38 @@ function ML:addToResult(key, seller, auction)
   if not entry[seller] then
     entry[seller] = {}
   end
+  -- TODO: delta encode the amounts (and possibly the itemId too)
   table.insert(entry[seller], auction)
+end
+
+function ML:zeroToEmpty(num)
+  if not num or num == 0 then
+    return ""
+  end
+  return tostring(num)
+end
+
+-- coma separated 0s are empty/skipped to shorten the string
+function ML:auctionEntry(timeLeft, itemCount, minBid, buyoutPrice, bidAmount)
+  -- we could use our map/apply and/or ... but this is important to self document the order etc
+  return table.concat({
+    self:zeroToEmpty(timeLeft), self:zeroToEmpty(itemCount), self:zeroToEmpty(minBid), self:zeroToEmpty(buyoutPrice),
+    self:zeroToEmpty(bidAmount)
+  }, ",")
+end
+
+function ML:ahStrToNum(numS)
+  if not numS or #numS == 0 then
+    return nil
+  end
+  return tonumber(numS)
+end
+
+-- reverse of auctionEntry
+function ML:extractAuctionData(auction)
+  local timeLeftS, itemCountS, minBidS, buyoutPriceS, curBidS = auction:match("^(.*),(.*),(.*),(.*),(.*)$")
+  return self:ahStrToNum(timeLeftS), self:ahStrToNum(itemCountS), self:ahStrToNum(minBidS),
+         self:ahStrToNum(buyoutPriceS), self:ahStrToNum(curBidS)
 end
 
 function ML:AHdump(fromEvent)
@@ -330,13 +465,14 @@ function ML:AHdump(fromEvent)
           end
         else
           local key = self:AddToItemDB(linkRes)
+          -- TODO: add the option to wait for seller information
           local _name, _texture, itemCount, _quality, _canUse, _level, _levelColHeader, minBid, _minIncrement,
-                buyoutPrice, _bidAmount, _highBidder, _bidderFullName, owner, ownerFullName, _saleStatus, _itemId,
+                buyoutPrice, bidAmount, _highBidder, _bidderFullName, owner, ownerFullName, _saleStatus, _itemId,
                 _hasAllInfo = GetAuctionItemInfo("list", j)
           local timeLeft = GetAuctionItemTimeLeft("list", j)
           self.ahResult[j] = true
           self:addToResult(key, ownerFullName or owner or "",
-                           string.format("%d,%d,%.0f,%.0f", (timeLeft or 0), itemCount, minBid, buyoutPrice))
+                           self:auctionEntry(timeLeft, itemCount, minBid, buyoutPrice, bidAmount))
         end
       end
       j = j + 1
@@ -383,35 +519,26 @@ function ML:AHdump(fromEvent)
   end
   local entry = self:AHContext()
   entry.ts = GetServerTime()
-  entry.dataFormatVersion = 4
-  entry.dataFormatInfo = "v4key!seller!timeleft,itemCount,minBid,buyoutPrice,seller&auction2& ..."
-  local temp = {}
-  local itemsForSale = 0
-  for k, v in pairs(self.ahKeyedResult) do
-    itemsForSale = itemsForSale + 1
-    local tt = {k}
-    if type(v) ~= "table" then
-      self:ErrorAndThrow("bug: for key % v is %", k, v)
-    end
-    for s, a in pairs(v) do
-      table.insert(tt, s)
-      table.insert(tt, table.concat(a, "&"))
-    end
-    table.insert(temp, table.concat(tt, "!"))
-  end
-  entry.itemsCount = itemsForSale
-  entry.data = table.concat(temp, " ") -- \n gets escaped into '\' + 'n' so might as well use 1 byte instead
-  self:PrintInfo("MoLib " .. self.L["AH Scan data packed % auctions of % items to % Kbytes"], count, itemsForSale,
+  entry.dataFormatVersion = 6
+  entry.dataFormatInfo =
+    "v4key!seller1/timeleft,itemCount,minBid,buyoutPrice,curBid&auction2&auction3!seller2/a1&a2 ...\n" ..
+      "(grouped by itemKey, seller) with auction units being timeleft,itemCount,minBid,buyoutPrice,curBid"
+  entry.itemsCount, entry.data = self:ahSerializeScanResult()
+  self:PrintInfo("MoLib " .. self.L["AH Scan data packed % auctions of % items to % Kbytes"], count, entry.itemsCount,
                  self:round(#entry.data / 1024, .1))
   self.ahResult = wipe(self.ahResult)
-  self.ahKeyedResult = wipe(self.ahKeyedResult)
+  wipe(self.ahAuctionInfoCache.ahKeyedResult) -- clear cache (we could update instead...)
+  self.ahAuctionInfoCache.ahKeyedResult = self.ahKeyedResult -- transfer the last scan data into the cache
+  self.ahKeyedResult = {} -- reset for next run (but not wipe, will be wiped n-1)
+  self.ahAuctionInfoCache.resCache = wipe(self.ahAuctionInfoCache.resCache)
+  self.ahAuctionInfoCache.ts = entry.ts
   entry.count = count
   entry.firstCount = self.expectedCount -- the two should be equal for good scans, probably shud just discard... keeping to study it
   entry.testScan = self.ahIsStale -- did we really do a query first
   self.ahEndTS = debugprofilestop()
   local elapsed = (self.ahEndTS - self.ahStartTS) / 1000 -- in seconds not ms
   entry.elapsed = elapsed
-  table.insert(self.savedVar.ah, entry)
+  table.insert(self.savedVar.ah, entry) -- result saved here
   local speed = self:round(count / elapsed, 0.1)
   elapsed = self:round(elapsed, 0.01)
   local newItems = itemDB._count_ - self.itemDBStartingCount
@@ -423,6 +550,28 @@ function ML:AHdump(fromEvent)
   self:AHendOfScanCB()
   self.AHinDump = false
   return entry
+end
+
+-- called by addon after we call it with restored saved vars (!)
+function ML:AHRestoreData()
+  if not self.savedVar or not self.savedVar.ah or #self.savedVar.ah == 0 then
+    return
+  end
+  local ah = self.savedVar.ah
+  local entry = ah[#ah]
+  if entry.dataFormatVersion ~= 6 then
+    self:Warning("Unexpected latest AH scan data format %", entry.dataFormatVersion)
+    return
+  end
+  -- TODO get the right faction one not just latest
+  local count, kr = self:ahDeserializeScanResult(entry.data)
+  if count ~= entry.itemsCount then
+    self:Error("Error deserializing got % when expecting % items.", count, entry.itemsCount)
+    return
+  end
+  self.ahAuctionInfoCache.ahKeyedResult = kr
+  self.ahAuctionInfoCache.ts = entry.ts
+  self:AHSetupEnv()
 end
 
 function ML:AHendOfScanCB()

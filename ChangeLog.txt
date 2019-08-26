@@ -4,6 +4,12 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.10.00 Aug 26th 2019
+- Classic is out today!
+- scan v6: includes the current bid info; itemdb also checks/includes the locale.
+- new :AHGetAuctionInfoByLink() used by the combo AHDB+Better Vendor Price to show AHDB data
+- deserializes most recent scan result for tooltip usage (though :AHRestoreData() callback to be called)
+
 v7.09.00 Aug 25th 2019
 - itemdb version 4 (20% shorter), fixed bug where suffixId was skipped (gem4id exists, doesn't stop at gem3)
 - localization strings for AH messages
@@ -20,7 +26,7 @@ v7.08.04 Aug 23rd 2019
 - fixed bug with ah record wipe on detected db format change
 - now include auction time left in the ah records
 v7.08.03 Aug 22nd 2019
-- More AH code for AuctionDB addon:
+- More AH code for my AHDB addon (the addon formerly known as AuctionDB, which was confusing to TSM folks):
   - Fully functional, fast, full scan (:AHFullSave()) - does generate a huge amount of data though.
   - Now setup with a per Wow product line (classic, bfa at the moment) ItemDB with short key and Scan result
   - added item db version check

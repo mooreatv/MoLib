@@ -49,6 +49,7 @@ globals = {
     "AuctionFrameBrowse",
     "C_Timer",
     "SetAuctionsTabShowing",
+    "GetLocale",
 }
 max_line_length = 132
 ignore = {
