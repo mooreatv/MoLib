@@ -113,12 +113,12 @@ function ML:AHGetAuctionInfoByLink(itemLink)
         if not res.minBid then
           res.minBid = bid
         else
-          res.minBid = math.min(res.minBid, bid / itemCount)
+          res.minBid = self:round(math.min(res.minBid, bid / itemCount), .1)
         end
         if not res.minBuyout then
           res.minBuyout = buyoutPrice -- could also be nil
         elseif buyoutPrice then
-          res.minBuyout = math.min(res.minBuyout, buyoutPrice / itemCount)
+          res.minBuyout = self:round(math.min(res.minBuyout, buyoutPrice / itemCount), .1)
         end
       end
     end
@@ -384,7 +384,7 @@ end
 
 function ML:AHdump(fromEvent)
   if not self.waitingForAH then
-    self.Warning("Not expecting AHdump() call...")
+    self:Warning("Not expecting AHdump() call...")
     return
   end
   if self.AHinDump then

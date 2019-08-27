@@ -4,6 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.10.02 Aug 26th 2019
+- Another . to : fix.
+- round to .1 copper when dividing in AH info (avoids 16.6666666 copper)
 v7.10.01 Aug 26th 2019
 - Bug fix with GetMyRegion in classic code path that couldn't be tested until now (!) sorry!
 v7.10.00 Aug 26th 2019
