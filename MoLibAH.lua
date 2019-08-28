@@ -213,6 +213,30 @@ function ML:AHSetupEnv()
   return self:CheckAndConvertItemDB()
 end
 
+function ML:AHOpenCB()
+  self:Debug("Default AH open cb")
+end
+function ML:AHCloseCB()
+  self:Debug("Default AH close cb")
+end
+
+ML.EventHdlrs.AUCTION_HOUSE_SHOW = function(frame)
+  local addonP = frame.addonPtr
+  if addonP.ahShown then
+    return -- remove duplicate events
+  end
+  addonP.ahShown = true
+  addonP:AHOpenCB()
+end
+
+ML.EventHdlrs.AUCTION_HOUSE_CLOSED = function(frame)
+  local addonP = frame.addonPtr
+  if addonP.ahShown then -- drop dup events
+    addonP.ahShown = nil
+    addonP:AHCloseCB()
+  end
+end
+
 -- Main entry point for this file/feature: does a full AH query and scan/parse the results into
 -- the addon saved variable.
 -- Debug/test mode:
@@ -226,7 +250,7 @@ function ML:AHSaveAll(dontActuallyQuery)
     self:AHdump() -- in case previous one got error/got stuck
     return
   end
-  if not _G.AuctionFrame or not _G.AuctionFrame:IsVisible() then
+  if not self.ahShown then
     self:Warning(self.L["Not at the AH, can't scan..."])
     return
   end
@@ -249,7 +273,9 @@ function ML:AHSaveAll(dontActuallyQuery)
   end
   self.waitingForAH = true
   self.ahResumeAt = nil
-  AuctionFrameBrowse:UnregisterEvent("AUCTION_ITEM_LIST_UPDATE")
+  if AuctionFrameBrowse then
+    AuctionFrameBrowse:UnregisterEvent("AUCTION_ITEM_LIST_UPDATE")
+  end
   -- AHdump called through the first event
   self:PrintInfo(self.L["AH Scan started... please wait..."])
 end
@@ -278,7 +304,9 @@ function ML:AHrestoreNormal()
     self.ahTimer:Cancel()
     self.ahTimer = nil
   end
-  AuctionFrameBrowse:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
+  if AuctionFrameBrowse then
+    AuctionFrameBrowse:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
+  end
   SetAuctionsTabShowing(true)
 end
 
