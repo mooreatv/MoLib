@@ -4,6 +4,10 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.10.04 Aug 27th 2019
+- For classic AH: Don't restore the event immediately (as that seems to create a huge pause, unlike BfA)
+  yet keep the UI functional even if you search after and hit enter in Name editbox for instance
+- shorten the classic realm message but make it a warning (1 time warning per session)
 v7.10.03 Aug 27th 2019
 - Fix ah restart message, normal with auction expirations for small change in number
 - Fix bug in ahRestarts not reset to 0 and some "unexpected dump" warnings too

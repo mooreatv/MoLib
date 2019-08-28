@@ -257,7 +257,6 @@ function ML:AHSaveAll(dontActuallyQuery)
   local itemDB = self:AHSetupEnv()
   self:Debug("Starting itemDB has % items (was %)", itemDB._count_, self.itemDBStartingCount)
   self.itemDBStartingCount = itemDB._count_
-  SetAuctionsTabShowing(false) -- does this do anything
   self.ahStartTS = debugprofilestop()
   self.ahResult = wipe(self.ahResult)
   if dontActuallyQuery then
@@ -275,6 +274,7 @@ function ML:AHSaveAll(dontActuallyQuery)
   self.ahResumeAt = nil
   if AuctionFrameBrowse then
     AuctionFrameBrowse:UnregisterEvent("AUCTION_ITEM_LIST_UPDATE")
+    AuctionFrameBrowse.isSearching = 1
   end
   -- AHdump called through the first event
   self:PrintInfo(self.L["AH Scan started... please wait..."])
@@ -294,6 +294,8 @@ ML.EventHdlrs.AUCTION_ITEM_LIST_UPDATE = function(frame, _event, _name)
   end
 end
 
+ML.ahUpdateBrowse = not ML.isClassic
+
 function ML:AHrestoreNormal()
   self.waitingForAH = nil
   self.ahRetries = 0
@@ -305,9 +307,26 @@ function ML:AHrestoreNormal()
     self.ahTimer = nil
   end
   if AuctionFrameBrowse then
-    AuctionFrameBrowse:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
+    if self.ahUpdateBrowse then
+      AuctionFrameBrowse:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
+    else
+      -- AuctionFrameBrowse_Search
+      if not _G.BrowseSearchButton then
+        self:Error("Unexpected to not find BrowseSearchButton !")
+        return
+      end
+      local restore = function()
+        self:Debug("Restoring auction frame as search button is pressed")
+        AuctionFrameBrowse:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
+      end
+      _G.BrowseSearchButton:HookScript("OnClick", restore)
+      _G.BrowseName:HookScript("OnEnterPressed", restore)
+      _G.BrowseNoResultsText:SetText(_G.BROWSE_SEARCH_TEXT)
+      _G.BrowseNoResultsText:Show()
+      -- TODO: how to hide the older  results?? it's not BrowseScrollFrame:Hide()
+    end
+    AuctionFrameBrowse.isSearching = nil
   end
-  SetAuctionsTabShowing(true)
 end
 
 -- (default) page size is NUM_AUCTION_ITEMS_PER_PAGE (50) which
