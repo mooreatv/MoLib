@@ -272,6 +272,7 @@ function ML:AHrestoreNormal()
   self.waitingForAH = nil
   self.ahRetries = 0
   self.ahResumeAt = nil
+  self.ahRestarts = 0
   if self.ahTimer then
     self:Debug(2, "cancelling previous timer, from restore normal")
     self.ahTimer:Cancel()
@@ -425,9 +426,16 @@ function ML:AHdump(fromEvent)
   else
     if count ~= self.expectedCount and count ~= self.currentCount then
       self.ahRestarts = (self.ahRestarts or 0) + 1
-      self:Warning(
-        "Auction list count changed unexpectedly from % to % (likely bad scan, please report) - starting over (restart #%)!",
-        self.currentCount or self.expectedCount, count, self.ahRestarts)
+      if count < self.expectedCount * 0.9 then
+        self:Warning(self.name .. self.L[" Auction list shrink too much from % to %"] .. "\n" ..
+                       self.L["Did you do a search (don't)? report otherwise - starting over (restart #%)!"],
+                     self.currentCount or self.expectedCount, count, self.ahRestarts)
+      else
+        -- probably ok/normal
+        self:PrintDefault(self.name ..
+                            self.L[" Auction list count changed during scan from % to % - starting over (restart #%)!"],
+                          self.currentCount or self.expectedCount, count, self.ahRestarts)
+      end
       self.currentCount = count
       -- start over
       if self.ahRestarts > self.ahMaxRestarts then
@@ -441,9 +449,7 @@ function ML:AHdump(fromEvent)
       self.ahKeyedResult = wipe(self.ahKeyedResult)
       self.ahResumeAt = 1
       self.ahIsStale = true
-      C_Timer.After(0.5, function()
-        self:AHdump(true) -- we'll probably get an event
-      end)
+      self:AHscheduleNextDump("restart from auction change")
       self.AHinDump = false
       return
     end

@@ -4,6 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.10.03 Aug 27th 2019
+- Fix ah restart message, normal with auction expirations for small change in number
+- Fix bug in ahRestarts not reset to 0 and some "unexpected dump" warnings too
 v7.10.02 Aug 26th 2019
 - Another . to : fix.
 - round to .1 copper when dividing in AH info (avoids 16.6666666 copper)
