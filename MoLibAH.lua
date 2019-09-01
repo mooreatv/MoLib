@@ -104,7 +104,12 @@ function ML:AHGetAuctionInfoByLink(itemLink)
     res.minBid = nil
     res.minBuyout = nil
     res.numAuctions = 0
-    for _, auctionsBySeller in pairs(res.rawData) do
+    res.numSellers = 0
+    for seller, auctionsBySeller in pairs(res.rawData) do
+      res.numSellers = res.numSellers + 1
+      if #seller == 0 then
+        res.hasUnknownSellers = true
+      end
       for _, auction in ipairs(auctionsBySeller) do
         local _timeLeft, itemCount, minBid, buyoutPrice, bidAmount = self:extractAuctionData(auction)
         res.quantity = res.quantity + itemCount
@@ -408,7 +413,9 @@ function ML:zeroToEmpty(num)
 end
 
 -- coma separated 0s are empty/skipped to shorten the string
-function ML:auctionEntry(timeLeft, itemCount, minBid, buyoutPrice, bidAmount)
+-- last 3 arguments are here only for overriding functions that want to do something with the item/auction
+-- (like AHDB's)
+function ML:auctionEntry(timeLeft, itemCount, minBid, buyoutPrice, bidAmount, _minIncrement, _highBidder, _itemLink, _auctionIndex)
   -- we could use our map/apply and/or ... but this is important to self document the order etc
   return table.concat({
     self:zeroToEmpty(timeLeft), self:zeroToEmpty(itemCount), self:zeroToEmpty(minBid), self:zeroToEmpty(buyoutPrice),
@@ -519,13 +526,14 @@ function ML:AHdump(fromEvent)
         else
           local key = self:AddToItemDB(linkRes)
           -- TODO: add the option to wait for seller information
-          local _name, _texture, itemCount, _quality, _canUse, _level, _levelColHeader, minBid, _minIncrement,
-                buyoutPrice, bidAmount, _highBidder, _bidderFullName, owner, ownerFullName, _saleStatus, _itemId,
+          local _name, _texture, itemCount, _quality, _canUse, _level, _levelColHeader, minBid, minIncrement,
+                buyoutPrice, bidAmount, highBidder, _bidderFullName, owner, ownerFullName, _saleStatus, _itemId,
                 _hasAllInfo = GetAuctionItemInfo("list", j)
           local timeLeft = GetAuctionItemTimeLeft("list", j)
           self.ahResult[j] = true
-          self:addToResult(key, ownerFullName or owner or "",
-                           self:auctionEntry(timeLeft, itemCount, minBid, buyoutPrice, bidAmount))
+          self:addToResult(key, ownerFullName or owner or "", self:auctionEntry(timeLeft, itemCount, minBid,
+                                                                                buyoutPrice, bidAmount, minIncrement, highBidder,
+                                                                                linkRes, j))
         end
       end
       j = j + 1
