@@ -8,6 +8,7 @@ v7.11.00 Sept 1st 2019
 - AH: added numSellers and hasUnknownSellers to item info to show in tooltip 
   as well as more information about the auction in :auctionEntry() so it can
   be overridden as a callback (done by AHDB addon)
+- Add price in new items info
 v7.10.04 Aug 27th 2019
 - For classic AH: Don't restore the event immediately (as that seems to create a huge pause, unlike BfA)
   yet keep the UI functional even if you search after and hit enter in Name editbox for instance

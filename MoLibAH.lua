@@ -47,14 +47,15 @@ function ML:ItemLinkToId(link)
   return short
 end
 
-function ML:AddToItemDB(link, batch)
+-- when called form batch conversion, price is nil/not specified
+function ML:AddToItemDB(link, price)
   local key = self:ItemLinkToId(link)
   local idb = self.savedVar[self.itemDBKey]
   local existing = idb[key]
   if existing then
-    -- instance difficultyid changes (without non cosmetic impact) and so does the linklevel/specid
+    -- instance difficulty id changes (without non cosmetic impact) and so does the linklevel/specid
     -- depending on which character scans... so only for dev/debug mode
-    if (batch or (self.debug and self.debug > 2)) and link ~= existing then
+    if ((price == nil) or (self.debug and self.debug > 2)) and link ~= existing then
       self:Warning(
         "key % for link % value mismatch with previous % (could be just the specid, difficultyId or a real issue)", key,
         link, existing)
@@ -65,15 +66,16 @@ function ML:AddToItemDB(link, batch)
   idb._count_ = idb._count_ + 1 -- lua doesn't expose the number of entries (!)
   idb[key] = link
   self:Debug("New item #% key %: %", idb._count_, key, link)
-  if not batch and self.showNewItems then
+  if price and self.showNewItems then
     local newIdx = idb._count_ - self.itemDBStartingCount
     if newIdx <= self.showNewItems then
       local extra = ""
       if newIdx == self.showNewItems then
         extra = self.L[" (maximum reached, won't show more for this scan)"]
       end
-      self:PrintDefault(self.name .. " " .. self.L["Never seen before item #% (%): "] .. link .. extra, newIdx,
-                        idb._count_)
+      self:PrintDefault(
+        self.name .. " " .. self.L["New item #% (%): "] .. link .. " " .. GetCoinTextureString(price) .. extra, newIdx,
+        idb._count_)
     end
   end
   return key
@@ -197,7 +199,7 @@ function ML:CheckAndConvertItemDB()
     if k:sub(1, 1) ~= "_" then
       oldKeySizes = oldKeySizes + #k
       valueSizes = valueSizes + #v
-      local newKey = self:AddToItemDB(v, true)
+      local newKey = self:AddToItemDB(v)
       newKeySizes = newKeySizes + #newKey
     end
   end
@@ -415,7 +417,8 @@ end
 -- coma separated 0s are empty/skipped to shorten the string
 -- last 3 arguments are here only for overriding functions that want to do something with the item/auction
 -- (like AHDB's)
-function ML:auctionEntry(timeLeft, itemCount, minBid, buyoutPrice, bidAmount, _minIncrement, _highBidder, _itemLink, _auctionIndex)
+function ML:auctionEntry(timeLeft, itemCount, minBid, buyoutPrice, bidAmount, _minIncrement, _highBidder, _itemLink,
+                         _auctionIndex)
   -- we could use our map/apply and/or ... but this is important to self document the order etc
   return table.concat({
     self:zeroToEmpty(timeLeft), self:zeroToEmpty(itemCount), self:zeroToEmpty(minBid), self:zeroToEmpty(buyoutPrice),
@@ -524,16 +527,16 @@ function ML:AHdump(fromEvent)
             firstIncomplete = j
           end
         else
-          local key = self:AddToItemDB(linkRes)
           -- TODO: add the option to wait for seller information
           local _name, _texture, itemCount, _quality, _canUse, _level, _levelColHeader, minBid, minIncrement,
                 buyoutPrice, bidAmount, highBidder, _bidderFullName, owner, ownerFullName, _saleStatus, _itemId,
                 _hasAllInfo = GetAuctionItemInfo("list", j)
+          local key = self:AddToItemDB(linkRes, math.max(buyoutPrice, minBid, bidAmount))
           local timeLeft = GetAuctionItemTimeLeft("list", j)
           self.ahResult[j] = true
           self:addToResult(key, ownerFullName or owner or "", self:auctionEntry(timeLeft, itemCount, minBid,
-                                                                                buyoutPrice, bidAmount, minIncrement, highBidder,
-                                                                                linkRes, j))
+                                                                                buyoutPrice, bidAmount, minIncrement,
+                                                                                highBidder, linkRes, j))
         end
       end
       j = j + 1

@@ -50,6 +50,7 @@ globals = {
     "C_Timer",
     "SetAuctionsTabShowing",
     "GetLocale",
+    "GetCoinTextureString",
 }
 max_line_length = 132
 ignore = {
