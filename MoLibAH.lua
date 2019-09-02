@@ -116,12 +116,12 @@ function ML:AHGetAuctionInfoByLink(itemLink)
         res.numAuctions = res.numAuctions + 1
         local bid = bidAmount or minBid
         if not res.minBid then
-          res.minBid = bid
+          res.minBid = self:round(bid / itemCount, .1)
         else
           res.minBid = self:round(math.min(res.minBid, bid / itemCount), .1)
         end
         if not res.minBuyout then
-          res.minBuyout = buyoutPrice -- could also be nil
+          res.minBuyout = self:round(buyoutPrice / itemCount), .1) -- could also be nil
         elseif buyoutPrice then
           res.minBuyout = self:round(math.min(res.minBuyout, buyoutPrice / itemCount), .1)
         end
