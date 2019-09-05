@@ -4,6 +4,11 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.11.01 Sept 5th 2019
+- AH: very big bug fix for :AHGetAuctionInfoByLink() which was initializing minbid/minbuyout incorrectly
+  for the first auction if it had multiple items
+  Fixes https://github.com/mooreatv/AuctionDB/issues/18
+  Good news is the raw data is fine and it's just the runtime calculation that was off in some cases
 v7.11.00 Sept 1st 2019
 - AH: added numSellers and hasUnknownSellers to item info to show in tooltip 
   as well as more information about the auction in :auctionEntry() so it can
