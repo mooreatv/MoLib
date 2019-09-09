@@ -694,6 +694,11 @@ function ML:WipeFrame(f, ...)
   if not f then
     return -- nothing to wipe
   end
+  if f.isldbi then
+    self:WipeFrame(f.isldbi)
+    wipe(f)
+    return
+  end
   f:Hide() -- first hide before we change children etc
   if f.UnregisterAllEvents then
     f:UnregisterAllEvents()
@@ -1000,10 +1005,34 @@ function ML:onCircle(angle, distance)
   return x, y
 end
 
+ML.allowLDBI = true -- set to false to use our own code even if LDBI is detected (better rendering)
 ML.minimapButtonAngle = 154 -- Make sure this is unique to your addon
 
-function ML:minimapButton(pos)
-  local b = CreateFrame("Button", nil, Minimap)
+function ML:minimapButton(pos, name, icon)
+  name = name or (self.name .. "minimapButton")
+  local ldbi = _G.LibStub and _G.LibStub:GetLibrary("LibDBIcon-1.0", true)
+  if ldbi and icon and self.allowLDBI then
+    local b = {}
+    b.isldbi = true
+    b.SetScript = function(w, sname, fn)
+      w[sname] = fn
+    end
+    b.icon = icon
+    self:Debug("Handle SexyMap/other map using LDBI instead of our code")
+    if not self.savedVar.ldbi then
+      self.savedVar.ldbi = {}
+    end
+    -- kinda stupid you can't "replace" or remove
+    if ldbi:GetMinimapButton(name) then
+      ldbi.objects[name] = nil
+    end
+    ldbi:Register(name, b, self.savedVar.ldbi)
+    b.isldbi = ldbi:GetMinimapButton(name)
+    b.isldbi.icon:SetSize(18, 18) -- fix up the 17,17 default in LDBI to more closely match ours
+    return b
+  end
+  local b = CreateFrame("Button", name, Minimap)
+  b.name = name
   b:SetFrameStrata("HIGH")
   if pos then
     local pt, xOff, yOff = unpack(pos)
@@ -1034,7 +1063,14 @@ function ML:minimapButton(pos)
   o:SetSize(54, 54)
   o:SetTexture(136430) -- interface/minimap/minimap-trackingborder
   o:SetPoint("TOPLEFT")
-  self:Debug("Created minimap button %", b)
+  if icon then
+    local t = b:CreateTexture(nil, "ARTWORK")
+    t:SetSize(19, 19)
+    t:SetTexture(icon)
+    t:SetPoint("TOPLEFT", 7, -6)
+    b.icon = t
+  end
+  self:Debug("Created minimap button % %", name, b)
   return b
 end
 
@@ -1043,7 +1079,7 @@ end
 function ML:ShowToolTip(f, anchor)
   self:Debug(3, "Show tool tip...")
   if f.tooltipText then
-    GameTooltip:SetOwner(f, anchor or "ANCHOR_RIGHT")
+    GameTooltip:SetOwner(f.isldbi or f, anchor or "ANCHOR_RIGHT")
     GameTooltip:SetText(f.tooltipText, 0.9, 0.9, 0.9, 1, false)
   else
     self:Debug(2, "No .tooltipText set on %", f:GetName())
@@ -1052,6 +1088,9 @@ end
 
 -- callback will be called with (f, pos, scale)
 function ML:MakeMoveable(f, callback, dragButton)
+  if f.isldbi then
+    return
+  end
   f.afterMoveCallBack = callback
   f:EnableMouse(true) -- hard to drag without clicking
   f:SetClampedToScreen(true)
