@@ -508,11 +508,12 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     s.Low:SetText(lowL)
     s.High:SetText(highL)
     s:SetScript("OnValueChanged", function(w, value)
-      local sVal
+      local sVal = tostring(ML:round(value, 0.001))
       if valueLabels and valueLabels[value] then
         sVal = valueLabels[value]
+      elseif valueLabels and valueLabels[sVal] then
+        sVal = valueLabels[sVal]
       else
-        sVal = tostring(ML:round(value, 0.001))
         if value == minV then
           sVal = lowL
         elseif value == maxV then
