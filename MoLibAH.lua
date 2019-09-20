@@ -55,7 +55,7 @@ function ML:AddToItemDB(link, price)
   if existing then
     -- instance difficulty id changes (without non cosmetic impact) and so does the linklevel/specid
     -- depending on which character scans... so only for dev/debug mode
-    if ((price == nil) or (self.debug and self.debug > 2)) and link ~= existing then
+    if ((price == nil) or (self.debug and self.debug > 3)) and link ~= existing then
       self:Warning(
         "key % for link % value mismatch with previous % (could be just the specid, difficultyId or a real issue)", key,
         link, existing)
@@ -254,7 +254,7 @@ function ML:AHSaveAll(dontActuallyQuery)
   end
   if self.waitingForAH then
     self:Warning("Already doing a scan (%), try a new one later...", self.ahResumeAt)
-    self:AHdump() -- in case previous one got error/got stuck
+    self:coroutineRunDump() -- in case previous one got error/got stuck
     return
   end
   if not self.ahShown then
@@ -271,7 +271,7 @@ function ML:AHSaveAll(dontActuallyQuery)
     self.ahIsStale = true
     -- we won't get the first event so schedule the dump for just after this, simulating the event:
     C_Timer.After(0, function()
-      self:AHdump(true)
+      self:coroutineRunDump(true)
     end)
   else
     self.ahIsStale = false
@@ -287,14 +287,31 @@ function ML:AHSaveAll(dontActuallyQuery)
   self:PrintInfo(self.L["AH Scan started... please wait..."])
 end
 
+ML.ahCoroutineCounter = 0
+function ML:coroutineRunDump(fromEvent)
+  self.ahCoroutineCounter = self.ahCoroutineCounter + 1
+  local id = self.ahCoroutineCounter
+  if self.ahCoroutine then
+    self:Warning("Bug? coroutine already existing...")
+  end
+  self.ahCoroutine = coroutine.create(function()
+    self:Debug(1, "coroutine % started for dump %", id, fromEvent)
+    self:AHdump(fromEvent)
+    self:Debug(1, "coroutine % about to end for dump %", id, fromEvent)
+    self.ahCoroutine = nil
+  end)
+  self:Debug(1, "coroutine % created for dump %", id, fromEvent)
+  coroutine.resume(self.ahCoroutine)
+end
+
 ML.EventHdlrs.AUCTION_ITEM_LIST_UPDATE = function(frame, _event, _name)
   local addonP = frame.addonPtr
-  addonP:Debug(3, "AUCTION_ITEM_LIST_UPDATE Event received - in ah wait %", addonP.waitingForAH)
+  addonP:Debug(5, "AUCTION_ITEM_LIST_UPDATE Event received - in ah wait %", addonP.waitingForAH)
   if addonP.waitingForAH then
     addonP:Debug(2, "Event received, waiting for items for AH, at % got % - already in is %", addonP.ahResumeAt,
                  #addonP.ahResult, addonP.AHinDump)
     if not addonP.AHinDump then
-      addonP:AHdump(true)
+      addonP:coroutineRunDump(true)
     else
       addonP:Debug(1, "Skipping item list even because we already are inside AHdump... %", addonP.ahResumeAt)
     end
@@ -351,13 +368,30 @@ function ML:AHscheduleNextDump(msg)
   self:Debug(5, "scheduling retry in %s", self.ahRetryTimerInterval)
   self.ahTimer = C_Timer.NewTimer(self.ahCurrentTimerInterval, function()
     self.ahTimer = nil
-    self:AHdump()
+    self:coroutineRunDump()
   end)
+end
+
+ML.yieldFrequency = 2500
+ML.operationsCount = 1 -- start at 1 so scan doesn't start with yield yet serialize does
+ML.yieldDelay = 0 -- ie "next frame" seems to work and keep a good rate without DC/hanging
+
+function ML:ShouldYield()
+  local shouldYield = (self.yieldFrequency > 0) and (self.operationsCount % self.yieldFrequency == 0)
+  self.operationsCount = self.operationsCount + 1 -- change it before we yield in case we reenter
+  if shouldYield then
+    self:Debug(1, "yielding after % operations", self.operationsCount)
+    local co = coroutine.running()
+    C_Timer.After(self.yieldDelay, function() coroutine.resume(co) end)
+    coroutine.yield()
+    self:Debug(1, "resuming after yield")
+  end
 end
 
 function ML:ahSerializeScanResult()
   local temp = {}
   local itemsForSale = 0
+  self.operationsCount = 0 -- reset so we start with a yield
   for k, v in pairs(self.ahKeyedResult) do
     itemsForSale = itemsForSale + 1
     local tt = {k}
@@ -365,6 +399,7 @@ function ML:ahSerializeScanResult()
       self:ErrorAndThrow("bug: for key % v is %", k, v)
     end
     for s, a in pairs(v) do
+      self:ShouldYield()
       table.insert(tt, s .. "/" .. table.concat(a, "&"))
     end
     table.insert(temp, table.concat(tt, "!"))
@@ -441,6 +476,7 @@ function ML:extractAuctionData(auction)
 end
 
 function ML:AHdump(fromEvent)
+  self:Debug(2, "AHdump call, fromEvent = %", fromEvent)
   if not self.waitingForAH then
     self:Warning("Not expecting AHdump() call...")
     return
@@ -512,6 +548,7 @@ function ML:AHdump(fromEvent)
     end
   end
   local itemDB = self.savedVar[self.itemDBKey]
+  ML.operationsCount = 1 -- reset operations counter for this starting batch
   -- prefetch/request at least .ahPrefetch then reschedule
   local i = self.ahResumeAt
   while (i <= count) do
@@ -519,6 +556,7 @@ function ML:AHdump(fromEvent)
     local numIncomplete = 0
     local j = i
     repeat
+      self:ShouldYield()
       if not self.ahResult[j] then
         local linkRes = GetAuctionItemLink("list", j)
         if not linkRes then

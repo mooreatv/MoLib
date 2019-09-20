@@ -783,6 +783,7 @@ else
 end
 
 --- localization helpers
+ML.debugLocalization = true
 
 -- returns the L array with meta suitable for
 -- https://authors.curseforge.com/knowledge-base/world-of-warcraft/531-localization-substitutions
@@ -797,7 +798,9 @@ function ML:GetLocalization()
     rawset(t, k, v)
   end
   Lmeta.__index = function(t, k)
-    self:Debug(1, "Localization not found for %", k)
+    if self.debugLocalization then
+      self:Debug(1, "Localization not found for %", k)
+    end
     rawset(t, k, k) -- cache it
     return k
   end

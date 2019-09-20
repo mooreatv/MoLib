@@ -4,6 +4,8 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.12.00 Sept 19th 2019
+- AH: now use periodic yield to avoid (rare) DCs
 v7.11.03 Sept 10th 2019
 - Allow non int keys in custom slider labels
 v7.11.02 Sept 9th 2019
