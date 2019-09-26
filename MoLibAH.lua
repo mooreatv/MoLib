@@ -76,6 +76,7 @@ function ML:AddToItemDB(link, price)
       self:PrintDefault(
         self.name .. " " .. self.L["New item #% (%): "] .. link .. " " .. GetCoinTextureString(price) .. extra, newIdx,
         idb._count_)
+      self:Yield(0) -- if we print stuff we (seem to) need to yield
     end
   end
   return key
@@ -354,11 +355,14 @@ function ML:AHrestoreNormal()
 end
 
 -- (default) page size is NUM_AUCTION_ITEMS_PER_PAGE (50) which
--- we don't to prefetch as that's way too slow
-ML.ahPrefetch = 1000
+-- we don't to prefetch as that's way too slow, there is a number after
+-- which we loose data because asking for later data erases earlier unfetched data
+-- we should consider halving the batch size at each retry or similar
+ML.ahPrefetch = 2500
 ML.ahMaxRetries = 10 -- how many retries without making progress (ie 1sec)
 ML.ahBaseTimerInterval = 0.1
 ML.ahMaxRestarts = 10 -- how many times to restart the scan when stepping on an expired auction
+ML.ahWaitForSellers = true
 
 function ML:AHscheduleNextDump(msg)
   if self.ahTimer then
@@ -376,14 +380,20 @@ ML.yieldFrequency = 2500
 ML.operationsCount = 1 -- start at 1 so scan doesn't start with yield yet serialize does
 ML.yieldDelay = 0 -- ie "next frame" seems to work and keep a good rate without DC/hanging
 
+function ML:Yield(forHowLong)
+  local co = coroutine.running()
+  C_Timer.After(forHowLong or self.yieldDelay, function()
+    coroutine.resume(co)
+  end)
+  coroutine.yield()
+end
+
 function ML:ShouldYield()
   local shouldYield = (self.yieldFrequency > 0) and (self.operationsCount % self.yieldFrequency == 0)
   self.operationsCount = self.operationsCount + 1 -- change it before we yield in case we reenter
   if shouldYield then
     self:Debug(1, "yielding after % operations", self.operationsCount)
-    local co = coroutine.running()
-    C_Timer.After(self.yieldDelay, function() coroutine.resume(co) end)
-    coroutine.yield()
+    self:Yield()
     self:Debug(1, "resuming after yield")
   end
 end
@@ -516,6 +526,7 @@ function ML:AHdump(fromEvent)
     self.ahResumeAt = 1
     self.expectedCount = count
     self.currentCount = nil
+    self.unknownOwners = 0
   else
     if count ~= self.expectedCount and count ~= self.currentCount then
       self.ahRestarts = (self.ahRestarts or 0) + 1
@@ -542,6 +553,7 @@ function ML:AHdump(fromEvent)
       self.ahKeyedResult = wipe(self.ahKeyedResult)
       self.ahResumeAt = 1
       self.ahIsStale = true
+      self.unknownOwners = 0
       self:AHscheduleNextDump("restart from auction change")
       self.AHinDump = false
       return
@@ -553,8 +565,10 @@ function ML:AHdump(fromEvent)
   local i = self.ahResumeAt
   while (i <= count) do
     local firstIncomplete = nil
+    local firstSellerMissing = nil
     local numIncomplete = 0
     local j = i
+    local missingSeller = 0
     repeat
       self:ShouldYield()
       if not self.ahResult[j] then
@@ -566,21 +580,42 @@ function ML:AHdump(fromEvent)
           end
         else
           -- TODO: add the option to wait for seller information
+          local timeLeft = GetAuctionItemTimeLeft("list", j)
           local _name, _texture, itemCount, _quality, _canUse, _level, _levelColHeader, minBid, minIncrement,
                 buyoutPrice, bidAmount, highBidder, _bidderFullName, owner, ownerFullName, _saleStatus, _itemId,
                 _hasAllInfo = GetAuctionItemInfo("list", j)
           local key = self:AddToItemDB(linkRes, math.max(buyoutPrice, minBid, bidAmount))
-          local timeLeft = GetAuctionItemTimeLeft("list", j)
-          self.ahResult[j] = true
-          self:addToResult(key, ownerFullName or owner or "", self:auctionEntry(timeLeft, itemCount, minBid,
-                                                                                buyoutPrice, bidAmount, minIncrement,
-                                                                                highBidder, linkRes, j))
+          local o = ownerFullName or owner or ""
+          local done = true
+          if o == "" then
+            missingSeller = missingSeller + 1
+            self:Debug(3, "Missing seller #% for % % " .. linkRes, missingSeller, j, key)
+            if self.ahWaitForSellers then
+              done = false
+              if not firstSellerMissing then
+                firstSellerMissing = j
+              end
+              -- fixme: copy pasta from above...
+              numIncomplete = numIncomplete + 1
+              if not firstIncomplete then
+                firstIncomplete = j
+              end
+            else
+              self.unknownOwners = self.unknownOwners + 1
+            end
+          end
+          if done then
+            self.ahResult[j] = true
+            self:addToResult(key, o, self:auctionEntry(timeLeft, itemCount, minBid, buyoutPrice, bidAmount,
+                                                       minIncrement, highBidder, linkRes, j))
+          end
         end
       end
       j = j + 1
     until (j > count) or (numIncomplete == self.ahPrefetch)
     if numIncomplete > 0 then
-      self:Debug(3, "ni % fi % ahR %", numIncomplete, firstIncomplete, self.ahResumeAt)
+      self:Debug(3, "ni % fi % ahR % missingSellers % firstSellerMissing %", numIncomplete, firstIncomplete,
+                 self.ahResumeAt, self.unknownOwners, firstSellerMissing)
       local progressMade = (firstIncomplete > self.ahResumeAt)
       if progressMade then
         self:Debug("We made progress from % to %, so resetting retries", self.ahResumeAt, firstIncomplete)
@@ -592,18 +627,26 @@ function ML:AHdump(fromEvent)
         retriesMsg = string.format(self.L[" retry #%d"], self.ahRetries)
       end
       if not fromEvent or progressMade then
-        self:PrintDefault(self.L["Expected incomplete ah % results found at % / %"] .. retriesMsg, numIncomplete,
+        self:PrintDefault(self.L["AH progress: % auctions missing info or seller, first one at % / %"] .. retriesMsg, numIncomplete,
                           firstIncomplete, count, self.ahRetries)
       end
       if self.ahRetries > self.ahMaxRetries then
-        self:Error(
-          "Too many retries (%) without progress when trying to get to full AH of % with page size %, stuck on item %",
-          self.ahRetries, count, self.ahPrefetch, firstIncomplete)
-        self:AHrestoreNormal()
-        self.AHinDump = false
-        return
+        if self.ahWaitForSellers and self.firstSellerMissing == self.ahResumeAt then
+          self:Warning("Too many retries (%) without getting seller info for item %, skipping " ..
+                         GetAuctionItemLink("list", firstSellerMissing), self.ahRetries, firstSellerMissing)
+          self.unknownOwners = self.unknownOwners + 1
+          self.ahResumeAt = firstSellerMissing + 1
+        else
+          self:Error("Too many retries (%) without progress when trying to get to full AH of % with page size %, " ..
+                       "stuck on item % (seller missing at %)", self.ahRetries, count, self.ahPrefetch, firstIncomplete,
+                     firstSellerMissing)
+          self:AHrestoreNormal()
+          self.AHinDump = false
+          return
+        end
+      else
+        self.ahResumeAt = firstIncomplete
       end
-      self.ahResumeAt = firstIncomplete
       -- we would prefer entirely event based... but it seems like we need more than just events but also keep retrying
       self:AHscheduleNextDump("retry loop")
       self.AHinDump = false
@@ -646,8 +689,10 @@ function ML:AHdump(fromEvent)
   local newItems = itemDB._count_ - self.itemDBStartingCount
   entry.newItems = newItems
   entry.itemDBcount = itemDB._count_
+  entry.missingSellers = self.unknownOwners
   self:PrintInfo(self.name .. self.L[": Auction scan complete and captured for % listings in % s (% auctions/sec)."] ..
-                   "\n" .. self.L["% new items in DB, now % entries."], count, elapsed, speed, newItems, itemDB._count_)
+                   "\n" .. self.L["% new items in DB, now % entries. % missing seller info."], count, elapsed, speed,
+                 newItems, itemDB._count_, self.unknownOwners)
   self:AHrestoreNormal()
   self:AHendOfScanCB()
   self.AHinDump = false
