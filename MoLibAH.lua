@@ -118,15 +118,21 @@ function ML:AHGetAuctionInfoByLink(itemLink)
         res.quantity = res.quantity + itemCount
         res.numAuctions = res.numAuctions + 1
         local bid = bidAmount or minBid
-        if not res.minBid then
-          res.minBid = bid and self:round(bid / itemCount, .1)
-        else
-          res.minBid = self:round(math.min(res.minBid, bid / itemCount), .1)
+        if bid then
+          local rBidPerItem = self:round(bid / itemCount, .1)
+          if not res.minBid then
+            res.minBid = rBidPerItem
+          else
+            res.minBid = math.min(res.minBid, rBidPerItem)
+          end
         end
-        if not res.minBuyout then
-          res.minBuyout = buyoutPrice and self:round(buyoutPrice / itemCount, .1) -- could also be nil
-        elseif buyoutPrice then
-          res.minBuyout = self:round(math.min(res.minBuyout, buyoutPrice / itemCount), .1)
+        if buyoutPrice then
+          local rBuyPerItem = self:round(buyoutPrice / itemCount, .1)
+          if not res.minBuyout then
+            res.minBuyout = rBuyPerItem
+          else
+            res.minBuyout = math.min(res.minBuyout, rBuyPerItem)
+          end
         end
       end
     end
@@ -335,6 +341,7 @@ function ML:AHrestoreNormal()
     if self.ahUpdateBrowse then
       AuctionFrameBrowse:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
     else
+      -- TODO: how to hide the older  results?? it's not BrowseScrollFrame:Hide()
       -- AuctionFrameBrowse_Search
       if not _G.BrowseSearchButton then
         self:Error("Unexpected to not find BrowseSearchButton !")
@@ -348,7 +355,6 @@ function ML:AHrestoreNormal()
       _G.BrowseName:HookScript("OnEnterPressed", restore)
       _G.BrowseNoResultsText:SetText(_G.BROWSE_SEARCH_TEXT)
       _G.BrowseNoResultsText:Show()
-      -- TODO: how to hide the older  results?? it's not BrowseScrollFrame:Hide()
     end
     AuctionFrameBrowse.isSearching = nil
   end
@@ -627,8 +633,8 @@ function ML:AHdump(fromEvent)
         retriesMsg = string.format(self.L[" retry #%d"], self.ahRetries)
       end
       if not fromEvent or progressMade then
-        self:PrintDefault(self.L["AH progress: % auctions missing info or seller, first one at % / %"] .. retriesMsg, numIncomplete,
-                          firstIncomplete, count, self.ahRetries)
+        self:PrintDefault(self.L["AH progress: % auctions missing info or seller, first one at % / %"] .. retriesMsg,
+                          numIncomplete, firstIncomplete, count, self.ahRetries)
       end
       if self.ahRetries > self.ahMaxRetries then
         if self.ahWaitForSellers and self.firstSellerMissing == self.ahResumeAt then

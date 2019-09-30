@@ -10,9 +10,15 @@ local addonName, _ns = ...
 local ML = _G[addonName]
 
 -- use 2 or 4 for sizes so there are 1/2, 1/4 points
+-- can also be used for numbers passing .1, .01 etc for n digits precision
 function ML:round(x, precision)
   precision = precision or 1
-  local i, _f = math.modf(math.floor(x / precision + 0.5)) * precision
+  if precision < 1 then
+    -- when called with .1, .01 ... and we turn it into 1/10 1/100 ...
+    local p = math.floor(1 / precision + 0.5)
+    return math.floor(x * p + 0.5) / p
+  end
+  local i = math.floor(x / precision + 0.5) * precision
   return i
 end
 
@@ -25,7 +31,7 @@ function ML:roundUp(x, precision)
     sign = -1
     x = -x
   end
-  local i, _f = math.modf(math.ceil(x / precision - 0.1)) * precision
+  local i = math.ceil(x / precision - 0.1) * precision
   return sign * i
 end
 
@@ -582,8 +588,8 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
   f.addScrollEditFrame = function(self, width, height, font, noInset)
     local s = self:addScrollingFrame(width, height, noInset)
     local e = CreateFrame("EditBox", nil, s)
-    if  s.inset then
-         e:SetFrameLevel(s.inset:GetFrameLevel() + 1)
+    if s.inset then
+      e:SetFrameLevel(s.inset:GetFrameLevel() + 1)
     end
     e:SetWidth(width)
     e:SetFontObject(font or f.defaultFont or ChatFontNormal)
