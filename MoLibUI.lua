@@ -562,18 +562,28 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     return e
   end
 
-  f.addScrollEditFrame = function(self, width, height, font, noInset)
+  f.addScrollingFrame = function(self, width, height, noInset)
     width = width or 400
     height = height or 300
     local s = CreateFrame("ScrollFrame", nil, self, "UIPanelScrollFrameTemplate")
     s:SetSize(width, height)
-    local e = CreateFrame("EditBox", nil, s)
     if not noInset then
       local inset = CreateFrame("Frame", nil, s, "InsetFrameTemplate")
       inset:SetPoint("BOTTOMLEFT", -4, -4)
       inset:SetPoint("TOPRIGHT", 4, 4)
       s.extraHeight = 8 -- inset is 4+4 outside
-      e:SetFrameLevel(inset:GetFrameLevel() + 1)
+      s.inset = inset
+    end
+    s.extraWidth = 24 -- scrollbar is outside
+    self:addMethods(s)
+    return s
+  end
+
+  f.addScrollEditFrame = function(self, width, height, font, noInset)
+    local s = self:addScrollingFrame(width, height, noInset)
+    local e = CreateFrame("EditBox", nil, s)
+    if  s.inset then
+         e:SetFrameLevel(s.inset:GetFrameLevel() + 1)
     end
     e:SetWidth(width)
     e:SetFontObject(font or f.defaultFont or ChatFontNormal)
@@ -585,8 +595,6 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     --    e:GetRegions():SetWordWrap(false)
     s:SetScrollChild(e)
     s.editBox = e
-    s.extraWidth = 24 -- scrollbar is outside
-    self:addMethods(s)
     return s
   end
 

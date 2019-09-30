@@ -4,6 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.14.00 Sept 30th 2019
+- wip on more scrollable things:
+- Split the addScrollEditFrame() code into reusable addScrollingFrame() and remaining editbox specific
 v7.13.00 Sept 25th 2019
 - AH: now wait for seller info (optionally) and yield in more places.
 v7.12.00 Sept 19th 2019
