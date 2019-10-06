@@ -4,10 +4,10 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
-v7.15.00 Oct 5th 2019
+v7.15.01 Oct 5th 2019
 - :RandomId now takes optional range for length of the id
 - initial working version of PlaceGrid(x, y) to place on 2 dimensional grid aligned by line/columns
-- :TextTable() using :PlaceGrid() to grid and :TextTableDemo() using it and RandomId for demo
+- :Table() using :PlaceGrid() to grid and :TableDemo() using it and RandomId for demo
 v7.14.00 Sept 30th 2019
 - Fix rounding issue in round() and improved AH info calc
   fixes https://github.com/mooreatv/BetterVendorPrice/issues/6

@@ -97,6 +97,7 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
   end
 
   f.Snap = function(w)
+    addon:GridUpdateHeader(w)
     w:setSizeToChildren()
     addon:SnapFrame(w)
   end
@@ -338,13 +339,14 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
       end
     else
       if y == 1 then
-        local prev = self.grid[x-1][1]
+        local prev = self.grid[x - 1][1]
         object:placeRight(prev, optOffsetX, optOffsetY)
       else
         local leftAnchor = self.grid[x][1]
         object:setPoint("LEFT", leftAnchor, "LEFT", optOffsetX, 0)
         local topAnchor = self.grid[1][y]
-        object:setPoint("TOP", topAnchor, "TOP", optOffsetY, 0)
+        local yAdjustment = addon:WidgetHeightAdjustment(object) - addon:WidgetHeightAdjustment(topAnchor)
+        object:setPoint("BOTTOM", topAnchor, "BOTTOM", 0, (optOffsetY or 0) + yAdjustment)
       end
     end
   end
@@ -706,23 +708,67 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
   return f
 end
 
-function ML:TextTable(f, data)
+function ML:Table(f, data)
   for y, l in ipairs(data) do
-    local first = true
     for x, c in ipairs(l) do
-      f:addText(c):PlaceGrid(x, y)
+      self:Debug("adding at % %: %", x, y, c)
+      if type(c) == "string" then
+        c = f:addText(c)
+      end
+      c:PlaceGrid(x, y)
     end
   end
 end
 
-function ML:TextTableDemo()
-  local t = {{"Hdr1", "Header 2", "Header 3"}}
-  for i = 1, 20 do
-    table.insert(t, {tostring(i), self:RandomId(1, 6), self:RandomId(3, 15)})
+function ML:GetFullWidth(w)
+  return (w.GetStringWidth and w:GetStringWidth() or w:GetWidth()) + (w.extraWidth or 0)
+end
+
+-- todo: make up my mind about widget/frame/toplevel(addon) functions...
+
+function ML:GridUpdateHeader(f)
+  if not f.grid then
+    return
   end
+  for x, c in ipairs(f.grid) do
+    local header, headerWidth
+    for y, l in ipairs(c) do
+      if y == 1 then
+        header = l
+        headerWidth = self:GetFullWidth(l)
+      else
+        thisWidth = self:GetFullWidth(l)
+        if thisWidth > headerWidth then
+          self:Debug("Found wider at % % : %", x, y, thisWidth)
+          header.extraWidth = (header.extraWidth or 0) + (thisWidth - headerWidth)
+          headerWidth = thisWidth
+          header:SetWidth(thisWidth)
+        end
+      end
+    end
+  end
+end
+
+function ML:WidgetHeightAdjustment(object)
+  local yAdjustment = 0
+  local oType = object:GetObjectType()
+  if oType == "CheckButton" then
+    yAdjustment = -7
+  elseif oType == "Button" then
+    yAdjustment = -4
+  end
+  return yAdjustment
+end
+
+function ML:TableDemo()
   f = self:StandardFrame("TableDemo", "Table Demo")
-  self:TextTable(f, t)
+  local t = {{"Hdr1", "H2", "Header 3"}}
+  for i = 1, 20 do
+    table.insert(t, {f:addButton(tostring(i)), f:addCheckBox(self:RandomId(1, 6)), self:RandomId(3, 15)})
+  end
+  self:Table(f, t)
   f:Snap()
+  return f
 end
 
 ---
