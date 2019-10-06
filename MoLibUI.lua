@@ -619,6 +619,12 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
       s.inset = inset
     end
     s.extraWidth = 24 -- scrollbar is outside
+    s.setScrollChild = function(p, c) -- set child relationship fix the frame level too
+      if p.inset then
+        c:SetFrameLevel(p.inset:GetFrameLevel() + 1)
+      end
+      p:SetScrollChild(c)
+    end
     self:addMethods(s)
     return s
   end
@@ -626,9 +632,6 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
   f.addScrollEditFrame = function(self, width, height, font, noInset)
     local s = self:addScrollingFrame(width, height, noInset)
     local e = CreateFrame("EditBox", nil, s)
-    if s.inset then
-      e:SetFrameLevel(s.inset:GetFrameLevel() + 1)
-    end
     e:SetWidth(width)
     e:SetFontObject(font or f.defaultFont or ChatFontNormal)
     if self.defaultTextColor then
@@ -637,7 +640,7 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     e:SetMultiLine(true)
     --    e:GetRegions():SetNonSpaceWrap(false)
     --    e:GetRegions():SetWordWrap(false)
-    s:SetScrollChild(e)
+    s:setScrollChild(e)
     s.editBox = e
     return s
   end
@@ -766,7 +769,7 @@ function ML:TableDemo()
   local s = f:addScrollingFrame()
   s:Place(5, 14) -- because of inset
   local g = self:Frame("TableDemoScrolling", nil, nil, s)
-  s:SetScrollChild(g)
+  s:setScrollChild(g)
   local t = {{"Hdr1", "H2", "Header 3"}}
   for i = 1, 20 do
     table.insert(t, {g:addButton(tostring(i)), g:addCheckBox(self:RandomId(1, 6)), self:RandomId(3, 15)})
@@ -774,6 +777,12 @@ function ML:TableDemo()
   self:Table(g, t)
   f.grid = g.grid
   f:Snap()
+  local cell = f.grid[2][3]
+  C_Timer.After(2, function()
+        cell.Text:SetText("updated now...")
+        cell.extraWidth = cell.Text:GetStringWidth()
+        f:Snap()
+  end)
   return f
 end
 
