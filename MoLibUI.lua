@@ -630,7 +630,7 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
       if frameType then
         c = CreateFrame(frameType, nil, s)
       else
-        c = addon:Frame(nil,nil, nil, p)
+        c = addon:Frame(nil, nil, nil, p)
       end
       p:setScrollChild(c)
       return c
@@ -773,23 +773,37 @@ function ML:WidgetHeightAdjustment(object)
   return yAdjustment
 end
 
-function ML:TableDemo()
+function ML:TableDemo(n, onlyText)
   f = self:StandardFrame("TableDemo", "Table Demo")
   local s = f:addScrollingFrame()
   s:Place(5, 14) -- because of inset
   local g = s:addScrollChild()
   local t = {{"Hdr1", "H2", "Header 3"}}
-  for i = 1, 20 do
-    table.insert(t, {g:addButton(tostring(i)), g:addCheckBox(self:RandomId(1, 6)), self:RandomId(3, 15)})
+  n = n or 20
+  for i = 1, n do
+    local t1 = tostring(i)
+    local t2 = self:RandomId(1, 6)
+    local t3 = self:RandomId(3, 15)
+    if not onlyText then
+      t1 = g:addButton(t1)
+      t2 = g:addCheckBox(t2)
+    end
+    table.insert(t, {t1, t2, t3})
   end
   self:Table(g, t)
   f.grid = g.grid
   f:Snap()
   local cell = f.grid[2][3]
   C_Timer.After(2, function()
-        cell.Text:SetText("updated now...")
-        cell.extraWidth = cell.Text:GetStringWidth()
-        f:Snap()
+    local t = cell
+    if cell.Text then
+      t = cell.Text
+    end
+    t:SetText("updated now...")
+    if cell.Text then
+      cell.extraWidth = t:GetStringWidth()
+    end
+    f:Snap()
   end)
   return f
 end
