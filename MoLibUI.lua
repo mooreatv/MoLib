@@ -320,7 +320,6 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
   end
 
   f.PlaceGrid = function(self, object, x, y, optOffsetX, optOffsetY)
-    self.numObjects = self.numObjects + 1
     if not self.grid then
       self.grid = {}
     end
@@ -333,11 +332,13 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
       if y == 1 then
         object:Place(optOffsetX, optOffsetY)
       else
+        self.numObjects = self.numObjects + 1
         local prev = self.grid[1][y - 1]
         local yO = (optOffsetY or 8) + (prev.extraHeight or 0)
         object:placeBelow(prev, optOffsetX, yO)
       end
     else
+      self.numObjects = self.numObjects + 1
       if y == 1 then
         local prev = self.grid[x - 1][1]
         object:placeRight(prev, optOffsetX, optOffsetY)
@@ -762,11 +763,16 @@ end
 
 function ML:TableDemo()
   f = self:StandardFrame("TableDemo", "Table Demo")
+  local s = f:addScrollingFrame()
+  s:Place(5, 14) -- because of inset
+  local g = self:Frame("TableDemoScrolling", nil, nil, s)
+  s:SetScrollChild(g)
   local t = {{"Hdr1", "H2", "Header 3"}}
   for i = 1, 20 do
-    table.insert(t, {f:addButton(tostring(i)), f:addCheckBox(self:RandomId(1, 6)), self:RandomId(3, 15)})
+    table.insert(t, {g:addButton(tostring(i)), g:addCheckBox(self:RandomId(1, 6)), self:RandomId(3, 15)})
   end
-  self:Table(f, t)
+  self:Table(g, t)
+  f.grid = g.grid
   f:Snap()
   return f
 end
