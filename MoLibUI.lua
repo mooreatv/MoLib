@@ -318,6 +318,37 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     return object
   end
 
+  f.PlaceGrid = function(self, object, x, y, optOffsetX, optOffsetY)
+    self.numObjects = self.numObjects + 1
+    if not self.grid then
+      self.grid = {}
+    end
+    if not self.grid[x] then
+      self.grid[x] = {}
+    end
+    self.grid[x][y] = object
+    object.inGrid = {x, y}
+    if x == 1 then
+      if y == 1 then
+        object:Place(optOffsetX, optOffsetY)
+      else
+        local prev = self.grid[1][y - 1]
+        local yO = (optOffsetY or 8) + (prev.extraHeight or 0)
+        object:placeBelow(prev, optOffsetX, yO)
+      end
+    else
+      if y == 1 then
+        local prev = self.grid[x-1][1]
+        object:placeRight(prev, optOffsetX, optOffsetY)
+      else
+        local leftAnchor = self.grid[x][1]
+        object:setPoint("LEFT", leftAnchor, "LEFT", optOffsetX, 0)
+        local topAnchor = self.grid[1][y]
+        object:setPoint("TOP", topAnchor, "TOP", optOffsetY, 0)
+      end
+    end
+  end
+
   -- To be used by the various factories/sub widget creation to add common methods to them
   -- (learned after coming up with this pattern on my own that that this seems to be
   -- called Mixins in blizzard code, though that doesn't cover forwarding or children tracking)
@@ -339,6 +370,10 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     end
     widget.PlaceLeft = function(...)
       widget.parent:PlaceLeft(...)
+      return widget
+    end
+    widget.PlaceGrid = function(...)
+      widget.parent:PlaceGrid(...)
       return widget
     end
     if not widget.Init then
@@ -669,6 +704,25 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
   end
 
   return f
+end
+
+function ML:TextTable(f, data)
+  for y, l in ipairs(data) do
+    local first = true
+    for x, c in ipairs(l) do
+      f:addText(c):PlaceGrid(x, y)
+    end
+  end
+end
+
+function ML:TextTableDemo()
+  local t = {{"Hdr1", "Header 2", "Header 3"}}
+  for i = 1, 20 do
+    table.insert(t, {tostring(i), self:RandomId(1, 6), self:RandomId(3, 15)})
+  end
+  f = self:StandardFrame("TableDemo", "Table Demo")
+  self:TextTable(f, t)
+  f:Snap()
 end
 
 ---

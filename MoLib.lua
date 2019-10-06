@@ -462,7 +462,12 @@ ML:Debug("and Base64 table, % elems: %", #ML.Base64, ML.Base64)
 --  end
 -- end
 
-function ML:RandomId(len)
+-- takes either 1 fixed length argument or a range; eg RandomId(3,12) will generate a random id from 3 to 12 characters long
+function ML:RandomId(len1, len2)
+  local len = len1
+  if len2 ~= nil then
+    len = math.random(len1, len2)
+  end
   local res = {}
   for _ = 1, len do
     table.insert(res, ML.AlphaNum[math.random(1, #ML.AlphaNum)])
