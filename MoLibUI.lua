@@ -750,7 +750,7 @@ function ML:GridUpdateHeader(f)
         header = l
         headerWidth = self:GetFullWidth(l)
       else
-        thisWidth = self:GetFullWidth(l)
+        local thisWidth = self:GetFullWidth(l)
         if thisWidth > headerWidth then
           self:Debug("Found wider at % % : %", x, y, thisWidth)
           header.extraWidth = (header.extraWidth or 0) + (thisWidth - headerWidth)
@@ -774,7 +774,7 @@ function ML:WidgetHeightAdjustment(object)
 end
 
 function ML:TableDemo(n, onlyText)
-  f = self:StandardFrame("TableDemo", "Table Demo")
+  local f = self:StandardFrame("TableDemo", "Table Demo")
   local s = f:addScrollingFrame()
   s:Place(5, 14) -- because of inset
   local g = s:addScrollChild()
