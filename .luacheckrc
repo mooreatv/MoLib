@@ -52,6 +52,7 @@ globals = {
     "GetLocale",
     "GetCoinTextureString",
     "unpack",
+    "bit",
 }
 max_line_length = 132
 ignore = {
