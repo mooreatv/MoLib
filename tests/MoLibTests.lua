@@ -104,17 +104,17 @@ function MLT.TestSecure() -- for now copy/paste into /lua as we can't run withou
   local t = DynBoxer:CreateSecureMessage("a :test", "tok1", "tok2")
   print(t)
 
-  if not TST then
-    TST = {}
+  if not _G.TST then
+    _G.TST = {}
   end
 
-  table.insert(TST, t)
+  table.insert(_G.TST, t)
 
   local m, l = DynBoxer:VerifySecureMessage(t, "tok1", "tok2")
   print(m, l)
   -- fails with too old (on purpose) when ran again later
-  local x, l = DynBoxer:VerifySecureMessage(TST[1], "tok1", "tok2")
-  print(x, l)
+  local x, ll = DynBoxer:VerifySecureMessage(_G.TST[1], "tok1", "tok2")
+  print(x, ll)
   print(x)
   --- end copy paste into /lua (wowlua) ---
 end
@@ -128,6 +128,6 @@ local i = tonumber("EFFFFFF1", 16)
 print(MLT:ToHex(i))
 
 local str = "Á"
-for i = 1, #str do
-  print(i, str:byte(i), MLT:ToHex(str:byte(i)))
+for ii = 1, #str do
+  print(ii, str:byte(ii), MLT:ToHex(str:byte(ii)))
 end

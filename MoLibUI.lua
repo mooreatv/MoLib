@@ -795,13 +795,13 @@ function ML:TableDemo(n, onlyText)
   f:Snap()
   local cell = f.grid[2][3]
   C_Timer.After(2, function()
-    local t = cell
+    local tt = cell
     if cell.Text then
-      t = cell.Text
+      tt = cell.Text
     end
-    t:SetText("updated now...")
+    tt:SetText("updated now...")
     if cell.Text then
-      cell.extraWidth = t:GetStringWidth()
+      cell.extraWidth = tt:GetStringWidth()
     end
     f:Snap()
   end)

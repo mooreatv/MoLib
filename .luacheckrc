@@ -51,6 +51,7 @@ globals = {
     "SetAuctionsTabShowing",
     "GetLocale",
     "GetCoinTextureString",
+    "unpack",
 }
 max_line_length = 132
 ignore = {
