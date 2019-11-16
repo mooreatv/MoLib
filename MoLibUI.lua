@@ -1351,7 +1351,7 @@ end
 
 ML.bugReportMaxLines = 225
 ML.bugReportKeepFirst = 25
-ML.bugReportMaxEntryLen = 400
+ML.bugReportMaxEntryLen = 600
 
 --- (De)Bug report frame
 function ML:BugReport(subtitle, text)
