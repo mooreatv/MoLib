@@ -302,12 +302,12 @@ function ML:coroutineRunDump(fromEvent)
     self:Warning("Bug? coroutine already existing...")
   end
   self.ahCoroutine = coroutine.create(function()
-    self:Debug(1, "coroutine % started for dump %", id, fromEvent)
+    self:Debug(3, "coroutine % started for dump %", id, fromEvent)
     self:AHdump(fromEvent)
-    self:Debug(1, "coroutine % about to end for dump %", id, fromEvent)
+    self:Debug(3, "coroutine % about to end for dump %", id, fromEvent)
     self.ahCoroutine = nil
   end)
-  self:Debug(1, "coroutine % created for dump %", id, fromEvent)
+  self:Debug(3, "coroutine % created for dump %", id, fromEvent)
   coroutine.resume(self.ahCoroutine)
 end
 
@@ -315,12 +315,12 @@ ML.EventHdlrs.AUCTION_ITEM_LIST_UPDATE = function(frame, _event, _name)
   local addonP = frame.addonPtr
   addonP:Debug(5, "AUCTION_ITEM_LIST_UPDATE Event received - in ah wait %", addonP.waitingForAH)
   if addonP.waitingForAH then
-    addonP:Debug(2, "Event received, waiting for items for AH, at % got % - already in is %", addonP.ahResumeAt,
+    addonP:Debug(3, "Event received, waiting for items for AH, at % got % - already in is %", addonP.ahResumeAt,
                  #addonP.ahResult, addonP.AHinDump)
     if not addonP.AHinDump then
       addonP:coroutineRunDump(true)
     else
-      addonP:Debug(1, "Skipping item list even because we already are inside AHdump... %", addonP.ahResumeAt)
+      addonP:Debug(3, "Skipping item list even because we already are inside AHdump... %", addonP.ahResumeAt)
     end
   end
 end
@@ -333,7 +333,7 @@ function ML:AHrestoreNormal()
   self.ahResumeAt = nil
   self.ahRestarts = 0
   if self.ahTimer then
-    self:Debug(2, "cancelling previous timer, from restore normal")
+    self:Debug(3, "cancelling previous timer, from restore normal")
     self.ahTimer:Cancel()
     self.ahTimer = nil
   end
@@ -398,9 +398,9 @@ function ML:ShouldYield()
   local shouldYield = (self.yieldFrequency > 0) and (self.operationsCount % self.yieldFrequency == 0)
   self.operationsCount = self.operationsCount + 1 -- change it before we yield in case we reenter
   if shouldYield then
-    self:Debug(1, "yielding after % operations", self.operationsCount)
+    self:Debug(3, "yielding after % operations", self.operationsCount)
     self:Yield()
-    self:Debug(1, "resuming after yield")
+    self:Debug(3, "resuming after yield")
   end
 end
 
@@ -492,7 +492,7 @@ function ML:extractAuctionData(auction)
 end
 
 function ML:AHdump(fromEvent)
-  self:Debug(2, "AHdump call, fromEvent = %", fromEvent)
+  self:Debug(3, "AHdump call, fromEvent = %", fromEvent)
   if not self.waitingForAH then
     self:Warning("Not expecting AHdump() call...")
     return
