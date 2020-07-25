@@ -41,6 +41,7 @@ globals = {
     "CanSendAuctionQuery",
     "QueryAuctionItems",
     "GetNumAuctionItems",
+    "GetItemInfo",
     "GetAuctionItemInfo",
     "GetAuctionItemLink",
     "GetAuctionItemTimeLeft",
