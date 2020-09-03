@@ -939,6 +939,51 @@ function ML:RegisterEventHandlers(handlers)
   end
 end
 
+function ML:SetupGuildInfo()
+  -- Seems like at startup we can have IsInGuild() false...
+  --if not IsInGuild() then
+  --  self:Debug("Not in a guild, no rooster cache to update")
+  --  return
+  --end
+  local guildHandler = {
+    GUILD_ROSTER_UPDATE = function(frame, ...)
+    local addonP = frame.addonPtr
+    addonP:Debug(1, "GUILD_ROSTER_UPDATE called for % % % [%]", addonP.name, frame:GetName(), frame.name, addonP:Dump(...))
+    addonP:UpdateGuildInfo()
+  end
+  }
+  self:RegisterEventHandlers(guildHandler)
+  self:Debug("Requesting Guild Roster")
+  GuildRoster() -- will call UpdateGuildInfo() from GUILD_ROSTER_UPDATE firing off
+end
+
+ML.GuildCache = {}
+ML.GuildCache.n = 0
+
+function ML:UpdateGuildInfo()
+  self:Debug("Received Guild Roster")
+  local numTotalGuildMembers, numOnlineGuildMembers = GetNumGuildMembers()
+  if numTotalGuildMembers == self.GuildCache.n then
+    self:Debug("Unchanged count %, online is %", numTotalGuildMembers, numOnlineGuildMembers)
+    return
+  end
+  self:PrintDefault(self.name .. ": In guild, % total, % online.", numTotalGuildMembers, numOnlineGuildMembers)
+  self.GuildCache = {}
+  self.GuildCache.n = numTotalGuildMembers
+  for i = 1, numTotalGuildMembers do
+    local name= GetGuildRosterInfo(i)
+    self.GuildCache[name] = true
+  end
+end
+
+-- Unlike UnitIsInMyGuild this takes the fullName (name-realm) as input
+function ML:IsInOurGuild(fullName)
+  local result = self.GuildCache[fullName]
+  self:Debug("IsInOurGuild(%) with % in cache: %", fullName, self.GuildCache.n, result)
+  return result
+end
+
+
 ---
 -- perf tests
 

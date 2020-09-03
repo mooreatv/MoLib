@@ -54,6 +54,9 @@ globals = {
     "GetCoinTextureString",
     "unpack",
     "bit",
+    "IsInGuild",
+    "GuildRoster",
+    "GetNumGuildMembers",
 }
 max_line_length = 132
 ignore = {

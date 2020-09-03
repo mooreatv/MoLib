@@ -4,6 +4,10 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.17.00 Sept 2nd 2020
+- New :IsInOurGuild(name) method that is a version of UnitIsInMyGuild() that works even if the unit is not in range
+  To use you need to call :SetupGuildInfo() once at startup/from main init (it'll register an extra event handler 
+  for GUILD_ROSTER_UPDATE)
 v7.16.00 July 24th 2020
 - Auction Item Database schema v5, now contains itemSellPrice, itemStackCount, itemClassID,
     itemSubClassID, itemRarity, itemMinLevel prefix before the link
