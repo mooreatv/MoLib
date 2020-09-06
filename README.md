@@ -11,6 +11,7 @@ MooreaTv addons common libs
 Both extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
+
 It now also includes Pixel Perfect drawing support as demonstrated in
 https://github.com/mooreatv/PixelPerfectAlign 
 
@@ -22,6 +23,8 @@ Other functions include
 - LRU cache/table
 - Hashing, rudimentary signing and random number utilities
 - base62 utils
+- binary to baseN where N is any between 2 and 255 (most useful values being 91(printable withou space),92(with space),123(valid chat characters) and 255)
+  which allows you to transmit binary (compressed) data with guaranteed minimal text size
 - ...more / to be updated but in meantime see the lua files...
 
 See also [ChangeLog.txt](ChangeLog.txt).

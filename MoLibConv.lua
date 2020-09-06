@@ -3,6 +3,10 @@
   Covered by the GNU Lesser General Public License v3.0 (LGPLv3)
   NO WARRANTY
   (contact the author if you need a different license)
+
+  If you use this please give credit and add a link to
+  https://github.com/mooreatv/MoLib in your documents/addon page on curse
+
 ]] --
 -- our name, our empty default (and unused) anonymous ns
 local addonName, _ns = ...
@@ -149,7 +153,12 @@ end
 
 function ML:convertNumberExt(srcDigits, srcBase, destBase)
    -- Generate a list of zero's which is long enough to hold the destination number.
-   local destDigitsLen = math.ceil(#srcDigits*math.log(srcBase)/math.log(destBase))
+   local destDigitsLen = #srcDigits*math.log(srcBase)/math.log(destBase)
+   if srcBase > destBase then
+    destDigitsLen = math.ceil(destDigitsLen)
+   else
+    destDigitsLen = math.floor(destDigitsLen)
+   end
    local destDigits = {}
    for i = 1, destDigitsLen do
     destDigits[i] = 0
@@ -157,7 +166,7 @@ function ML:convertNumberExt(srcDigits, srcBase, destBase)
    -- Do conversion.
    self:convertNumber(srcDigits, srcBase, destDigits, destBase)
    -- Return result (without leading zeros).
-   return self:withoutLeadingZeros(destDigits)
+   return destDigits
 end
 
 --- end of python to lua translation of the above awesomeness

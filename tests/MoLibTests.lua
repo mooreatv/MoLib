@@ -30,9 +30,22 @@ _G.GetServerTime = function()
   return os.time()
 end
 
+_G.
+_G.GetTime = function()
+  return os.time()
+end
+
 _G.UnitFullName = function(name)
   MLT:Debug(3, "Inside UnitFullName for %", name)
   return name .. "1", "My'Realm"
+end
+
+_G.GetBuildInfo = function()
+  return "1.13.5", 35753, "Sept  1 2020", 11305
+end
+
+_G.GetRealmName = function()
+  return "My'Realm"
 end
 
 _G.gsub = string.gsub
@@ -79,19 +92,19 @@ MLT:Debug("lru2 = %", lru2)
 print(MLT:Dump("TST lru1 and lru2 lists", lru1.direct, "<<<TST>>>", lru2.direct))
 
 print("---table1, newest first---")
-for v, c in lru1.iterateNewest() do
+for v, c in lru1:iterateNewest() do
   MLT:Debug("lru1 newest v=% c=%", v, c)
 end
 print("---table1, oldest first---")
-for v, c in lru1.iterateOldest() do
+for v, c in lru1:iterateOldest() do
   MLT:Debug("lru1 newest v=% c=%", v, c)
 end
 print("---table2, newest first---")
-for v, c in lru2.iterateNewest() do
+for v, c in lru2:iterateNewest() do
   MLT:Debug("lru2 v=% c=%", v, c)
 end
 print("---table2, oldest first---")
-for v, c in lru2.iterateOldest() do
+for v, c in lru2:iterateOldest() do
   MLT:Debug("lru2 v=% c=%", v, c)
 end
 
