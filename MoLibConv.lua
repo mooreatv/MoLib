@@ -1,6 +1,5 @@
 --[[
-  MoLib (Conversions, encoding part) -- (c) 2020 moorea@ymail.com (MooreaT
-  v)
+  MoLib (Conversions, encoding part) -- (c) 2020 moorea@ymail.com (MooreaTv)
   Covered by the GNU Lesser General Public License v3.0 (LGPLv3)
   NO WARRANTY
   (contact the author if you need a different license)
