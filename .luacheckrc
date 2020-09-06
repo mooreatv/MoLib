@@ -57,6 +57,8 @@ globals = {
     "IsInGuild",
     "GuildRoster",
     "GetNumGuildMembers",
+    "strchar",
+    "strbyte",
 }
 max_line_length = 132
 ignore = {
