@@ -106,18 +106,20 @@ end
 -- Thanks to
 -- https://jonnydee.wordpress.com/2011/05/01/convert-a-block-of-digits-from-base-x-to-base-y/
 
-
+--[[
 function ML:incNumberByValue(digits, base, value)
    -- The initial overflow is the 'value' to add to the number.
    local overflow = value
    -- Traverse list of digits in reverse order.
    for i = #digits, 1, -1 do
         -- If there is no overflow we can stop overflow propagation to next higher digit(s).
-        if not overflow then
+        if overflow == 0 then
              return
         end
+        -- inlined IntDivide
         local sum = digits[i] + overflow
-        overflow , digits[i] = self:IntDivide(sum, base)
+        overflow = math.floor(sum/base)
+        digits[i] = sum - overflow*base
     end
 end
 
@@ -125,18 +127,14 @@ function ML:multNumberByValue(digits, base, value)
    local overflow = 0
    -- Traverse list of digits in reverse order.
    for i = #digits, 1, -1 do
-        local tmp = (digits[i] * value) + overflow
-        overflow, digits[i] = self:IntDivide(tmp, base)
+        local sum = (digits[i] * value) + overflow
+        -- inlined IntDivide
+        overflow = math.floor(sum/base)
+        digits[i] = sum - overflow*base
    end
 end
 
-function ML:convertNumber(srcDigits, srcBase, destDigits, destBase)
-    for _, srcDigit in ipairs(srcDigits) do
-        self:multNumberByValue(destDigits, destBase, srcBase)
-        self:incNumberByValue(destDigits, destBase, srcDigit)
-    end
-end
-
+-- not used:
 function ML:withoutLeadingZeros(digits)
     local res = {}
     local add = false
@@ -149,6 +147,34 @@ function ML:withoutLeadingZeros(digits)
       end
     end
    return res
+end
+]]
+
+function ML:convertNumber(srcDigits, srcBase, destDigits, destBase)
+    local overflow
+    local sum
+    local nDest = #destDigits
+    for _, srcDigit in ipairs(srcDigits) do
+        -- inlining: self:multNumberByValue(destDigits, destBase, srcBase)
+        overflow = 0
+        -- Traverse list of digits in reverse order.
+        for i = nDest, 1, -1 do
+             sum = (destDigits[i] * srcBase) + overflow
+             -- inlined IntDivide
+             overflow = math.floor(sum/destBase)
+             destDigits[i] = sum - overflow*destBase
+        end
+        -- inlining: self:incNumberByValue(destDigits, destBase, srcDigit)
+        overflow = srcDigit
+        for i = nDest, 1, -1 do
+            if overflow == 0 then
+                break
+            end
+            sum = destDigits[i] + overflow
+            overflow = math.floor(sum/destBase)
+            destDigits[i] = sum - overflow*destBase
+        end
+    end
 end
 
 function ML:convertNumberExt(srcDigits, srcBase, destBase)

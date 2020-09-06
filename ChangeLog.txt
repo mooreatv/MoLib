@@ -4,6 +4,8 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.18.01 Sept 6th 2020
+- Performance tweaked :Encode()/:Decode(), added correctness and performance tests
 v7.18.00 Sept 5th 2020
 - New: baseN (2-255) encoding/decoding in MoLibConv.lua : allows to use base123 for maximum density in chat,
   or base91 for exportable/printable only characters (without space or 92 with space)
