@@ -131,7 +131,7 @@ function ML:multNumberByValue(digits, base, value)
 end
 
 function ML:convertNumber(srcDigits, srcBase, destDigits, destBase)
-    for _,srcDigit in ipairs(srcDigits) do
+    for _, srcDigit in ipairs(srcDigits) do
         self:multNumberByValue(destDigits, destBase, srcBase)
         self:incNumberByValue(destDigits, destBase, srcDigit)
     end
@@ -153,12 +153,7 @@ end
 
 function ML:convertNumberExt(srcDigits, srcBase, destBase)
    -- Generate a list of zero's which is long enough to hold the destination number.
-   local destDigitsLen = #srcDigits*math.log(srcBase)/math.log(destBase)
-   if srcBase > destBase then
-    destDigitsLen = math.ceil(destDigitsLen)
-   else
-    destDigitsLen = math.floor(destDigitsLen+0.0001)
-   end
+   local destDigitsLen = self:ConvSize(#srcDigits, srcBase, destBase)
    local destDigits = {}
    for i = 1, destDigitsLen do
     destDigits[i] = 0
@@ -170,6 +165,17 @@ function ML:convertNumberExt(srcDigits, srcBase, destBase)
 end
 
 --- end of python to lua translation of the above awesomeness
+
+function ML:ConvSize(len, srcBase, destBase)
+    local destLen = len*math.log(srcBase)/math.log(destBase)
+    if srcBase > destBase then
+        destLen = math.ceil(destLen)
+    else
+        -- todo proper math would be which value of the original length yield the ceil above
+        destLen = math.floor(destLen+0.0001)
+    end
+    return destLen
+end
 
 function ML:Encode(bytes, base, dict)
     dict = dict or self.base255
@@ -200,6 +206,37 @@ function ML:Decode(bytes, base, invDict)
         resC[i] = strchar(d)
     end
     return table.concat(resC, "")
+end
+
+-- benchmark utils
+
+function ML:measureC(msg, f, n)
+    local x
+    local t1 = debugprofilestop()
+    x = f(self, n)
+    local t2 = debugprofilestop()
+    print("Perf measure: " .. msg .. ": " .. tostring(t2 - t1))
+    return x
+end
+
+function ML:randomBuffer(n)
+    local bytes = {}
+    for i = 1, n do
+       bytes[i] =  strchar(math.random(0,255))
+    end
+    return bytes
+end
+
+function ML:ConvBenchMark(n)
+    n = n or 1000
+    local nStr = " " .. tostring(n)
+    local bytes = self:measureC("buffer create" .. nStr, self.randomBuffer, n)
+    local bytesStr = self:measureC("concat" .. nStr, function(_self, b) return table.concat(b, "") end, bytes)
+    local e = self:measureC("encode" .. nStr, self.Encode, bytesStr)
+    local d = self:measureC("decode" .. nStr, self.Decode, e)
+    if d ~= bytesStr then
+        self:Error("Unexpected mistmatch % % % %", #bytesStr, #d, bytesStr, d)
+    end
 end
 
 
