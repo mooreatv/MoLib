@@ -192,3 +192,43 @@ function ML:Decode(bytes, base, invDict)
     end
     return table.concat(resC, "")
 end
+
+
+---- TODO:
+
+-- correctness tests: random data in, check encode/decode invariants (for various (or all? bases 2-255))
+
+-- benchmark tests: at 91, 123, 255
+
+--[[
+Note my goal is correctness and compactness of the output, not necessarily encoding performance but if performance
+can be improved easily, sure (without destroying readability for instance) - thus the importance of measuring and
+testing before optimizing
+
+
+*** Suggestions from Meorawr on discord:
+    I'd remove all the table.insert function calls in favour of keeping track of table length in variables, if performance is a goal
+    Same with use of ipairs to instead use for i = 1, #t style loops
+    Inline incNumber and multNumber calls to convertNumber, and convertNumber into convertNumberExt
+    The dictionary is constant; make it once and just embed it in the code as a table
+
+my note: doubt that makes any difference
+
+    I'd be tempted to suggest you move the bytesDigits tables out of the encode/decode methods and into the outer scope, and
+    reuse them across calls
+    Otherwise you're gonna be murdering the garbage collector if used frequently
+    (Especially since you'll also trigger a bunch of individual table resizes in making those tables to begin with)
+    string.len => just use #)
+
+MooreaTv
+a pool of buffers?
+well as long as I don't call any wow api I guess it's single threaded
+
+    Meorawr:
+    No, just literally move them out of there and reuse the tables as-is. I don't think supporting reentrancy into those function
+    is worthwhile. It's always single threaded
+
+MooreaTv
+yeah but it can be reentrant
+
+]]
