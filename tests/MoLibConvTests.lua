@@ -50,6 +50,8 @@ local bytesStr = table.concat(bytes, "")
 local out1 = assert(io.open("orig", "wb"))
 out1:write(bytesStr)
 out1:close()
+-- rounding error shows up with this value
+_G.test1Conf(bytesStr, 512-500, 2)
 for i = 1, #bytesStr do
   for base = 2, 255 do
     _G.test1Conf(bytesStr, i, base)

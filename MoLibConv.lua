@@ -157,7 +157,7 @@ function ML:convertNumberExt(srcDigits, srcBase, destBase)
    if srcBase > destBase then
     destDigitsLen = math.ceil(destDigitsLen)
    else
-    destDigitsLen = math.floor(destDigitsLen)
+    destDigitsLen = math.floor(destDigitsLen+0.0001)
    end
    local destDigits = {}
    for i = 1, destDigitsLen do
