@@ -210,9 +210,12 @@ testing before optimizing
     I'd remove all the table.insert function calls in favour of keeping track of table length in variables, if performance is a goal
     Same with use of ipairs to instead use for i = 1, #t style loops
     Inline incNumber and multNumber calls to convertNumber, and convertNumber into convertNumberExt
+
+TODO ^
+
     The dictionary is constant; make it once and just embed it in the code as a table
 
-my note: doubt that makes any difference
+my note: doubt that last bit (the dictionary inline, not the rest) makes any difference
 
     I'd be tempted to suggest you move the bytesDigits tables out of the encode/decode methods and into the outer scope, and
     reuse them across calls
