@@ -593,6 +593,13 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
       addon:Debug(4, "Keeping original function for %", text)
     end
     c:SetScript("OnClick", callback)
+    c:SetScript("OnEnter", function()
+      addon:ShowToolTip(c)
+    end)
+    f:SetScript("OnLeave", function()
+      GameTooltip:Hide()
+      addon:Debug(3, "Hide button tool tip...")
+    end)
     return c
   end
 
