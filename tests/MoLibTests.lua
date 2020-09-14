@@ -30,7 +30,6 @@ _G.GetServerTime = function()
   return os.time()
 end
 
-_G.
 _G.GetTime = function()
   return os.time()
 end

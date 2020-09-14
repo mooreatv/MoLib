@@ -14,11 +14,46 @@ local ns = {}
 
 -- Simulating a few wow functions we use
 
+MLT.debug = 9
+
+_G.DEFAULT_CHAT_FRAME = {
+  AddMessage = function(_, msg)
+    print(msg)
+  end
+}
+
+_G.GetAddOnMetadata = function(addon, key)
+  return "<a=" .. addon .. ", k=" .. key .. ">"
+end
+
+_G.GetServerTime = function()
+  return os.time()
+end
+
+_G.GetTime = function()
+  return os.time()
+end
+
+_G.UnitFullName = function(name)
+  MLT:Debug(3, "Inside UnitFullName for %", name)
+  return name .. "1", "My'Realm"
+end
+
+_G.GetBuildInfo = function()
+  return "1.13.5", 35753, "Sept  1 2020", 11305
+end
+
+_G.GetRealmName = function()
+  return "My'Realm"
+end
+
 _G.gsub = string.gsub
 _G.strchar = string.char
 _G.strbyte = string.byte
 
-local f = assert(loadfile("../MoLibConv.lua"))
+local f = assert(loadfile("../MoLib.lua"))
+f(libName, ns)
+f = assert(loadfile("../MoLibConv.lua"))
 f(libName, ns)
 
 --local rnum = math.random()
@@ -60,4 +95,28 @@ function _G.ConvCorrectnessTests()
   end
 end
 
+function _G.TestCompactor()
+  local testStr = {
+    "",
+    "a",
+    "aa",
+    "b",
+    "bc",
+    "abc",
+    "aaa",
+    "   ",
+    ".",
+    "z",
+    "sadfasdf adsf.sdf a.",
+    "aaaaaaaaaaaaaaaabcd",
+  }
+  for _,i in ipairs(testStr) do
+    local e = MLT:TextCompactor(i)
+    local d = MLT:TextDeCompactor(e)
+    local u = string.upper(i)
+    MLT:PrintDefault("% -> " .. e .. " -> %", i, d)
+    assert(d == u)
+  end
+end
+_G.TestCompactor()
 _G.ConvCorrectnessTests()

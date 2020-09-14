@@ -15,6 +15,14 @@ local ML = _G[addonName]
 
 -- Convert a byte array to base N where N >= 2 and <= 256
 
+function ML:InverseDict(dict)
+    local ires = {}
+    for i = 1, #dict do
+        ires[dict[i]] = i - 1
+    end
+    return ires
+end
+
 -- base2-10, base16, base36, base62, base91/92 [printable ascii], base123 [wow's ok chat messages]
 -- etc all the way to base127, and base255 (all but nul)
 function ML:CreateDictionary()
@@ -72,24 +80,111 @@ function ML:CreateDictionary()
     for i = 128, 255 do
         table.insert(res, strchar(i))
     end
-    -- create the inverse dictionary:
-    local ires = {}
-    for i = 1, #res do
-        ires[res[i]] = i-1
-    end
-    return res, ires
+    return res, self:InverseDict(res)
 end
 
+-- dictionary and inverse for base2-255
 ML.base255, ML.base255inversed = ML:CreateDictionary()
 
--- integer division and reminder
+-- latin letters (A-Z) only dictionary + space + dot - telegram style minimum
+function ML:CreateBase28Dictionary()
+    local res = {}
+    -- letters A-Z
+    for i = 1, 26 do
+        table.insert(res, strchar(64+i))
+    end
+    table.insert(res, " ")
+    table.insert(res, ".")
+    return res, self:InverseDict(res)
+end
+
+-- special text only dict/base
+ML.base28, ML.base28inversed = ML:CreateBase28Dictionary()
+
+
+function ML:stripLeadingZeroes(digits)
+    if digits[1] ~= 0 then
+        return 0, digits
+    end
+    local nRes = {}
+    local inZ = true
+    local numZ = 1
+    for i = 2, #digits do
+        local d =  digits[i]
+        if inZ and d == 0 then
+            numZ = numZ + 1
+        else
+            inZ = false
+            table.insert(nRes, d)
+        end
+    end
+    return numZ, nRes
+end
+
+-- go from base 28 to base 91 text
+function ML:TextCompactor(text)
+    local ut = string.upper(text)
+    local b28digits = {}
+    local numLeadingZeros = 0
+    local leading = true
+    b28digits[1] = 1
+    for i = 1, #ut do
+        local c = string.sub(ut, i, i)
+        local d = self.base28inversed[c]
+        if d then
+            if leading and d == 0 then
+                numLeadingZeros = numLeadingZeros + 1
+            else
+                leading = false
+                table.insert(b28digits, d)
+            end
+        else
+            self:Warning("Ignoring %", c)
+        end
+    end
+    b28digits[1] = 1 + numLeadingZeros -- so we always start with non 0 and count number of leading zeros ("A"s)
+    local lz, resN = self:stripLeadingZeroes(self:convertNumberExt(b28digits, 28, 91))
+    self:Debug("# of leading zeroes (As) is %, enc % to % (skipped % zeroes)", numLeadingZeros, b28digits, resN, lz)
+    local resC = {}
+    for _, d in ipairs(resN) do
+        resC[#resC + 1] = self.base255[1+d]
+    end
+    return table.concat(resC, "")
+end
+
+-- go back from base 91 to base 28 upper case text
+function ML:TextDeCompactor(str)
+    local b92digits = {}
+    for i = 1, #str do
+        local c = string.sub(str, i, i)
+        local d = self.base255inversed[c]
+        table.insert(b92digits, d)
+    end
+    local _, resN = self:stripLeadingZeroes(self:convertNumberExt(b92digits, 91, 28))
+    if #resN == 0 then
+        return ""
+    end
+    local numLeadingZeros = resN[1] - 1
+    self:Debug("# of leading zeroes (As) is %, enc is %", numLeadingZeros, resN)
+    local resC = {}
+    for i = 1, numLeadingZeros do
+        resC[i] = self.base28[1] -- A
+    end
+    for i = 2, #resN do
+        resC[i - 1 + numLeadingZeros] = self.base28[1+resN[i]]
+    end
+    return table.concat(resC, "")
+end
+
+
+-- integer division and reminder (inlined in actual use)
 function ML:IntDivide(num, div)
     local d = math.floor(num/div)
     local r = num - d*div
     return d, r
 end
 
--- turn small lua number into string in given base
+-- turn a lua native number into string in given base
 function ML:ToDigits(v, base, dict)
     dict = dict or self.base255
     local l = {}
@@ -186,19 +281,26 @@ function ML:convertNumberExt(srcDigits, srcBase, destBase)
    end
    -- Do conversion.
    self:convertNumber(srcDigits, srcBase, destDigits, destBase)
-   -- Return result (without leading zeros).
+   -- Return result.
    return destDigits
 end
 
 --- end of python to lua translation of the above awesomeness
 
 function ML:ConvSize(len, srcBase, destBase)
+    if len == 0 then
+        return 0
+    end
     local destLen = len*math.log(srcBase)/math.log(destBase)
-    if srcBase > destBase then
+    --self:Debug("ConvSize for len % src base % dest base % float v %", len, srcBase, destBase, destLen)
+    if srcBase > destBase or destBase ~= 256 then
         destLen = math.ceil(destLen)
     else
         -- todo proper math would be which value of the original length yield the ceil above
         destLen = math.floor(destLen+0.0001)
+        if destLen == 0 then
+            destLen = 1
+        end
     end
     return destLen
 end

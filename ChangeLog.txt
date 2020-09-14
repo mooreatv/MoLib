@@ -4,6 +4,10 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.19.00 Sept 13th 2020
+- New :TextCompactor and :TextDeCompactor taking a-z + space + dot and turning it into base91
+- Tests
+
 v7.18.02 Sept 8th 2020
 - Fixed tooltip anchor for option menu in Classic
 v7.18.01 Sept 6th 2020
