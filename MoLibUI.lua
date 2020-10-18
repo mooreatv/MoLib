@@ -851,14 +851,18 @@ end
 -- (note this is not a pool but could be modified to do resetting of object in pool)
 function ML:WipeFrame(f, ...)
   if not f then
-    return -- nothing to wipe
+    return nil -- nothing to wipe
   end
   if f.isldbi then
     self:WipeFrame(f.isldbi)
     wipe(f)
-    return
+    return nil
   end
-  f:Hide() -- first hide before we change children etc
+  if f.Hide then
+    f:Hide() -- first hide before we change children etc
+  else
+    return nil -- not a frame?
+  end
   if f.UnregisterAllEvents then
     f:UnregisterAllEvents()
   end

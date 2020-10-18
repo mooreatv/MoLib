@@ -4,6 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.19.01 Oct 18th 2020
+- :WipeFrame fix for already wiped non nil frame/tables.
+
 v7.19.00 Sept 13th 2020
 - New :TextCompactor and :TextDeCompactor taking a-z + space + dot and turning it into base91
 - Tests
