@@ -4,6 +4,10 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.20.00 Oct 24th 2020
+- :addTextButton and mirroring of position to make button overlays on text,
+  used in dynamicboxer unit frame
+
 v7.19.01 Oct 18th 2020
 - :WipeFrame fix for already wiped non nil frame/tables.
 
