@@ -923,6 +923,12 @@ function ML:WipeFrame(f, ...)
   else
     assert(not f.children)
   end
+  if f.mirror then
+    f.mirror = self:WipeFrame(f.mirror)
+  end
+  if f.linked then
+    f.linked = self:WipeFrame(f.linked)
+  end
   if name then
     _G[name] = nil
   end
