@@ -554,7 +554,7 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     return base
   end
 
-  f.addCheckBox = function(self, text, tooltip)
+  f.addCheckBox = function(self, text, tooltip, optCallback)
     -- local name= "self.cb.".. tostring(self.id) -- not needed
     local c = CreateFrame("CheckButton", nil, self, "InterfaceOptionsCheckButtonTemplate")
     addon:Debug(8, "check box starts with % points", c:GetNumPoints())
@@ -564,6 +564,16 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     end
     self:addMethods(c)
     c.extraWidth = c.Text:GetWidth()
+    if optCallback then
+      c:SetScript("OnClick", optCallback)
+    else
+      -- Work around bug in 9.0.2 where non existent SetValue is called through OnClick
+      c:SetScript("OnClick", nil)
+    end
+--    if not c.SetValue then
+--      c.SetValue = function()
+--      end
+--    end
     return c
   end
 
@@ -631,11 +641,11 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
       c:SetScript("OnClick", callback)
     end
     c:SetScript("OnEnter", function()
-      addon:Debug("Show button tool tip...")
+      addon:Debug(7, "Show button tool tip...")
       addon:ShowToolTip(c)
     end)
     c:SetScript("OnLeave", function()
-      addon:Debug("Hide button tool tip...")
+      addon:Debug(7, "Hide button tool tip...")
       GameTooltip:Hide()
     end)
   end

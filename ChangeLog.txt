@@ -4,6 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.21.00 Nov 24th 2020
+- workaround for Blizzard 9.0.2 bug of calling SetValue on checkboxes
+
 v7.20.01 Oct 24th 2020
 - :addTextButton and mirroring of position to make button overlays on text,
   used in dynamicboxer unit frame
