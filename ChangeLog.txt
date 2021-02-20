@@ -4,6 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.22.00 Feb 20th 2021
+- Changes to avoid wiping minimap button frames (to avoid errors in other minimap management addons)
+
 v7.21.00 Nov 24th 2020
 - workaround for Blizzard 9.0.2 bug of calling SetValue on checkboxes
 

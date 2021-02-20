@@ -87,19 +87,19 @@ end
 ML.base255, ML.base255inversed = ML:CreateDictionary()
 
 -- latin letters (A-Z) only dictionary + space + dot - telegram style minimum
-function ML:CreateBase28Dictionary()
+function ML:CreateBase36Dictionary()
     local res = {}
-    -- letters A-Z
-    for i = 1, 26 do
-        table.insert(res, strchar(64+i))
+    -- characters and letters A-Z in freq order
+    --            12345678901234567890123456 7890123456
+    local freq = string.upper("t eaoinsrhldcumfgpywb,.vk-\"'x)(;jq:z")
+    for i = 1, #freq do
+        table.insert(res, string.sub(freq, i, i))
     end
-    table.insert(res, " ")
-    table.insert(res, ".")
     return res, self:InverseDict(res)
 end
 
 -- special text only dict/base
-ML.base28, ML.base28inversed = ML:CreateBase28Dictionary()
+ML.base36, ML.base36inversed = ML:CreateBase36Dictionary()
 
 
 function ML:stripLeadingZeroes(digits)
@@ -121,30 +121,30 @@ function ML:stripLeadingZeroes(digits)
     return numZ, nRes
 end
 
--- go from base 28 to base 91 text
+-- go from base 36 to base 91 text
 function ML:TextCompactor(text)
     local ut = string.upper(text)
-    local b28digits = {}
+    local b36digits = {}
     local numLeadingZeros = 0
     local leading = true
-    b28digits[1] = 1
+    b36digits[1] = 1
     for i = 1, #ut do
         local c = string.sub(ut, i, i)
-        local d = self.base28inversed[c]
+        local d = self.base36inversed[c]
         if d then
             if leading and d == 0 then
                 numLeadingZeros = numLeadingZeros + 1
             else
                 leading = false
-                table.insert(b28digits, d)
+                table.insert(b36digits, d)
             end
         else
             self:Warning("Ignoring %", c)
         end
     end
-    b28digits[1] = 1 + numLeadingZeros -- so we always start with non 0 and count number of leading zeros ("A"s)
-    local lz, resN = self:stripLeadingZeroes(self:convertNumberExt(b28digits, 28, 91))
-    self:Debug("# of leading zeroes (As) is %, enc % to % (skipped % zeroes)", numLeadingZeros, b28digits, resN, lz)
+    b36digits[1] = 1 + numLeadingZeros -- so we always start with non 0 and count number of leading zeros ("A"s)
+    local lz, resN = self:stripLeadingZeroes(self:convertNumberExt(b36digits, 36, 91))
+    self:Debug("# of leading zeroes (As) is %, enc % to % (skipped % zeroes)", numLeadingZeros, b36digits, resN, lz)
     local resC = {}
     for _, d in ipairs(resN) do
         resC[#resC + 1] = self.base255[1+d]
@@ -152,7 +152,7 @@ function ML:TextCompactor(text)
     return table.concat(resC, "")
 end
 
--- go back from base 91 to base 28 upper case text
+-- go back from base 91 to base 36 upper case text
 function ML:TextDeCompactor(str)
     local b92digits = {}
     for i = 1, #str do
@@ -160,7 +160,7 @@ function ML:TextDeCompactor(str)
         local d = self.base255inversed[c]
         table.insert(b92digits, d)
     end
-    local _, resN = self:stripLeadingZeroes(self:convertNumberExt(b92digits, 91, 28))
+    local _, resN = self:stripLeadingZeroes(self:convertNumberExt(b92digits, 91, 36))
     if #resN == 0 then
         return ""
     end
@@ -168,10 +168,10 @@ function ML:TextDeCompactor(str)
     self:Debug("# of leading zeroes (As) is %, enc is %", numLeadingZeros, resN)
     local resC = {}
     for i = 1, numLeadingZeros do
-        resC[i] = self.base28[1] -- A
+        resC[i] = self.base36[1] -- A
     end
     for i = 2, #resN do
-        resC[i - 1 + numLeadingZeros] = self.base28[1+resN[i]]
+        resC[i - 1 + numLeadingZeros] = self.base36[1+resN[i]]
     end
     return table.concat(resC, "")
 end

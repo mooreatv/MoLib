@@ -109,12 +109,13 @@ function _G.TestCompactor()
     "z",
     "sadfasdf adsf.sdf a.",
     "aaaaaaaaaaaaaaaabcd",
+    "A sin probably rivalled only by those people who write \"here's a library with all the utility functions I've been using in my personal addons\"",
   }
   for _,i in ipairs(testStr) do
     local e = MLT:TextCompactor(i)
     local d = MLT:TextDeCompactor(e)
     local u = string.upper(i)
-    MLT:PrintDefault("% -> " .. e .. " -> %", i, d)
+    MLT:PrintDefault("% (%) -> " .. e .. " (%) -> % (%)", i, #i, #e, d, #d)
     assert(d == u)
   end
 end
