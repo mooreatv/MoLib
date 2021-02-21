@@ -874,10 +874,34 @@ function ML:TableDemo(n, onlyText)
 end
 
 ---
+function ML:ScaleAdjustment()
+  if not self.useUIScale then
+    return 1
+  end
+  local sw, _= GetPhysicalScreenSize()
+  local ui = UIParent:GetWidth()
+  return sw/ui
+end
+
+function ML:AdjustScale(newScale)
+  if not newScale then
+    newScale = 1
+  end
+  if not self.useUIScale then
+    return newScale
+  end
+  local adj = self:ScaleAdjustment()
+  local ns = newScale * adj
+  self:Debug(2, "Using UI scale for Scale % x % -> ", newScale, adj, ns)
+  return ns
+end
+
+
 -- Changes the scale without changing the anchor
 function ML:ChangeScale(f, newScale)
   local pt1, parent, pt2, x, y = f:GetPoint()
   local oldScale = f:GetScale()
+  newScale = self:AdjustScale(newScale)
   local ptMult = oldScale / newScale -- correction for point
   self:Debug(7, "Changing scale from % to % for pt % / % x % y % - point multiplier %", oldScale, newScale, pt1, pt2, x,
              y, ptMult)
@@ -1376,7 +1400,7 @@ function ML:SavePosition(f)
   -- change point to TOPLEFT
   self:SetTopLeft(f)
   local point, relTo, relativePoint, xOfs, yOfs = f:GetPoint()
-  local scale = f:GetScale()
+  local scale = f:GetScale() / self:ScaleAdjustment()
   self:Debug(2, "SavePosition: Stopped moving/scaling widget % % % % relative to % % - scale %", point, relativePoint,
              xOfs, yOfs, relTo, relTo and relTo:GetName(), scale)
   local pos = {relativePoint, xOfs, yOfs} -- relativePoint seems to always be same as point, when called at the right time
@@ -1389,9 +1413,7 @@ end
 
 function ML:RestorePosition(f, pos, scale)
   self:Debug("# Restoring % %", pos, scale)
-  if scale then
-    f:SetScale(scale)
-  end
+  f:SetScale(self:AdjustScale(scale))
   f:ClearAllPoints()
   f:SetPoint("TOPLEFT", nil, unpack(pos))
   -- if our widget we use the widget function, otherwise the generic snap

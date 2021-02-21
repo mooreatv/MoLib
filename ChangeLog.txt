@@ -4,6 +4,10 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
 but also meant to be reused in other addons, not just mine.
 
+v7.23.00 Feb 21st 2021
+- New addon.useUIscale option to change scale based on UIParent scale instead of plain pixels
+  like so far.
+
 v7.22.00 Feb 20th 2021
 - Changes to avoid wiping minimap button frames (to avoid errors in other minimap management addons)
 
