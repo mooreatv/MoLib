@@ -71,7 +71,9 @@ end
 ML.sessionLog = {}
 
 function ML:Print(msg, ...)
-  DEFAULT_CHAT_FRAME:AddMessage(msg, ...)
+  for _, line in ipairs({ strsplit("\n",msg)}) do
+        DEFAULT_CHAT_FRAME:AddMessage(line, ...)
+  end
   table.insert(self.sessionLog, msg)
 end
 
