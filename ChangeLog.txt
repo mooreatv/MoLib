@@ -1,8 +1,12 @@
 ChangeLog for MoLib by MooreaTv (moorea@ymail.com)
 --------------------------------------------------
 Extensively used by DynamicBoxer e.g.
-https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua 
+https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua
 but also meant to be reused in other addons, not just mine.
+
+v8.00.00 May 10th 2021
+- Changed isClassic to return true for Burning Crusade Classic too (wow 2.5)
+  makes DynamicBoxer/MAMA work for BCC
 
 v7.24.00 April 18th 2021
 - Multi line print now output to chat window as separate message so they can be scrolled back individually
@@ -39,7 +43,7 @@ v7.18.00 Sept 5th 2020
 
 v7.17.00 Sept 2nd 2020
 - New :IsInOurGuild(name) method that is a version of UnitIsInMyGuild() that works even if the unit is not in range
-  To use you need to call :SetupGuildInfo() once at startup/from main init (it'll register an extra event handler 
+  To use you need to call :SetupGuildInfo() once at startup/from main init (it'll register an extra event handler
   for GUILD_ROSTER_UPDATE)
 
 v7.16.00 July 24th 2020
@@ -70,7 +74,7 @@ v7.11.01 Sept 5th 2019
   Fixes https://github.com/mooreatv/AuctionDB/issues/18
   Good news is the raw data is fine and it's just the runtime calculation that was off in some cases
 v7.11.00 Sept 1st 2019
-- AH: added numSellers and hasUnknownSellers to item info to show in tooltip 
+- AH: added numSellers and hasUnknownSellers to item info to show in tooltip
   as well as more information about the auction in :auctionEntry() so it can
   be overridden as a callback (done by AHDB addon)
 - Add price in new items info
@@ -134,7 +138,7 @@ v7.06.00 Aug 14th 2019
 - more common code: .OnEvent, :RegisterEventHandlers
 - also fixed SetSaved to return changed count (like the newer version add except dbox)
 v7.05.00 Aug 10th 2019
-- added .isClassic boolean 
+- added .isClassic boolean
 - use `.minimapButtonAngle` to set the :minimapButton() initial position, default 154 degree,
   must be changed for each addon (137 for Mama)
 - expect self.savedVar to be set to the same pointer to the addon saved var
@@ -232,7 +236,7 @@ v6.00.01 July 18th 2019
 v6.00.00 July 17th 2019
 - Move in code from DynamicBoxer :ChangeScale  f:addTexture
 - added comments/doc
-- new :PreloadTextures (pending using coroutine/continuations or delaying layout 
+- new :PreloadTextures (pending using coroutine/continuations or delaying layout
   on update event for textures that aren't loaded yet)
 - overridePadding argument in (set)Scale() and better calculation of scale.
 - new :addAnimatedTexture
@@ -250,7 +254,7 @@ v6.00.00 July 17th 2019
 - Made Place() take optional Points so one can do centered layout (see DynamicBoxer TAB feature)
 5.3.0 July 11th 2019
 - pixel perfect snap to pixel boundary with :SnapFrame() on any frame
-- proper bottom right margin calculation and setting in f:Snap() 
+- proper bottom right margin calculation and setting in f:Snap()
 - new :ErrorAndThrow(...) to both log a formatted error and throw the same message
 - working (for players as target) :GetUnitRealmUsingGuid() and :GetRealRealm()
   (first uses just the guid's realmid, second uses the playerinfobyguid)
@@ -297,7 +301,7 @@ check all the callers, always use ":" !
 - Dump/Debug etc now properly escape the wow | sequences
 - new .StartsWith(str, prefix [, cb]) returns true and the reminder of the str if str starts with prefix,
 optional cb argument is called with reminder of str after prefix if a match is found.
-- new :CreateSecureMessage and :VerifySecureMessage functions to exchange time limited secure messages 
+- new :CreateSecureMessage and :VerifySecureMessage functions to exchange time limited secure messages
 based on 1 visible and 1 secret token, embeds server time and checks it too (messages stay valid for 15s)
 - new :Sign(msg, secret) which returns the long hash of msg .. secret, also exposed .Hash() in addition
 to earlier .ShortHash()
@@ -316,7 +320,7 @@ every occurrence of needle by replace in haystack, rest of signature
 and return is same as gsub()
 - new :ShortHash(str) returning 1 alpha num hash of input string (and
 the longer 32 bits hash numerical value)
-- changed DebugEvCall to take mandatory level arg 
+- changed DebugEvCall to take mandatory level arg
 - new :RandomId(len) for random alpha num string of length len
 - new :Warning(formatStr, ...) for warnings with nice orange color
 - :Debug now takes optional level first argument (if absent level is 1), use higher level
