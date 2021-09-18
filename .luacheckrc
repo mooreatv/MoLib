@@ -61,6 +61,7 @@ globals = {
     "strbyte",
     "strsplit",
     "GetGuildRosterInfo",
+    "InCombatLockdown",
 }
 max_line_length = 132
 ignore = {
