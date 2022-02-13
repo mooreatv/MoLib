@@ -409,7 +409,7 @@ ML.ahPrefetch = 2500
 ML.ahMaxRetries = 10 -- how many retries without making progress (ie 1sec)
 ML.ahBaseTimerInterval = 0.1
 ML.ahMaxRestarts = 10 -- how many times to restart the scan when stepping on an expired auction
-ML.ahWaitForSellers = true
+ML.ahWaitForSellers = false -- used to work but they broke it in bcc and back ported the breakage to som...
 ML.ahSkipOverErrors = false
 
 function ML:AHscheduleNextDump(msg)
@@ -698,6 +698,9 @@ function ML:AHdump(fromEvent)
             self:Error("Too many retries (%) without progress when trying to get to full AH of % with page size %, " ..
               "stuck on item % (seller missing at %)", self.ahRetries, count, self.ahPrefetch, firstIncomplete,
               firstSellerMissing)
+            if self.ahWaitForSellers then
+              self:Warning("Blizzard broke getting Seller info since BCC, turn of that option in /ahdb config")
+            end
             self:AHrestoreNormal()
             self.AHinDump = false
             return
