@@ -21,10 +21,32 @@ local ML = _G[addon]
 
 ML.name = addon
 
--- Cover both classic (2) and bc (5)
-ML.isClassic = (_G.WOW_PROJECT_ID >= _G.WOW_PROJECT_CLASSIC)
-ML.isBurningCrusade = (_G.WOW_PROJECT_ID == _G.WOW_PROJECT_BURNING_CRUSADE_CLASSIC)
-ML.isClassicEra = (_G.WOW_PROJECT_ID == _G.WOW_PROJECT_CLASSIC)
+if _G.WOW_PROJECT_ID == nil then
+  ML.isLegacy = true
+  ML.isClassic = false
+  ML.isBurningCrusade = false
+  ML.isClassicEra = false
+  function IsInRaid()
+    return (GetNumRaidMembers() > 0)
+  end
+  function GetNumGroupMembers()
+	  return IsInRaid() and GetNumRaidMembers() or GetNumPartyMembers()
+  end
+  function UnitFullName(unit)
+    local thisRealm = ML:NormalizeRealm(GetRealmName())
+    local name, realm = UnitName(unit)
+    if realm == nil or realm == "" then
+      realm = thisRealm
+    end
+    return name, realm
+  end
+else
+  -- Cover both classic (2) and bc (5)
+  ML.isLegacy = false
+  ML.isClassic = (_G.WOW_PROJECT_ID >= _G.WOW_PROJECT_CLASSIC)
+  ML.isBurningCrusade = (_G.WOW_PROJECT_ID == _G.WOW_PROJECT_BURNING_CRUSADE_CLASSIC)
+  ML.isClassicEra = (_G.WOW_PROJECT_ID == _G.WOW_PROJECT_CLASSIC)
+end
 
 ML.Factions = {"Horde", "Alliance", "Neutral"}
 
@@ -205,8 +227,9 @@ function ML:MoLibInit()
   local version = addon .. " / " .. self.name .. " " .. ML.manifestVersion .. " / " .. _G[globe]
   local wowV, wowP = GetBuildInfo()
   self.WowVersion = " v" .. wowV .. "-" .. wowP
-  self:Print("MoLib embedded in " .. version .. " running on WoW " .. (self.isClassic and "classic" or "mainline") ..
-             " p" .. _G.WOW_PROJECT_ID ..
+  self:Print("MoLib embedded in " .. version .. " running on WoW " ..
+            (self.isLegacy and "legacy" or (self.isClassic and "classic" or "mainline")) ..
+             " p" .. (_G.WOW_PROJECT_ID or 0) ..
                self.WowVersion)
   return false -- so caller can continue with 1 time init
 end

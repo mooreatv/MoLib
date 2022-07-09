@@ -9,6 +9,19 @@ local addonName, _ns = ...
 
 local ML = _G[addonName]
 
+if ML.isLegacy then
+  function GetPhysicalScreenSize()
+    local width, height = strmatch(({GetScreenResolutions()})[GetCurrentResolution()], "(%d+)x(%d+)")
+	  return tonumber(width), tonumber(height)
+  end
+end
+
+ML.id = 0
+function ML:NextId()
+  self.id = self.id + 1
+  return self.id
+end
+
 -- use 2 or 4 for sizes so there are 1/2, 1/4 points
 -- can also be used for numbers passing .1, .01 etc for n digits precision
 function ML:round(x, precision)
@@ -75,10 +88,19 @@ function ML.ScreenFrame(addon)
   return addon:Frame(nil, nil, nil, addon:PixelPerfectFrame(true))
 end
 
+
 -- parent should be null or a child or grandchild of a pixelPerfectFrame()
 function ML.Frame(addon, name, global, template, parent) -- to not shadow self below but really call with Addon:Frame(name)
   local f = CreateFrame("Frame", global, parent or addon:PixelPerfectFrame(), template)
   f:SetSize(1, 1) -- need a starting size for most operations
+  local ct = f.CreateTexture
+  f.CreateTexture = function(w,...)
+    local t = ct(w,...)
+    if t.SetColorTexture == nil then
+      t.SetColorTexture = t.SetTexture
+    end
+    return t
+  end
   if addon.debug and addon.debug >= 8 then
     addon:Debug(8, "Debug level 8 is on, putting debug background on frame %", name)
     f.bg = f:CreateTexture(nil, "BACKGROUND")
@@ -413,6 +435,9 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     t:SetJustifyH("LEFT")
     t:SetJustifyV("TOP")
     self:addMethods(t)
+    if t.SetMaxLines == nil then
+      t.SetMaxLines = function (...) end -- isLegacy case
+    end
     return t
   end
 
@@ -461,6 +486,10 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
 
   -- adds a line of given thickness and color
   f.addLine = function(self, thickness, r, g, b, a, layer, dontaddtochildren)
+    if addon.isLegacy then
+      -- TODO support at least horizontal and vertical lines
+      return {}
+    end
     local l = self:CreateLine(nil, layer or "BACKGROUND")
     l.originalThickness = thickness or 1
     l:SetThickness(l.originalThickness)
@@ -474,6 +503,10 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
   -- adds a border, thickness is in pixels (will be altered based on scale)
   -- the border isn't added to regular children
   f.addBorder = function(self, padX, padY, thickness, r, g, b, alpha, layer)
+    if addon.isLegacy then
+      -- TODO support at least horizontal and vertical lines
+      return {}
+    end
     padX = padX or 0.5
     padY = padY or 0.5
     layer = layer or "BACKGROUND"
@@ -555,9 +588,15 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
   end
 
   f.addCheckBox = function(self, text, tooltip, optCallback)
-    -- local name= "self.cb.".. tostring(self.id) -- not needed
-    local c = CreateFrame("CheckButton", nil, self, "InterfaceOptionsCheckButtonTemplate")
+    local name= nil
+    if addon.isLegacy then
+      name = "MoLib" .. self.name .. "ChkBox".. tostring(addon:NextId())
+    end
+    local c = CreateFrame("CheckButton", name, self, "InterfaceOptionsCheckButtonTemplate")
     addon:Debug(8, "check box starts with % points", c:GetNumPoints())
+    if c.Text == nil then
+      c.Text = _G[c:GetName().."Text"]
+    end
     c.Text:SetText(text)
     if tooltip then
       c.tooltipText = tooltip
@@ -585,13 +624,24 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     step = step or 1
     lowL = lowL or tostring(minV)
     highL = highL or tostring(maxV)
-    local s = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
+    local name= nil
+    if addon.isLegacy then
+      name = "MoLib" .. self.name .. "Slider".. tostring(addon:NextId())
+    end
+    local s = CreateFrame("Slider", name, self, "OptionsSliderTemplate")
+    if s.Text == nil then
+      s.Text = _G[name.."Text"]
+      s.Low = _G[name.."Low"]
+      s.High = _G[name.."High"]
+    end
     s.DoDisable = BlizzardOptionsPanel_Slider_Disable -- what does enable/disable do ? seems we need to call these
     s.DoEnable = BlizzardOptionsPanel_Slider_Enable
     s:SetValueStep(step)
-    s:SetStepsPerPage(step)
+    if s.SetStepsPerPage ~= nil then -- doesn't exist in isLegacy
+      s:SetStepsPerPage(step)
+      s:SetObeyStepOnDrag(true)
+    end
     s:SetMinMaxValues(minV, maxV)
-    s:SetObeyStepOnDrag(true)
     s.Text:SetFontObject(GameFontNormal)
     -- not centered, so changing (value) doesn't wobble the whole thing
     -- (justifyH left alone didn't work because the point is also centered)
@@ -652,8 +702,14 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
 
   -- the call back is either a function or a command to send to addon.Slash
   f.addButton = function(self, text, tooltip, cb)
-    -- local name= "addon.cb.".. tostring(self.id) -- not needed
-    local c = CreateFrame("Button", nil, self, "UIPanelButtonTemplate")
+    local name= nil
+    if addon.isLegacy then
+      name = "MoLib" .. self.name .. "Button".. tostring(addon:NextId())
+    end
+    local c = CreateFrame("Button", name, self, "UIPanelButtonTemplate")
+    if c.Text == nil then
+      c.Text = _G[c:GetName().."Text"]
+    end
     c.Text:SetText(text)
     c:SetWidth(c.Text:GetStringWidth() + 20) -- need some extra spaces for corners
     self:addButtonBehavior(c, text, tooltip, cb)
@@ -1268,7 +1324,7 @@ ML.minimapButtonAngle = 154 -- Make sure this is unique to your addon
 function ML:minimapButton(pos, name, icon)
   name = name or (self.name .. "minimapButton")
   local ldbi = _G.LibStub and _G.LibStub:GetLibrary("LibDBIcon-1.0", true)
-  if ldbi and icon and self.allowLDBI then
+  if ldbi and icon and self.allowLDBI and ldbi.GetMinimapButton ~= nil then
     if _G[name] and _G[name].isldbi then
       _G[name].isldbi:Show()
       return _G[name]
@@ -1317,16 +1373,25 @@ function ML:minimapButton(pos, name, icon)
   -- b:SetFrameLevel(8)
   b:RegisterForClicks("AnyUp")
   b:RegisterForDrag("LeftButton")
-  b:SetHighlightTexture(136477) -- interface/minimap/ui-minimap-zoombutton-highlight
+  if self.isLegacy then
+    b:SetHighlightTexture("Interface\\Minimap\\UI-MiniMap-ZoomButton-Highlight")
+  else
+    b:SetHighlightTexture(136477) -- interface/minimap/ui-minimap-zoombutton-highlight
+  end
   if not b.bgTextures then
     local bg = b:CreateTexture(nil, "BACKGROUND")
     b.bgTextures= bg
     bg:SetSize(24, 24)
-    bg:SetTexture(136467) -- interface/minimap/ui-minimap-background
-    bg:SetPoint("CENTER", 1, 1)
     local o = b:CreateTexture(nil, "OVERLAY")
+    if self.isLegacy then
+      bg:SetTexture("Interface\\Minimap\\UI-MiniMap-Background")
+      o:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    else
+      bg:SetTexture(136467) -- interface/minimap/ui-minimap-background
+      o:SetTexture(136430) -- interface/minimap/minimap-trackingborder
+    end
+    bg:SetPoint("CENTER", 1, 1)
     o:SetSize(54, 54)
-    o:SetTexture(136430) -- interface/minimap/minimap-trackingborder
     o:SetPoint("TOPLEFT")
     if icon then
       local t = b:CreateTexture(nil, "ARTWORK")
