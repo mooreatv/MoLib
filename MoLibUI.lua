@@ -88,6 +88,66 @@ function ML.ScreenFrame(addon)
   return addon:Frame(nil, nil, nil, addon:PixelPerfectFrame(true))
 end
 
+if ML.isLegacy and C_Timer == nil then
+  C_Timer = {}
+  C_Timer.timers = {}
+  local timerFrame = CreateFrame("Frame", "C_TimerFrame", nil)
+  timerFrame:SetScript("OnUpdate",ML.TimerOnUpdate)
+  function ML.TimerOnUpdate(_self, elapsed)
+    for i, v in ipairs(C_Timer.timers) do
+      if v.cancelled then
+        table.remove(C_Timer.timers, i)
+        break
+      end
+      if v.duration < 0 then
+        v.callback()
+        v.iterations = v.iterations - 1
+        if v.iterations <= 0 then
+          table.remove(C_Timer.timers, i)
+        end
+      else
+        v.duration = v.duration - elapsed
+      end
+    end
+  end
+  function C_Timer.NewTicker(duration, callback, iterations)
+    local t = {
+      duration = duration,
+      callback = callback,
+      iterations = iterations,
+      cancelled = false,
+      Cancel = function(self)
+        self.cancelled = true
+      end,
+      IsCancelled = function(self)
+        return self.cancelled
+      end
+    }
+    table.insert(C_Timer.timers, t)
+    return t
+  end
+  function C_Timer.NewTimer(duration, callback)
+    C_Timer.NewTicker(duration, callback, 1)
+  end
+  function C_Timer.After(duration, callback)
+    C_Timer.NewTimer(duration, callback)
+  end
+  function GetServerTime()
+    return time()
+  end
+end
+
+function ML:SetDebugBackground(f, alpha, ...)
+  f.bg = f:CreateTexture(nil, "BACKGROUND")
+  if ML.isLegacy then
+    f.bg:SetTexture(...)
+  else
+    f.bg:SetColorTexture(...)
+    f.bg:SetIgnoreParentAlpha(true)
+  end
+  f.bg:SetAlpha(alpha)
+  f.bg:SetAllPoints()
+end
 
 -- parent should be null or a child or grandchild of a pixelPerfectFrame()
 function ML.Frame(addon, name, global, template, parent) -- to not shadow self below but really call with Addon:Frame(name)
@@ -103,11 +163,7 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
   end
   if addon.debug and addon.debug >= 8 then
     addon:Debug(8, "Debug level 8 is on, putting debug background on frame %", name)
-    f.bg = f:CreateTexture(nil, "BACKGROUND")
-    f.bg:SetIgnoreParentAlpha(true)
-    f.bg:SetAlpha(.2)
-    f.bg:SetAllPoints()
-    f.bg:SetColorTexture(.1, .2, .7)
+    addon:SetDebugBackground(f, 0.2, .1, .2, .7)
   end
   f.name = name
   f.children = {}
@@ -449,11 +505,7 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     cf:Show()
     if addon.debug then
       addon:Debug("Debug level is on, putting debug background on text frame %", text)
-      cf.bg = cf:CreateTexture(nil, "BACKGROUND")
-      cf.bg:SetIgnoreParentAlpha(true)
-      cf.bg:SetAlpha(.5)
-      cf.bg:SetAllPoints()
-      cf.bg:SetColorTexture(.2, .7, .7)
+      addon:SetDebugBackground(cf, 0.5, .2, .7, .7)
     end
     t.frame = cf
     return t
@@ -465,11 +517,7 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     cf.name = "textbutton"
     if addon.debug then
       addon:Debug("Debug level is on, putting debug background on text frame %", text)
-      cf.bg = cf:CreateTexture(nil, "BACKGROUND")
-      cf.bg:SetIgnoreParentAlpha(true)
-      cf.bg:SetAlpha(.5)
-      cf.bg:SetAllPoints()
-      cf.bg:SetColorTexture(.7, .2, .7)
+      addon:SetDebugBackground(cf, 0.5, .7, .2, .7)
     end
     self:addButtonBehavior(cf, text, tooltipText, cb)
     t.button = cf
@@ -574,7 +622,9 @@ function ML.Frame(addon, name, global, template, parent) -- to not shadow self b
     glow:SetTexture(glowId)
     glow:SetBlendMode("ADD")
     glow:SetAlpha(0) -- start with no change
-    glow:SetIgnoreParentAlpha(true)
+    if not addon.isLegacy then
+      glow:SetIgnoreParentAlpha(true)
+    end
     local ag = glow:CreateAnimationGroup()
     base.animationGroup = ag
     local anim = ag:CreateAnimation("Alpha")
