@@ -63,7 +63,8 @@ globals = {
     "GetGuildRosterInfo",
     "InCombatLockdown",
     "GetNumRaidMembers",
-    "GetNumPartyMembers"
+    "GetNumPartyMembers",
+    "time"
 }
 max_line_length = 132
 ignore = {

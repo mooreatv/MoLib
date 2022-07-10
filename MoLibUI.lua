@@ -91,28 +91,34 @@ end
 if ML.isLegacy and C_Timer == nil then
   C_Timer = {}
   C_Timer.timers = {}
-  local timerFrame = CreateFrame("Frame", "C_TimerFrame", nil)
-  timerFrame:SetScript("OnUpdate",ML.TimerOnUpdate)
+  local timerFrame = CreateFrame("Frame", "C_TimerFrame")
   function ML.TimerOnUpdate(_self, elapsed)
+    ML:Debug(9, "C_TimerOnUpdate elapsed %", elapsed)
     for i, v in ipairs(C_Timer.timers) do
+      ML:Debug(9, "C_TimerOnUpdate timer %: %", i, v)
       if v.cancelled then
         table.remove(C_Timer.timers, i)
         break
       end
-      if v.duration < 0 then
+      if v.timeLeft < 0 then
         v.callback()
-        v.iterations = v.iterations - 1
-        if v.iterations <= 0 then
-          table.remove(C_Timer.timers, i)
+        if v.iterations ~= nil then
+          v.iterations = v.iterations - 1
+          if v.iterations <= 0 then
+            table.remove(C_Timer.timers, i)
+          end
         end
+        v.timeLeft = v.duration
       else
-        v.duration = v.duration - elapsed
+        v.timeLeft = v.timeLeft - elapsed
       end
     end
   end
+  timerFrame:SetScript("OnUpdate",ML.TimerOnUpdate)
   function C_Timer.NewTicker(duration, callback, iterations)
     local t = {
       duration = duration,
+      timeLeft = duration,
       callback = callback,
       iterations = iterations,
       cancelled = false,
@@ -130,7 +136,7 @@ if ML.isLegacy and C_Timer == nil then
     C_Timer.NewTicker(duration, callback, 1)
   end
   function C_Timer.After(duration, callback)
-    C_Timer.NewTimer(duration, callback)
+    C_Timer.NewTicker(duration, callback, 1)
   end
   function GetServerTime()
     return time()

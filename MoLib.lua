@@ -40,8 +40,24 @@ if _G.WOW_PROJECT_ID == nil then
     end
     return name, realm
   end
+  function IsInGroup()
+    return (GetNumRaidMembers() > 0 or GetNumPartyMembers() > 0)
+  end
+  function UnitIsGroupLeader(unit)
+    if not IsInGroup() then
+      return false
+    elseif unit == "player" then
+      return (IsInRaid() and IsRaidLeader() or IsPartyLeader())
+    else
+      local index = strmatch(unit, "%d+")
+      if IsInRaid() then
+        return (index and select(2, GetRaidRosterInfo(index)) == 2)
+      end
+      return (index and GetPartyLeaderIndex() == tonumber(index))
+    end
+  end
 else
-  -- Cover both classic (2) and bc (5)
+    -- Cover both classic (2) and bc (5)
   ML.isLegacy = false
   ML.isClassic = (_G.WOW_PROJECT_ID >= _G.WOW_PROJECT_CLASSIC)
   ML.isBurningCrusade = (_G.WOW_PROJECT_ID == _G.WOW_PROJECT_BURNING_CRUSADE_CLASSIC)
