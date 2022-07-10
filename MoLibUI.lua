@@ -619,7 +619,7 @@ function ML.Frame(addon, name, global, template, parent, typ) -- to not shadow s
   f.addAnimatedTexture = function(self, baseId, glowId, duration, glowAlpha, looping, layer)
     local base = self:addTexture(layer)
     base:SetTexture(baseId)
-    if not base:IsObjectLoaded() then
+    if not addon.isLegacy and not base:IsObjectLoaded() then
       addon:Warning("Texture % not loaded yet... use ML:PreloadTextures()...", baseId)
       base:SetSize(64, 64)
     end
@@ -634,8 +634,10 @@ function ML.Frame(addon, name, global, template, parent, typ) -- to not shadow s
     local ag = glow:CreateAnimationGroup()
     base.animationGroup = ag
     local anim = ag:CreateAnimation("Alpha")
-    anim:SetFromAlpha(0)
-    anim:SetToAlpha(glowAlpha or 0.2)
+    if not addon.isLegacy then
+      anim:SetFromAlpha(0)
+      anim:SetToAlpha(glowAlpha or 0.2)
+    end
     ag:SetLooping(looping or "BOUNCE")
     anim:SetDuration(duration or 2)
     base.linked = glow
