@@ -156,8 +156,8 @@ function ML:SetDebugBackground(f, alpha, ...)
 end
 
 -- parent should be null or a child or grandchild of a pixelPerfectFrame()
-function ML.Frame(addon, name, global, template, parent) -- to not shadow self below but really call with Addon:Frame(name)
-  local f = CreateFrame("Frame", global, parent or addon:PixelPerfectFrame(), template)
+function ML.Frame(addon, name, global, template, parent, typ) -- to not shadow self below but really call with Addon:Frame(name)
+  local f = CreateFrame(typ or "Frame", global, parent or addon:PixelPerfectFrame(), template)
   f:SetSize(1, 1) -- need a starting size for most operations
   local ct = f.CreateTexture
   f.CreateTexture = function(w,...)
