@@ -196,7 +196,6 @@ function ML:ToDigits(v, base, dict)
     return string.reverse(table.concat(l, ""))
 end
 
-
 -- Multi byte math for base X to base Y conversion:
 -- Thanks to
 -- https://jonnydee.wordpress.com/2011/05/01/convert-a-block-of-digits-from-base-x-to-base-y/

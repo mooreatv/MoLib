@@ -4,6 +4,10 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua
 but also meant to be reused in other addons, not just mine.
 
+v9.00.00 July 9th 2022
+- Support for legacy (3.3.5a) client (wip)
+- Support for Wrath Classic (beta/wip)
+
 v8.01.01 Nov 9th 2021
 - Handle case on tbc classic where sometimes an item just doesn't come up even after retries,
   option to skip said item (option in AHDB addon)
