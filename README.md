@@ -1,6 +1,7 @@
 # MoLib
 MooreaTv addons common libs
 
+
 2 Files/set of utilities:
 
 - General and debugging functions, like
@@ -8,8 +9,8 @@ MooreaTv addons common libs
 (unlike std format, does work for booleans and tables)
 
 - UI widget library
-Both extensively used by DynamicBoxer e.g.
-https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua
+Both extensively used by all my addons
+https://www.curseforge.com/members/mooreatv/projects
 but also meant to be reused in other addons, not just mine.
 
 It now also includes Pixel Perfect drawing support as demonstrated in

@@ -1,7 +1,7 @@
 ChangeLog for MoLib by MooreaTv (moorea@ymail.com)
 --------------------------------------------------
-Extensively used by DynamicBoxer e.g.
-https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua
+Extensively used by all my addons
+https://www.curseforge.com/members/mooreatv/projects
 but also meant to be reused in other addons, not just mine.
 
 v9.00.02 Sept 4th 2022
