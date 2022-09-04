@@ -4,6 +4,9 @@ Extensively used by DynamicBoxer e.g.
 https://github.com/mooreatv/DynamicBoxer/blob/master/DynamicBoxer/DBoxUI.lua
 but also meant to be reused in other addons, not just mine.
 
+v9.00.02 Sept 4th 2022
+- Added `isWrath` and changed `isBurningCrusade` to be true in Wrath too (use >= for all the classic booleans)
+
 v9.00.01 July 24th 2022
 - Fix 335a issue with wipe/SetScale
 
