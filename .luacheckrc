@@ -64,7 +64,9 @@ globals = {
     "InCombatLockdown",
     "GetNumRaidMembers",
     "GetNumPartyMembers",
-    "time"
+    "time",
+    "InterfaceOptionsFrame",
+    "InterfaceOptionsFrame_OpenToCategory"
 }
 max_line_length = 132
 ignore = {
