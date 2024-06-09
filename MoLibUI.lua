@@ -16,6 +16,19 @@ if ML.isLegacy then
   end
 end
 
+
+if InterfaceOptionsFrame_OpenToCategory == nil then
+	-- Stolen from https://github.com/Gethe/wow-ui-source/blob/10.2.7/Interface/AddOns/Blizzard_Settings_Shared/Blizzard_Deprecated.lua
+function InterfaceOptionsFrame_OpenToCategory(categoryIDOrFrame)
+	if type(categoryIDOrFrame) == "table" then
+		local categoryID = categoryIDOrFrame.name;
+		return Settings.OpenToCategory(categoryID);
+	else
+		return Settings.OpenToCategory(categoryIDOrFrame);
+	end
+end
+end
+
 function ML:ShowConfigPanel(p)
     -- Show config panel
     -- used to be/need InterfaceOptionsList_DisplayPanel(BVP.optionsPanel)
