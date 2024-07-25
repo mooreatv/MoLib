@@ -66,9 +66,25 @@ globals = {
     "GetNumPartyMembers",
     "time",
     "InterfaceOptionsFrame",
-    "InterfaceOptionsFrame_OpenToCategory"
+    "InterfaceOptionsFrame_OpenToCategory",
+    "InterfaceOptions_AddCategory",
+    "Settings",
+    "GetMouseFocus",
+    "GetMouseFoci",
+    "GetScreenResolutions",
+    "GetCurrentResolution",
+    "IsInRaid",
+    "UnitName",
+    "IsInGroup",
+    "UnitIsGroupLeader",
+    "GetNumGroupMembers",
+    "IsRaidLeader",
+    "IsPartyLeader",
+    "GetRaidRosterInfo",
+    "GetPartyLeaderIndex",
+    "strmatch",
 }
-max_line_length = 132
+max_line_length = 160
 ignore = {
     "211/_.*",
     "212/_.*",
