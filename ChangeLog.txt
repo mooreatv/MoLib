@@ -4,8 +4,12 @@ Extensively used by all my addons
 https://www.curseforge.com/members/mooreatv/projects
 but also meant to be reused in other addons, not just mine.
 
-v11.00.00 July 24th 2024
+v14.00.00 July 24th 2024
 - Support for new Addon options panel api and other 11.0.0 retail changes.
+
+v12.00.00 June 9th 2024
+- Was a tentative fix to resurrecting InterfaceOptionsFrame_OpenToCategory if needed like it is in 12.0 beta (#21)
+- Also somehow skipped 11.0 which is unfortunate given that's the retail version, oh well.
 
 v10.00.01 March 26th 2023
 - Localization debug off by default.

@@ -17,6 +17,8 @@ if ML.isLegacy then
 end
 
 
+--[[ let's use the proper one below in new ShowConfigPanel/ConfigPanel instead of this:
+
 if InterfaceOptionsFrame_OpenToCategory == nil then
 	-- Stolen from https://github.com/Gethe/wow-ui-source/blob/10.2.7/Interface/AddOns/Blizzard_Settings_Shared/Blizzard_Deprecated.lua
 function InterfaceOptionsFrame_OpenToCategory(categoryIDOrFrame)
@@ -28,6 +30,8 @@ function InterfaceOptionsFrame_OpenToCategory(categoryIDOrFrame)
 	end
 end
 end
+
+]]
 
 function ML:ShowConfigPanel(p)
     if ML.configCategory then
