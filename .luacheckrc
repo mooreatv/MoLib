@@ -83,6 +83,7 @@ globals = {
     "GetRaidRosterInfo",
     "GetPartyLeaderIndex",
     "strmatch",
+    "C_AddOns",
 }
 max_line_length = 160
 ignore = {
