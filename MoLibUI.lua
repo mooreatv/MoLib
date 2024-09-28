@@ -745,6 +745,22 @@ function ML.Frame(addon, name, global, template, parent, typ) -- to not shadow s
     if addon.isLegacy then
       lname = "MoLib" .. self.name .. "Slider".. tostring(addon:NextId())
     end
+    local toc = select(4, GetBuildInfo())
+    if toc == 11504 then
+      if _G["molibSliderWarning"] == nil then
+        addon:Warning("Blizzard broke OptionsSliderTemplate - set values by hand meanwhile")
+        _G["molibSliderWarning"] = true
+      end
+      local s = self:addText("Broken slider:" .. text)
+      s.SetValue = function(ws, v)
+        ws:SetText("Broken slider:" .. text .. ": " .. v)
+        ws.value = v
+      end
+      s.GetValue = function(ws) return ws.value end
+      s.DoDisable = function() end
+      s.DoEnable = function() end
+      return s
+    end
     local s = CreateFrame("Slider", lname, self, "OptionsSliderTemplate")
     if s.Text == nil then
       s.Text = _G[name.."Text"]
