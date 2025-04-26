@@ -1013,16 +1013,20 @@ ML.GuildCache.n = 0
 function ML:UpdateGuildInfo()
   self:Debug("Received Guild Roster")
   local numTotalGuildMembers, numOnlineGuildMembers = GetNumGuildMembers()
+  if not self.GuildCache then
+    self.GuildCache = {}
+  end
   if numTotalGuildMembers == self.GuildCache.n then
     self:Debug("Unchanged count %, online is %", numTotalGuildMembers, numOnlineGuildMembers)
     return
   end
   self:PrintDefault(self.name .. ": In guild, % total, % online.", numTotalGuildMembers, numOnlineGuildMembers)
-  self.GuildCache = {}
-  self.GuildCache.n = numTotalGuildMembers
+  self.GuildCache = { n = numTotalGuildMembers }
   for i = 1, numTotalGuildMembers do
-    local name= GetGuildRosterInfo(i)
-    self.GuildCache[name] = true
+    local name = GetGuildRosterInfo(i)
+    if name then
+      self.GuildCache[name] = true
+    end
   end
 end
 
