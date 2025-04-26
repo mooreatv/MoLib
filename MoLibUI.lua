@@ -763,9 +763,9 @@ function ML.Frame(addon, name, global, template, parent, typ) -- to not shadow s
     end
     local s = CreateFrame("Slider", lname, self, "OptionsSliderTemplate")
     if s.Text == nil then
-      s.Text = _G[name.."Text"]
-      s.Low = _G[name.."Low"]
-      s.High = _G[name.."High"]
+      s.Text = _G[lname.."Text"]
+      s.Low = _G[lname.."Low"]
+      s.High = _G[lname.."High"]
     end
     s.DoDisable = BlizzardOptionsPanel_Slider_Disable -- what does enable/disable do ? seems we need to call these
     s.DoEnable = BlizzardOptionsPanel_Slider_Enable
